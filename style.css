@@ -1,0 +1,14 @@
+/* 
+Dark pink: #a50a51
+Dark blue: #0494cb
+Light blue: #12b5ea
+Dark green: #558920
+Light green: #86af15
+Orange: #ff6f0c
+Gray: #636467
+*/
+
+/* Set form colors */
+:root {
+    --main-color: #a50a51;
+  }
