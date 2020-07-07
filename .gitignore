@@ -3,3 +3,6 @@
 
 # Ignore files related to API keys
 /env/config.js
+
+# Ignore bundled JS file
+/scripts/bundle.js
