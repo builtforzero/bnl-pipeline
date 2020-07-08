@@ -1,20 +1,46 @@
 <!DOCTYPE html>
 
 <head>
-    <meta charset="utf-8">
-    <title>Report BNL Data | Built for Zero</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,300;0,400;0,500;0,700;0,900;1,200;1,400;1,500;1,700&display=swap" rel="stylesheet">
+  <meta charset="utf-8">
+  <title>Report BNL Data | Built for Zero</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,300;0,400;0,500;0,700;0,900;1,200;1,400;1,500;1,700&display=swap"
+    rel="stylesheet">
 </head>
 
 <body>
-    <label for="avatar">Choose a profile picture!</label>
-    <input type="file" id="avatar" name="avatar" accept="image/png, image/jpeg">
+
+  <form>
+
+    <div>
+      <label for="fileUpload">Choose file to upload</label>
+      <input type="file" id="fileUpload" name="fileUpload">
+    </div>
+
+    <div>
+      <button id="fileSubmit">Submit</button>
+      <progress max="100" value="0"></progress>
+    </div>
+
+  </form>
 
 
 
-    <script src="scripts/bundle.js"></script>
+  <!-- <script src="scripts/bundle.js"></script> -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.16.0/d3.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.711.0.min.js"></script>
+
+  <script src="env/papaparse.min.js"></script>
+
+  <script type="module" src="scripts/main.js"></script>
+  <script type="module" src="env/config.js"></script>
+
 </body>
 
 </html>
