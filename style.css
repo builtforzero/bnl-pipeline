@@ -10,9 +10,9 @@ Gray: #636467
 
 /* Set form colors */
 :root {
-    --theme: #a50a51;
-    --font: 'Raleway';
-  }
+  --theme: #a50a51;
+  --font: 'Raleway';
+}
 
 body {
   margin: 0;
