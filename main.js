@@ -1,10 +1,10 @@
-const random = Math.floor(Math.random() * Math.floor(100))
+const random = Math.floor(Math.random() * Math.floor(1000))
 
 let state = {
     data: null,
     csv: null,
     fileList: null,
-    title: "test" + random.toString() + ".csv"
+    title: "test_" + random.toString() + ".csv"
 }
 
 const formatTime = d3.timeFormat("%X");
@@ -12,7 +12,7 @@ const formatTime = d3.timeFormat("%X");
 function updateStatus(newStatus) {
     d3.select(".status")
         .append("div")
-        .html(`${newStatus} <b style='color:gray;'>${formatTime(Date.now())} </b>` + "<br><br>")
+        .html(`${newStatus} <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br><br>")
 }
 
 updateStatus(`'${state.title}' set as random file name`)
