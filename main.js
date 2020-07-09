@@ -19,7 +19,7 @@ updateStatus(`'${state.title}' set as random file name`)
 
 import {
     keys
-} from "../env/config.js";
+} from "./env/config.js";
 
 const bucketName = keys.BUCKET_NAME
 const bucketRegion = keys.BUCKET_REGION
