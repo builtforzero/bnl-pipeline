@@ -15,6 +15,8 @@ function updateStatus(newStatus) {
         .html(`${newStatus} <b style='color:gray;'>${formatTime(Date.now())} </b>` + "<br><br>")
 }
 
+updateStatus(`'${state.title}' set as random file name`)
+
 import {
     keys
 } from "../env/config.js";
@@ -35,7 +37,7 @@ const s3 = new AWS.S3({
     }
 });
 
-updateStatus(`'${state.title}' set as random file name`)
+
 
 function uploadToAWS(file, docTitle, bucketName) {
     updateStatus(`uploading ${state.title} to AWS`)
