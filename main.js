@@ -4,7 +4,7 @@ let state = {
     data: null,
     csv: null,
     fileList: null,
-    title: "test_" + random.toString() + ".csv"
+    title: "test" + random.toString() + ".csv"
 }
 
 const formatTime = d3.timeFormat("%X");
@@ -19,7 +19,7 @@ updateStatus(`'${state.title}' set as random file name`)
 
 import {
     keys
-} from "./env/config.js";
+} from "./config.js";
 
 const bucketName = keys.BUCKET_NAME
 const bucketRegion = keys.BUCKET_REGION
