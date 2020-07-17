@@ -1,42 +1,11 @@
 const d3 = require('d3');
-const express = require('express');
 const Papa = require('papaparse');
-const AWS = require('aws-sdk')
-const $ = require("jquery")(window);
-
-const app = express();
-app.listen(5500, () => console.log('listening at 3000'))
-app.use(express.static('public'));
-
+const AWS = require('aws-sdk');
 require('dotenv').config();
-console.log(process.env);
 
 const bucketName = process.env.BUCKET_NAME;
 const bucketRegion = process.env.BUCKET_REGION;
 const identityPoolId = process.env.IDENTITY_POOL_ID;
-
-
-
-/* APP */
-
-const random = Math.floor(Math.random() * Math.floor(1000))
-
-let state = {
-    data: null,
-    csv: null,
-    fileList: null,
-    title: "test" + random.toString() + ".csv"
-}
-
-const formatTime = d3.timeFormat("%X");
-
-function updateStatus(newStatus) {
-    d3.select(".status")
-        .append("div")
-        .html(`${newStatus} <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br><br>")
-}
-
-updateStatus(`'${state.title}' set as random file name`)
 
 AWS.config.region = bucketRegion;
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
@@ -49,8 +18,6 @@ const s3 = new AWS.S3({
         Bucket: bucketName
     }
 });
-
-
 
 function uploadToAWS(file, docTitle, bucketName) {
     updateStatus(`uploading ${state.title} to AWS`)
@@ -73,10 +40,33 @@ function uploadToAWS(file, docTitle, bucketName) {
 }
 
 
+
+const random = Math.floor(Math.random() * Math.floor(1000))
+
+let state = {
+    data: null,
+    csv: null,
+    fileList: null,
+    title: "test" + random.toString() + ".csv"
+}
+
+
+const formatTime = d3.timeFormat("%X");
+
+function updateStatus(newStatus) {
+    d3.select(".status")
+        .append("div")
+        .html(`${newStatus} <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br><br>")
+}
+updateStatus(`'${state.title}' set as random file name`)
+
+
+
 const inputElement = document.getElementById("fileUpload");
 inputElement.addEventListener("change", viewFile, false);
 
 function viewFile() {
+
     updateStatus(`File ${state.title} chosen`)
     state.fileList = this.files;
 
@@ -90,6 +80,7 @@ function viewFile() {
         }
     });
 }
+
 
 const uploadElement = d3
     .select("#fileSubmit")

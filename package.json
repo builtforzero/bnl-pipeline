@@ -4,7 +4,8 @@
   "description": "Upload files to AWS.",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -20,8 +21,6 @@
     "aws-sdk": "^2.713.0",
     "d3": "^5.16.0",
     "dotenv": "^8.2.0",
-    "express": "^4.17.1",
-    "jquery": "^3.5.1",
     "papaparse": "^5.2.0"
   }
 }
