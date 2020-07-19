@@ -9,7 +9,9 @@
     "start-watch": "nodemon server/index.js",
     "dev": "concurrently --kill-others \"npm run start-watch\" \"npm run build-watch\"",
     "build": "parcel build ./client/index.html",
-    "start": "npm run build && node server/index.js"
+    "start": "npm run build && node server/index.js",
+    "predeploy": "rm -rf dist && parcel build ./client/index.html --public-url https://builtforzero.github.io/bnl-pipeline",
+    "deploy": "gh-pages -d dist"
   },
   "repository": {
     "type": "git",
@@ -24,6 +26,7 @@
   "homepage": "https://github.com/builtforzero/bnl-pipeline#readme",
   "devDependencies": {
     "concurrently": "^5.2.0",
+    "gh-pages": "^3.1.0",
     "nodemon": "^2.0.4",
     "parcel-bundler": "^1.12.4"
   },
