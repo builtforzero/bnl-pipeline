@@ -13,10 +13,24 @@
 
         <h1>HELLO!</h1>
 
-        <div id="test"></div>
+        <form>
+
+            <div>
+                <label for="fileUpload">Choose a CSV file to upload</label>
+                <input type="file" id="fileUpload" name="fileUpload" accept=".csv">
+            </div>
+
+            <div>
+                <button type='button' id="fileSubmit">Upload</button>
+                <br>
+                <br>
+                <div class="status"></div>
+            </div>
+
+        </form>
 
     </div>
-    <script src="./index.js"></script>
+    <script src="./main.js"></script>
 </body>
 
 </html>
