@@ -1,7 +1,24 @@
+require('dotenv').config();
 const d3 = require('d3')
 const AWS = require('aws-sdk');
 const Papa = require('papaparse');
-require('dotenv').config();
+
+const random = Math.floor(Math.random() * Math.floor(1000))
+
+let state = {
+    data: null,
+    csv: null,
+    fileList: null,
+    fields: null,
+    fail: {
+        fields: ["ssn", "name", "age"]
+    },
+    check: {
+        headers: false,
+        text: false,
+    },
+    title: "test" + random.toString() + ".csv"
+}
 
 
 // Function to upload a file to our AWS S3 bucket
@@ -48,32 +65,28 @@ const uploadToAws = function (file, docTitle) {
 
 
 
-const random = Math.floor(Math.random() * Math.floor(1000))
-
-let state = {
-    data: null,
-    csv: null,
-    fileList: null,
-    title: "test" + random.toString() + ".csv"
-}
-
+/* STATUS UPDATE FUNCTION */
 const formatTime = d3.timeFormat("%X");
 
-function updateStatus(newStatus) {
-    d3.select(".status")
+function updateStatus(location, newStatus) {
+    d3.select(location)
         .append("div")
         .html(`${newStatus} <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br><br>")
 }
-updateStatus(`'${state.title}' set as random file name`)
+
+updateStatus(".upload-status", `'${state.title}' set as random file name`)
+updateStatus(".clean-status", `'${state.title}' not yet clean`)
 
 
+/* ON UPLOAD TRIGGER */
 const inputElement = document.getElementById("fileUpload");
-inputElement.addEventListener("change", viewFile, false);
+inputElement.addEventListener("change", getFile, false);
 
 
-function viewFile() {
+/* GET FILE FROM FILE PICKER */
+function getFile() {
 
-    updateStatus(`File ${state.title} chosen`)
+    updateStatus(".upload-status", `File ${state.title} chosen`)
     state.fileList = this.files;
 
     Papa.parse(state.fileList[0], {
@@ -82,14 +95,57 @@ function viewFile() {
         complete: function (results) {
             state.data = results.data;
             state.csv = Papa.unparse(results.data);
-            updateStatus(`${state.title} parsed`)
+            state.fields = results.meta.fields;
+            updateStatus(".upload-status", `${state.title} parsed`);
+            parseHeaders(state.data, state.csv, state.fields)
         }
     });
 }
 
+
+function parseHeaders(data, csv, fields) {
+    updateStatus(".clean-status", `Checking headers for '${state.title}'`);
+
+    parsedFields = [];
+    failedFields = [];
+
+    fields.forEach(element => {
+        parsedFields.push(element.replace(/[^A-Z0-9]/ig, " ").toLowerCase())
+    });
+
+    updateStatus(".clean-status", `<b>File Headers:</b> '${parsedFields}'`);
+
+    parsedFields.forEach(element => {
+        if (checkHeaders(state.fail.fields, element)) {
+            failedFields.push(element);
+            updateStatus(".clean-status", `&nbsp&nbsp${element} : <b style='color:red;'>failed<b>`)
+        } else {
+            updateStatus(".clean-status", `&nbsp&nbsp${element} : <b style='color:green;'>passed</b>`)
+        }
+    });
+
+    updateStatus(".clean-status", `<b>These fields did not pass:</b> '${failedFields}'`);
+
+    if (failedFields.length > 0) {
+        state.check.headers = false;
+        updateStatus(".test-status", `<b>Headers do not contain the fields ${state.fail.fields}:</b> <b style='color:red;'>TEST FAIL</b>`);
+    } else {
+        state.check.headers = true;
+        updateStatus(".test-status", `<b>Headers do not contain the fields ${state.fail.fields}:</b> <b style='color:green;'>TEST PASS</b>`);
+    }
+}
+
+function checkHeaders(arr, val) {
+    return arr.some(function (arrVal) {
+        return val === arrVal;
+    });
+}
+
+
+
 const uploadElement = d3
     .select("#fileSubmit")
     .on("click", function () {
-        updateStatus(`${state.title} submitting`)
+        updateStatus(".upload-status", `${state.title} submitting`)
         uploadToAws(state.csv, state.title);
     });
