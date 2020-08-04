@@ -3,7 +3,7 @@ const d3 = require('d3')
 const AWS = require('aws-sdk');
 const Papa = require('papaparse');
 
-const random = Math.floor(Math.random() * Math.floor(1000))
+const random = Math.floor(Math.random() * Math.floor(10000))
 
 let state = {
     data: null,
@@ -42,7 +42,7 @@ let test = {
 // Function to upload a file to our AWS S3 bucket
 const uploadToAws = function (file, docTitle) {
 
-    updateStatus(`uploading ${state.title} to AWS`)
+    updateStatus(".upload-status", `uploading ${docTitle} to AWS`)
 
     // Environment variables
     const bucket = process.env.BUCKET_NAME;
@@ -74,9 +74,9 @@ const uploadToAws = function (file, docTitle) {
     s3.upload(params, function (err, data) {
         if (err) {
             throw err,
-                updateStatus(`${state.title} was not uploaded. ${err}`)
+                updateStatus(".upload-status", `${docTitle} was not uploaded. ${err}`)
         }
-        updateStatus(`${state.title} uploaded successfully to ${data.Location}`);
+        updateStatus(".upload-status", `${docTitle} uploaded successfully to ${data.Location}`);
     });
 
 }
@@ -93,7 +93,6 @@ function updateStatus(location, newStatus) {
 }
 
 updateStatus(".upload-status", `'${state.title}' set as random file name`)
-updateStatus(".upload-status", `'${state.title}' not yet clean`)
 
 
 /* ON UPLOAD TRIGGER */
