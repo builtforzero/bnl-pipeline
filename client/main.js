@@ -20,6 +20,24 @@ let state = {
     title: "test" + random.toString() + ".csv"
 }
 
+let test = {
+    headers: {
+        name: "Does your file contain no headers with PII?",
+        raw: [],
+        testCondition: ["ssn", "name", "age"],
+        status: null,
+        failText: `FAIL: Please check your column headers and try again. Headers should not contain personally-identifiable information.`,
+        passText: `PASS: Your headers do not contain personally-identifiable information.`,
+    },
+    length: {
+        name: "Does your file contain at least two rows of data?",
+        raw: [],
+        testCondition: 2,
+        status: null,
+        failText: `FAIL: failtext.`,
+        passText: `PASS: passtext`,
+    },
+}
 
 // Function to upload a file to our AWS S3 bucket
 const uploadToAws = function (file, docTitle) {
@@ -71,11 +89,11 @@ const formatTime = d3.timeFormat("%X");
 function updateStatus(location, newStatus) {
     d3.select(location)
         .append("div")
-        .html(`${newStatus} <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br><br>")
+        .html(`<br>${newStatus} <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br>")
 }
 
 updateStatus(".upload-status", `'${state.title}' set as random file name`)
-updateStatus(".clean-status", `'${state.title}' not yet clean`)
+updateStatus(".upload-status", `'${state.title}' not yet clean`)
 
 
 /* ON UPLOAD TRIGGER */
@@ -83,7 +101,7 @@ const inputElement = document.getElementById("fileUpload");
 inputElement.addEventListener("change", getFile, false);
 
 
-/* GET FILE FROM FILE PICKER */
+/* GET FILE FROM FILE PICKER AND PULL OUT TESTING DATA */
 function getFile() {
 
     updateStatus(".upload-status", `File ${state.title} chosen`)
@@ -95,52 +113,92 @@ function getFile() {
         complete: function (results) {
             state.data = results.data;
             state.csv = Papa.unparse(results.data);
-            state.fields = results.meta.fields;
+            test.headers.raw = results.meta.fields;
+            test.length.raw = state.data.length;
+            runTests();
             updateStatus(".upload-status", `${state.title} parsed`);
-            parseHeaders(state.data, state.csv, state.fields)
         }
     });
 }
 
-
-function parseHeaders(data, csv, fields) {
-    updateStatus(".clean-status", `Checking headers for '${state.title}'`);
-
-    parsedFields = [];
-    failedFields = [];
-
-    fields.forEach(element => {
-        parsedFields.push(element.replace(/[^A-Z0-9]/ig, " ").toLowerCase())
-    });
-
-    updateStatus(".clean-status", `<b>File Headers:</b> '${parsedFields}'`);
-
-    parsedFields.forEach(element => {
-        if (checkHeaders(state.fail.fields, element)) {
-            failedFields.push(element);
-            updateStatus(".clean-status", `&nbsp&nbsp${element} : <b style='color:red;'>failed<b>`)
-        } else {
-            updateStatus(".clean-status", `&nbsp&nbsp${element} : <b style='color:green;'>passed</b>`)
-        }
-    });
-
-    updateStatus(".clean-status", `<b>These fields did not pass:</b> '${failedFields}'`);
-
-    if (failedFields.length > 0) {
-        state.check.headers = false;
-        updateStatus(".test-status", `<b>Headers do not contain the fields ${state.fail.fields}:</b> <b style='color:red;'>TEST FAIL</b>`);
-    } else {
-        state.check.headers = true;
-        updateStatus(".test-status", `<b>Headers do not contain the fields ${state.fail.fields}:</b> <b style='color:green;'>TEST PASS</b>`);
-    }
+function runTests() {
+    testHeaders(test.headers.raw);
+    testLengthOfFile(test.length.raw);
 }
 
-function checkHeaders(arr, val) {
+
+function checkAvailability(arr, val) {
     return arr.some(function (arrVal) {
         return val === arrVal;
     });
 }
 
+
+/* TEST: HEADERS */
+function testHeaders(rawTestData) {
+
+    // Define variables for use with tests
+    const cleanTestData = [];
+    const failState = test.headers.testCondition;
+    const testName = test.headers.name;
+    const passedTest = [];
+    const failedTest = [];
+    const passText = test.headers.passText;
+    const failText = test.headers.failText;
+
+    // Update cleaning status with test in progress
+    updateStatus(".test-status", `<b style='font-size: 20px;'>${testName}</b>`);
+
+    // Clean raw data for testing
+    rawTestData.forEach(element => {
+        cleanTestData.push(element.replace(/[^A-Z0-9]/ig, " ").toLowerCase())
+    });
+
+    // Apply test function to sort input data into pass and fail
+    cleanTestData.forEach(header => {
+        if (checkAvailability(failState, header)) {
+            failedTest.push(header);
+        } else {
+            passedTest.push(header);
+        }
+    });
+
+    // Check length of failed output data
+    if (failedTest.length > 0) {
+        updateStatus(".test-status", `<b style='color:red;'> ✖ ${failText}</b>`);
+        test.headers.status = "fail";
+        return false;
+    } else {
+        updateStatus(".test-status", `<b style='color:green;'> ✓ ${passText}</b>`);
+        test.headers.status = "pass";
+        return true;
+    }
+}
+
+
+/* TEST: FILE LENGTH */
+function testLengthOfFile(rawTestData) {
+
+    // Define variables for use with tests
+    const failState = test.length.testCondition;
+    const testName = test.length.name;
+    const passText = test.length.passText;
+    const failText = test.length.failText;
+
+    // Update cleaning status with test in progress
+    updateStatus(".test-status", `<b style='font-size: 20px;'>${testName}</b>`);
+
+    // Apply test function
+    if (rawTestData < failState) {
+        updateStatus(".test-status", `<b style='color:red;'> ✖ Your file contains ${rawTestData} row(s) of data. ${failText}</b>`);
+        test.headers.status = "fail";
+        return false;
+    } else {
+        updateStatus(".test-status", `<b style='color:green;'> ✓ Your file contains ${rawTestData} row(s) of data. ${passText}</b>`);
+        test.headers.status = "pass";
+        return true;
+    }
+}
 
 
 const uploadElement = d3

@@ -71,6 +71,13 @@ button {
     padding: 5%;
 }
 
+.column2-test {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 1%;
+    margin: 1%;
+}
+
 /* FORM FIELDS */
 
 input,
