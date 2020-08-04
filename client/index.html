@@ -29,23 +29,39 @@
             <section class="column1">
                 <form>
 
+                    <!-- Community Name -->
                     <div class="form-field">
                         <div class="question-text">What is your community name?</div>
-                        <div class="subtitle-text">Choose one.</div>
-                        <select class="input" name="Community" id="community-dropdown" placeholder="Test Community">
-                            <option>Test Community</option>
+                        <select class="input" name="Community" id="community-dropdown" placeholder="Select a Community">
+                            <option>Select a Community</option>
+                            <option>Arlington County CoC</option>
+                            <option>Bakersfield/Kern County CoC</option>
+                            <option>Watsonville/Santa Cruz City & County CoC</option>
+                            <option>Richmond/Henrico, Chesterfield, Hanover Counties CoC</option>
+                            <option>Jacksonville-Duval, Clay Counties CoC</option>
                         </select>
                     </div>
 
+                    <!-- Reporting Date -->
+                    <div class="form-field">
+                        <div class="form-label">
+                            <div class="question-text">Enter the date you are reporting for:</span></div>
+                            <input class="input" type="date" name="Reporting Date" id="date-input">
+                        </div>
+                    </div>
+
+                    <!-- Your Name -->
                     <div class="form-field">
                         <div class="question-text">What is your name?</div>
                         <input class="input" name="Name" id="name-input" placeholder="Name of Contact Person">
                     </div>
 
+                    <!-- Population -->
                     <div class="form-field">
                         <div class="question-text">What population are you reporting?</div>
                         <div class="subtitle-text">Choose one.</div>
-                        <select class="input" name="Community" id="community-dropdown" placeholder="Test Community">
+                        <select class="input" name="Community" id="community-dropdown" placeholder="Select a Population">
+                            <option>Select a Population</option>
                             <option>Single Adults</option>
                             <option>Chronic</option>
                             <option>Veteran</option>
@@ -74,6 +90,7 @@
 
                 <div class="status">
                     <h2>UPLOAD STATUS</h2>
+                    <div class="file-name-status"></div>
                     <div class="upload-status"></div>
                 </div>
 
