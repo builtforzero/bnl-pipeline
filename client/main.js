@@ -60,7 +60,7 @@ function updateState() {
         .on("change", function () {
             state.community = this.value.replace(/[^A-Z0-9]/ig, "");
             state.title = state.community + state.date + ".csv";
-            overwriteStatus(".file-name-status", `The file name is <b>${state.title}</b>`);
+            overwriteStatus(".file-name-status", `File name set: <b>${state.title}</b>`);
             console.log(state);
         })
 
@@ -70,7 +70,7 @@ function updateState() {
         .on("change", function () {
             state.date = formatDate(parseDate(this.value));;
             state.title = state.community + state.date + ".csv";
-            overwriteStatus(".file-name-status", `The file name is <b>${state.title}</b>`);
+            overwriteStatus(".file-name-status", `File name set: <b>${state.title}</b>`);
             console.log(state);
         })
 
@@ -85,7 +85,7 @@ inputElement.addEventListener("change", getFile, false);
 /* GET FILE FROM FILE PICKER AND PULL OUT TESTING DATA */
 function getFile() {
 
-    updateStatus(".upload-status", `File <b>${state.title}</b> chosen`)
+    updateStatus(".upload-status", `File chosen`)
     state.fileList = this.files;
 
     Papa.parse(state.fileList[0], {
@@ -97,7 +97,7 @@ function getFile() {
             test.headers.raw = results.meta.fields;
             test.length.raw = state.data.length;
             runTests();
-            updateStatus(".upload-status", `<b>${state.title}</b> parsed`);
+            updateStatus(".upload-status", `File parsed`);
         }
     });
 }
@@ -186,7 +186,7 @@ function testLengthOfFile(rawTestData) {
 /* UPLOAD FILE TO AWS S3 BUCKET */
 const uploadToAws = function (file, docTitle) {
 
-    updateStatus(".upload-status", `uploading ${docTitle} to AWS`)
+    updateStatus(".upload-status", `Uploading file to AWS`)
 
     // Environment variables
     const bucket = process.env.BUCKET_NAME;
@@ -218,9 +218,9 @@ const uploadToAws = function (file, docTitle) {
     s3.upload(params, function (err, data) {
         if (err) {
             throw err,
-                updateStatus(".upload-status", `${docTitle} was not uploaded. ${err}`)
+                updateStatus(".upload-status", `File was not uploaded. ${err}`)
         }
-        updateStatus(".upload-status", `${docTitle} uploaded successfully to ${data.Location}`);
+        updateStatus(".upload-status", `File uploaded successfully to ${data.Location}`);
     });
 
 }
@@ -228,6 +228,6 @@ const uploadToAws = function (file, docTitle) {
 const uploadElement = d3
     .select("#fileSubmit")
     .on("click", function () {
-        updateStatus(".upload-status", `${state.title} submitting`)
+        updateStatus(".upload-status", `File submitting`)
         uploadToAws(state.csv, state.title);
     });
