@@ -2,42 +2,146 @@ require('dotenv').config();
 const d3 = require('d3')
 const AWS = require('aws-sdk');
 const Papa = require('papaparse');
+const Validator = require('validatorjs');
+const levenary = require('levenary');
 
+// Import engines
+import {
+    ValidatorEngine
+} from "./validator.js"
+
+import {
+    AggregatorEngine
+} from "./aggregator.js";
+
+
+// Global state
+let state = {
+    // Environment variables
+    bucket: process.env.BUCKET_NAME,
+    bucketRegion: process.env.BUCKET_REGION,
+    identityPoolId: process.env.IDENTITY_POOL_ID,
+
+    // Form fields
+    community: null,
+    email: null,
+    name: null,
+    reportingDate: null,
+    timestamp: null,
+
+    // File processing
+    fileList: null,
+    fileTitle: null,
+
+    // Data
+    raw: null,
+    clean: null,
+    output: null,
+}
+
+
+// Dictionary of fuzzy-matching fields for Levenary.js
+let dictionary = {
+    headers: ["date of identification date added to list", "homeless start date", "housing move in date", "inactive date", "returned to active date", "age", "client id", "household id", "bnl status", "literal homeless status", "household type", "chronic status", "veteran status", "ethnicity", "race", "gender", "current living situation", "disabling condition general", "disabling condition hiv aids diagnosis", "disabling condition mental health condition", "disabling condition physical disability", "disabling condition da abuse"],
+    bnlStatus: ["active", "inactive", "housed"],
+    literalStatus: ["literally homeless", "not literally homeless"],
+    householdType: ["single adult / individual", "family", "youth"],
+    chronicStatus: ["chronic", "not chronic", "na"],
+    veteranStatus: ["yes", "yes validated", "no", "unconfirmed", "na"],
+    ethnicity: ["hispanic", "nonhispanic", "client doesnt know", "data not collected", "na", "unknown"],
+    race: ["american indian or alaska native", "asian", "black or african american", "native hawaiian or other pacific islander", "white", "multi racial", "client doesnt know", "data not collected", "na", "unknown"],
+    gender: ["female", "male", "trans female", "trans male", "client doesnt know", "data not collected", "na", "unknown"],
+    currentSituation: ["not literally homeless", "outdoors", "safe haven", "shelters", "transitional housing", "client doesnt know", "data not collected", "na", "unknown"],
+    disGeneral: ["yes", "no", "client doesnt know", "data not collected", "na", "unknown"],
+    disHiv: ["yes", "no", "client doesnt know", "data not collected", "na", "unknown"],
+    disMental: ["yes", "no", "client doesnt know", "data not collected", "na", "unknown"],
+    disPhysical: ["yes", "no", "client doesnt know", "data not collected", "na", "unknown"],
+    disDaAbuse: ["yes", "no", "client doesnt know", "data not collected", "na", "unknown"],
+}
+
+
+// Rules for Validator.js
+let rules = {
+    headers: [
+        'required',
+        {
+            'not_in': ['SSN', 'Social Security Number', 'First Name', 'Last Name', 'DOB', 'Birthday', 'Date of Birth', 'Last 4']
+        }
+    ],
+    dateAdded: 'date|required',
+    dateHomeless: 'date|required',
+    dateMoveIn: 'date|required',
+    dateInactive: 'date|required',
+    dateReturned: 'date|required',
+    age: 'required|integer',
+    clientId: 'required',
+    householdId: 'present',
+    bnlStatus: 'required',
+    literalStatus: 'present',
+    householdType: 'required',
+    chronicStatus: 'required',
+    veteranStatus: 'required',
+    ethnicity: 'required',
+    race: 'required',
+    gender: 'required',
+    currentSituation: 'present',
+    disGeneral: 'present',
+    disHiv: 'present',
+    disMental: 'present',
+    disPhysical: 'present',
+    disDaAbuse: 'present',
+}
+
+// Custom error messages for Validator.js
+let customErrorMessages = {
+    "header.not_in": "The file cannot contain personally-identifiable information (PII) like name, birthday, and SSN.",
+}
+
+let meta = {
+    headers: [],
+    length: null,
+}
+
+// Parsed data file in column format
+let input = {
+    // Backend
+    community: [],
+    email: [],
+    name: [],
+    reportingDate: [],
+    timestamp: [],
+    subpop: [], // Calculated in validation step
+
+    // Upload fields
+    dateAdded: [],
+    dateHomeless: [],
+    dateMoveIn: [],
+    dateInactive: [],
+    dateReturned: [],
+    age: [],
+    clientId: [],
+    householdId: [],
+    bnlStatus: [],
+    literalStatus: [],
+    householdType: [],
+    chronicStatus: [],
+    veteranStatus: [],
+    ethnicity: [],
+    race: [],
+    gender: [],
+    currentSituation: [],
+    disGeneral: [],
+    disHiv: [],
+    disMental: [],
+    disPhysical: [],
+    disDaAbuse: [],
+}
+
+
+/* GLOBAL HELPER FUNCTIONS */
 const formatTime = d3.timeFormat("%X");
 const formatDate = d3.timeFormat("%Y%m%d");
 const parseDate = d3.timeParse("%Y-%m-%d")
-
-let state = {
-    community: "Select a Community",
-    date: formatDate(Date.now()),
-    data: null,
-    csv: null,
-    fileList: null,
-    fields: null,
-    title: null,
-}
-
-let test = {
-    headers: {
-        name: "Does your file contain no headers with PII?",
-        raw: [],
-        testCondition: ["ssn", "name", "age"],
-        status: null,
-        failText: `FAIL: Please check your column headers and try again. Headers should not contain personally-identifiable information.`,
-        passText: `PASS: Your headers do not contain personally-identifiable information.`,
-    },
-    length: {
-        name: "Does your file contain at least two rows of data?",
-        raw: [],
-        testCondition: 2,
-        status: null,
-        failText: `FAIL: failtext.`,
-        passText: `PASS: passtext`,
-    },
-}
-
-/* STATUS UPDATE FUNCTION */
-
 
 function updateStatus(location, newStatus) {
     d3.select(location)
@@ -51,36 +155,55 @@ function overwriteStatus(location, newStatus) {
 }
 
 
-/* FORM FIELD EVENT LISTENERS */
-function updateState() {
 
-    // Event listener on community name field
-    let communityInput = d3
-        .select("#community-dropdown")
-        .on("change", function () {
-            state.community = this.value.replace(/[^A-Z0-9]/ig, "");
-            state.title = state.community + state.date + ".csv";
-            overwriteStatus(".file-name-status", `File name set: <b>${state.title}</b>`);
-            console.log(state);
-        })
+/* INITIALIZE APP */
 
-    // Event listener on reported date field
-    let dateInput = d3
-        .select("#date-input")
-        .on("change", function () {
-            state.date = formatDate(parseDate(this.value));;
-            state.title = state.community + state.date + ".csv";
-            overwriteStatus(".file-name-status", `File name set: <b>${state.title}</b>`);
-            console.log(state);
-        })
-
+function init() {
+    val = new ValidatorEngine(state, dictionary, rules, input, meta, customErrorMessages);
+    agg = new AggregatorEngine(state, dictionary, rules, input, meta, customErrorMessages);
 }
 
-updateState();
 
-/* ON UPLOAD TRIGGER */
-const inputElement = document.getElementById("fileUpload");
+/* FORM FIELD EVENT LISTENERS */
+
+// Event listener on community name field
+let communityInput = d3
+    .select("#community-dropdown")
+    .on("change", function () {
+        state.timestamp = formatTime(Date.now());
+        state.community = this.value.replace(/[^A-Z0-9]/ig, "");
+        state.fileTitle = state.community + state.reportingDate + ".csv";
+        overwriteStatus(".file-name-status", `File name set: <b>${state.title}</b>`);
+        updateBackendFields();
+        console.log(state);
+    })
+
+// Event listener on reported date field
+let dateInput = d3
+    .select("#date-input")
+    .on("change", function () {
+        state.timestamp = formatTime(Date.now());
+        state.reportingDate = formatDate(parseDate(this.value));;
+        state.fileTitle = state.community + state.reportingDate + ".csv";
+        overwriteStatus(".file-name-status", `File name set: <b>${state.title}</b>`);
+        updateBackendFields();
+        console.log(state, input);
+    })
+
+// Event listener on submit button
+let uploadElement = d3
+    .select("#fileSubmit")
+    .on("click", function () {
+        state.timestamp = `${formatTime(Date.now())}`;
+        updateBackendFields();
+        uploadToAws(state.output, state.fileTitle);
+    });
+
+let inputElement = document.getElementById("fileUpload");
 inputElement.addEventListener("change", getFile, false);
+
+
+
 
 /* GET FILE FROM FILE PICKER AND PULL OUT TESTING DATA */
 function getFile() {
@@ -91,143 +214,35 @@ function getFile() {
     Papa.parse(state.fileList[0], {
         dynamicTyping: true,
         header: true,
-        complete: function (results) {
-            state.data = results.data;
-            state.csv = Papa.unparse(results.data);
-            test.headers.raw = results.meta.fields;
-            test.length.raw = state.data.length;
-            runTests();
-            updateStatus(".upload-status", `File parsed`);
-        }
+        complete: addMetadata(results),
     });
 }
 
-/* RUN TESTS */
-function runTests() {
-    testHeaders(test.headers.raw);
-    testLengthOfFile(test.length.raw);
+function addMetadata(data) {
+    state.raw = data;
+    meta.headers = data.meta.fields;
+    meta.length = data.length;
 }
 
-/* TEST #1: HEADERS */
-function testHeaders(rawTestData) {
+function updateBackendFields(state, input) {
+    // Clear out all backend data
+    input.community = [];
+    input.email = [];
+    input.name = [];
+    input.reportingDate = [];
+    input.timestamp = [];
 
-    // Define variables for use with tests
-    const cleanTestData = [];
-    const failState = test.headers.testCondition;
-    const testName = test.headers.name;
-    const passedTest = [];
-    const failedTest = [];
-    const passText = test.headers.passText;
-    const failText = test.headers.failText;
-
-    // Update cleaning status with test in progress
-    updateStatus(".test-status", `<b style='font-size: 20px;'>${testName}</b>`);
-
-    // Clean raw data for testing
-    rawTestData.forEach(element => {
-        cleanTestData.push(element.replace(/[^A-Z0-9]/ig, " ").toLowerCase())
-    });
-
-    function checkAvailability(arr, val) {
-        return arr.some(function (arrVal) {
-            return val === arrVal;
-        });
+    // Append backend fields to each row of data
+    for (let row = 0; row < input.length; row++) {
+        input.community.push(state.community);
+        input.email.push(state.email);
+        input.name.push(state.name);
+        input.reportingDate.push(state.reportingDate);
+        input.timestamp.push(state.timestamp);
     }
 
-    // Apply test function to sort input data into pass and fail
-    cleanTestData.forEach(header => {
-        if (checkAvailability(failState, header)) {
-            failedTest.push(header);
-        } else {
-            passedTest.push(header);
-        }
-    });
-
-    // Check length of failed output data
-    if (failedTest.length > 0) {
-        updateStatus(".test-status", `<b style='color:red;'> ✖ ${failText}</b>`);
-        test.headers.status = "fail";
-        return false;
-    } else {
-        updateStatus(".test-status", `<b style='color:green;'> ✓ ${passText}</b>`);
-        test.headers.status = "pass";
-        return true;
-    }
+    // Update the final CSV file
+    state.output = Papa.unparse(input)
 }
 
-/* TEST #2: FILE LENGTH */
-function testLengthOfFile(rawTestData) {
-
-    // Define variables for use with tests
-    const failState = test.length.testCondition;
-    const testName = test.length.name;
-    const passText = test.length.passText;
-    const failText = test.length.failText;
-
-    // Update cleaning status with test in progress
-    updateStatus(".test-status", `<b style='font-size: 20px;'>${testName}</b>`);
-
-    // Apply test function
-    if (rawTestData < failState) {
-        updateStatus(".test-status", `<b style='color:red;'> ✖ Your file contains ${rawTestData} row(s) of data. ${failText}</b>`);
-        test.headers.status = "fail";
-        return false;
-    } else {
-        updateStatus(".test-status", `<b style='color:green;'> ✓ Your file contains ${rawTestData} row(s) of data. ${passText}</b>`);
-        test.headers.status = "pass";
-        return true;
-    }
-}
-
-
-
-/* UPLOAD FILE */
-
-/* UPLOAD FILE TO AWS S3 BUCKET */
-const uploadToAws = function (file, docTitle) {
-
-    updateStatus(".upload-status", `Uploading file to AWS`)
-
-    // Environment variables
-    const bucket = process.env.BUCKET_NAME;
-    const bucketRegion = process.env.BUCKET_REGION;
-    const identityPoolId = process.env.IDENTITY_POOL_ID;
-
-    // Config AWS
-    AWS.config.region = bucketRegion;
-    AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-        IdentityPoolId: identityPoolId,
-    });
-
-    // New S3 instance
-    const s3 = new AWS.S3({
-        apiVersion: '2006-03-01',
-        params: {
-            Bucket: bucket
-        }
-    });
-
-    // Set up S3 upload parameters
-    const params = {
-        Bucket: bucket,
-        Key: docTitle, // File name you want to save as in S3
-        Body: file,
-    };
-
-    // Upload files to the bucket
-    s3.upload(params, function (err, data) {
-        if (err) {
-            throw err,
-                updateStatus(".upload-status", `File was not uploaded. ${err}`)
-        }
-        updateStatus(".upload-status", `File uploaded successfully to ${data.Location}`);
-    });
-
-}
-
-const uploadElement = d3
-    .select("#fileSubmit")
-    .on("click", function () {
-        updateStatus(".upload-status", `File submitting`)
-        uploadToAws(state.csv, state.title);
-    });
+init();
