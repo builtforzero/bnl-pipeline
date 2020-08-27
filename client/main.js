@@ -3,7 +3,7 @@ const d3 = require('d3')
 const AWS = require('aws-sdk');
 const Papa = require('papaparse');
 const Validator = require('validatorjs');
-const levenary = require('levenary');
+const stringSimilarity = require('string-similarity');
 
 // Import engines
 import {
@@ -14,6 +14,8 @@ import {
     AggregatorEngine
 } from "./aggregator.js";
 
+let val, agg;
+
 
 // Global state
 let state = {
@@ -23,15 +25,16 @@ let state = {
     identityPoolId: process.env.IDENTITY_POOL_ID,
 
     // Form fields
-    community: null,
-    email: null,
-    name: null,
-    reportingDate: null,
-    timestamp: null,
+    community: "na",
+    email: "na",
+    name: "na",
+    reportingDate: "na",
+    timestamp: "na",
 
     // File processing
-    fileList: null,
-    fileTitle: null,
+    fileList: "na",
+    fileTitle: "na",
+    fileDate: "na",
 
     // Data
     raw: null,
@@ -97,7 +100,7 @@ let customErrorMessages = {
     "header.not_in": "The file cannot contain personally-identifiable information (PII) like name, birthday, and SSN.",
 }
 
-let meta = {
+let metadata = {
     headers: [],
     length: null,
 }
@@ -112,7 +115,7 @@ let input = {
     timestamp: [],
     subpop: [], // Calculated in validation step
 
-    // Upload fields
+    // Date & numeric fields
     dateAdded: [],
     dateHomeless: [],
     dateMoveIn: [],
@@ -121,6 +124,8 @@ let input = {
     age: [],
     clientId: [],
     householdId: [],
+
+    // Picklists
     bnlStatus: [],
     literalStatus: [],
     householdType: [],
@@ -135,12 +140,33 @@ let input = {
     disMental: [],
     disPhysical: [],
     disDaAbuse: [],
+
+    // Fuzzy-matched fields
+    bnlStatus_matched: [],
+    literalStatus_matched: [],
+    householdType_matched: [],
+    chronicStatus_matched: [],
+    veteranStatus_matched: [],
+    ethnicity_matched: [],
+    race_matched: [],
+    gender_matched: [],
+    currentSituation_matched: [],
+    disGeneral_matched: [],
+    disHiv_matched: [],
+    disMental_matched: [],
+    disPhysical_matched: [],
+    disDaAbuse_matched: [],
+    test_matched: [],
 }
+
+console.log(input)
 
 
 /* GLOBAL HELPER FUNCTIONS */
 const formatTime = d3.timeFormat("%X");
-const formatDate = d3.timeFormat("%Y%m%d");
+const formatReportingDate = d3.timeFormat("%Y-%m-%d");
+const formatTimestamp = d3.timeFormat("%Y-%m-%d %X");
+const formatFileDate = d3.timeFormat("%Y%m%d");
 const parseDate = d3.timeParse("%Y-%m-%d")
 
 function updateStatus(location, newStatus) {
@@ -159,8 +185,8 @@ function overwriteStatus(location, newStatus) {
 /* INITIALIZE APP */
 
 function init() {
-    val = new ValidatorEngine(state, dictionary, rules, input, meta, customErrorMessages);
-    agg = new AggregatorEngine(state, dictionary, rules, input, meta, customErrorMessages);
+    val = new ValidatorEngine(state, dictionary, rules, input, metadata, customErrorMessages);
+    agg = new AggregatorEngine(state, dictionary, rules, input, metadata, customErrorMessages);
 }
 
 
@@ -170,32 +196,31 @@ function init() {
 let communityInput = d3
     .select("#community-dropdown")
     .on("change", function () {
-        state.timestamp = formatTime(Date.now());
+        state.timestamp = formatTimestamp(Date.now());
         state.community = this.value.replace(/[^A-Z0-9]/ig, "");
-        state.fileTitle = state.community + state.reportingDate + ".csv";
+        state.fileTitle = state.community + state.fileDate + ".csv";
         overwriteStatus(".file-name-status", `File name set: <b>${state.title}</b>`);
-        updateBackendFields();
-        console.log(state);
+        updateBackendFields(input, metadata, state);
     })
 
 // Event listener on reported date field
 let dateInput = d3
     .select("#date-input")
     .on("change", function () {
-        state.timestamp = formatTime(Date.now());
-        state.reportingDate = formatDate(parseDate(this.value));;
-        state.fileTitle = state.community + state.reportingDate + ".csv";
+        state.timestamp = formatTimestamp(Date.now());
+        state.reportingDate = formatReportingDate(parseDate(this.value));
+        state.fileDate = formatFileDate(parseDate(this.value));
+        state.fileTitle = state.community + state.fileDate + ".csv";
         overwriteStatus(".file-name-status", `File name set: <b>${state.title}</b>`);
-        updateBackendFields();
-        console.log(state, input);
+        updateBackendFields(input, metadata, state);
     })
 
 // Event listener on submit button
 let uploadElement = d3
     .select("#fileSubmit")
     .on("click", function () {
-        state.timestamp = `${formatTime(Date.now())}`;
-        updateBackendFields();
+        state.timestamp = formatTimestamp(Date.now());
+        updateBackendFields(input, metadata, state);
         uploadToAws(state.output, state.fileTitle);
     });
 
@@ -214,17 +239,22 @@ function getFile() {
     Papa.parse(state.fileList[0], {
         dynamicTyping: true,
         header: true,
-        complete: addMetadata(results),
+        complete: function (results) {
+            addMetadata(results.data, results.meta);
+        },
     });
 }
 
-function addMetadata(data) {
+function addMetadata(data, meta) {
     state.raw = data;
-    meta.headers = data.meta.fields;
-    meta.length = data.length;
+    metadata.headers = meta.fields;
+    metadata.length = data.length;
+    console.log("adding metadata", state)
+    console.log("adding metadata", metadata)
+    updateBackendFields(input, metadata, state);
 }
 
-function updateBackendFields(state, input) {
+function updateBackendFields(input, metadata, state) {
     // Clear out all backend data
     input.community = [];
     input.email = [];
@@ -233,7 +263,7 @@ function updateBackendFields(state, input) {
     input.timestamp = [];
 
     // Append backend fields to each row of data
-    for (let row = 0; row < input.length; row++) {
+    for (let row = 0; row < metadata.length; row++) {
         input.community.push(state.community);
         input.email.push(state.email);
         input.name.push(state.name);
@@ -242,7 +272,10 @@ function updateBackendFields(state, input) {
     }
 
     // Update the final CSV file
-    state.output = Papa.unparse(input)
+    state.output = Papa.unparse([input])
+
+    console.log("input", input)
+    console.log("output", state.output)
 }
 
 init();

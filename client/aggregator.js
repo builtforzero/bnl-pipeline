@@ -1,13 +1,13 @@
 class AggregatorEngine {
 
-    constructor(state, dictionary, rules, input, meta, customErrorMessages) {
+    constructor(state, dictionary, rules, input, metadata, customErrorMessages) {
         console.log("aggregator engine starting");
         require('dotenv').config();
         const d3 = require('d3')
         const AWS = require('aws-sdk');
         const Papa = require('papaparse');
         const Validator = require('validatorjs');
-        const levenary = require('levenary');
+        const stringSimilarity = require('string-similarity');
     }
 
 

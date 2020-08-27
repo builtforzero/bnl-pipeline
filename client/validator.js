@@ -1,37 +1,66 @@
 class ValidatorEngine {
 
-    constructor(state, dictionary, rules, input, meta, customErrorMessages) {
+    constructor(state, dictionary, rules, input, metadata, customErrorMessages) {
         console.log("validation engine starting");
         require('dotenv').config();
         const d3 = require('d3')
         const AWS = require('aws-sdk');
         const Papa = require('papaparse');
         const Validator = require('validatorjs');
-        const levenary = require('levenary');
     }
 
 
 
     /* HELPER FUNCTIONS */
 
-    // Return the single dictionary term that most closely resembles the search term.
-    fuzzyMatch(state, dictionary, searchTerm) {
-        console.log("fuzzyMatch function")
+    // Return the single dictionary term that most closely resembles the search term
+    fuzzyMatchTerm(searchTerm, dictionary) {
+        const stringSimilarity = require('string-similarity');
+        const a = stringSimilarity.findBestMatch(searchTerm, dictionary);
+
+        // If the Dice's coefficient falls below threshold, return null
+        if (a.bestMatch.rating <= 0.25) {
+            return null
+        } else {
+            return a.bestMatch.target;
+        }
     }
 
-    // Takes an array of values, loops through each value to get the fuzzy-matched equivalent, and appends to the original dataset.
-    fuzzyMatchColumn(state, dictionary, arr, fieldName) {
-        console.log("fuzzyMatchColumn function")
+    // Takes a raw array and dictionary and returns a fuzzy-matched array
+    fuzzyMatchArray(rawArray, dictionary) {
+        const matchedArray = [];
+        for (let i = 0; i < rawArray.length; i++) {
+            const match = this.fuzzyMatchTerm(rawArray[i], dictionary);
+            matchedArray.push(match);
+        }
+        return matchedArray;
     }
 
-    // Validates a data source JSON structure against a set of rules, and then returns pass / fail
+    // For every item in the array, change to lowercase and remove special characters. Returns newly cleaned array
+    cleanArray(rawArray) {
+        const cleanArr = [];
+        for (let i = 0; i < rawArray.length; i++) {
+            const cleanItem = rawArray[i].replace(/[^A-Z0-9]/ig, " ").toLowerCase()
+            cleanArr.push(cleanItem)
+        }
+        return cleanArr;
+    }
+
+    // Takes arrays and returns an array with subpopulation
+    getSubpop(householdType, chronicArray, veteranArray) {
+        const subpopArray = [];
+        for (let i = 0; i < householdType.length; i++) {
+            if (householdType[i] === "single adult" && chronicArray[i] === "chronic" && veteranArray[i] === "no") {
+                let s = "chronic";
+                subpopArray.push(s);
+            }
+        }
+        return subpopArray;
+    }
+
+    // Validates a data source against a set of rules, and then returns pass / fail
     validateData(state, dictionary, data, rules) {
         console.log("validateData function")
-    }
-
-    // For every item in the array, change to lowercase and remove special characters. Returns the newly cleaned array.
-    cleanArray(state, dictionary, arr) {
-        console.log("cleanArray function")
     }
 
     // Prints the error message at the error location
