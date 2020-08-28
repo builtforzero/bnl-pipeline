@@ -1,6 +1,5 @@
 require('dotenv').config();
 const d3 = require('d3')
-const AWS = require('aws-sdk');
 const Papa = require('papaparse');
 const Validator = require('validatorjs');
 const stringSimilarity = require('string-similarity');
@@ -43,7 +42,7 @@ let state = {
 }
 
 
-// Dictionary of fuzzy-matching fields for Levenary.js
+// Dictionary of fuzzy-matching fields
 let dictionary = {
     headers: ["date of identification date added to list", "homeless start date", "housing move in date", "inactive date", "returned to active date", "age", "client id", "household id", "bnl status", "literal homeless status", "household type", "chronic status", "veteran status", "ethnicity", "race", "gender", "current living situation", "disabling condition general", "disabling condition hiv aids diagnosis", "disabling condition mental health condition", "disabling condition physical disability", "disabling condition da abuse"],
     bnlStatus: ["active", "inactive", "housed"],
@@ -65,14 +64,8 @@ let dictionary = {
 
 // Rules for Validator.js
 let rules = {
-    headers: [
-        'required',
-        {
-            'not_in': ['SSN', 'Social Security Number', 'First Name', 'Last Name', 'DOB', 'Birthday', 'Date of Birth', 'Last 4']
-        }
-    ],
-    dateAdded: 'date|required',
-    dateHomeless: 'date|required',
+    'Date of Identification / Date Added to List': 'date|required',
+    'Homeless Start Date': 'date|required',
     dateMoveIn: 'date|required',
     dateInactive: 'date|required',
     dateReturned: 'date|required',
@@ -95,9 +88,10 @@ let rules = {
     disDaAbuse: 'present',
 }
 
-// Custom error messages for Validator.js
+// Custom error messages for Validator.jss
 let customErrorMessages = {
-    "header.not_in": "The file cannot contain personally-identifiable information (PII) like name, birthday, and SSN.",
+    "headers.not_in": "The file cannot contain personally-identifiable information (PII) like name, birthday, and SSN.",
+    "headers.required": "The file requires a header row.",
 }
 
 let metadata = {
@@ -169,15 +163,15 @@ const formatTimestamp = d3.timeFormat("%Y-%m-%d %X");
 const formatFileDate = d3.timeFormat("%Y%m%d");
 const parseDate = d3.timeParse("%Y-%m-%d")
 
-function updateStatus(location, newStatus) {
+function printMessage(location, className, message) {
     d3.select(location)
         .append("div")
-        .html(`<br>${newStatus} <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br>")
+        .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br>")
 }
 
-function overwriteStatus(location, newStatus) {
+function overwriteStatus(location, className, message) {
     d3.select(location)
-        .html(`<br>${newStatus} <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br>")
+        .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br>")
 }
 
 
@@ -186,7 +180,10 @@ function overwriteStatus(location, newStatus) {
 
 function init() {
     val = new ValidatorEngine(state, dictionary, rules, input, metadata, customErrorMessages);
+    printMessage(".success-status", "success", "Validator engine starting");
     agg = new AggregatorEngine(state, dictionary, rules, input, metadata, customErrorMessages);
+    printMessage(".success-status", "success", "Aggregator engine starting");
+
 }
 
 
@@ -199,7 +196,7 @@ let communityInput = d3
         state.timestamp = formatTimestamp(Date.now());
         state.community = this.value.replace(/[^A-Z0-9]/ig, "");
         state.fileTitle = state.community + state.fileDate + ".csv";
-        overwriteStatus(".file-name-status", `File name set: <b>${state.title}</b>`);
+        overwriteStatus(".file-name-status", "neutral", `File name set: <b>${state.title}</b>`);
         updateBackendFields(input, metadata, state);
     })
 
@@ -211,7 +208,7 @@ let dateInput = d3
         state.reportingDate = formatReportingDate(parseDate(this.value));
         state.fileDate = formatFileDate(parseDate(this.value));
         state.fileTitle = state.community + state.fileDate + ".csv";
-        overwriteStatus(".file-name-status", `File name set: <b>${state.title}</b>`);
+        overwriteStatus(".file-name-status", "neutral", `File name set: <b>${state.title}</b>`);
         updateBackendFields(input, metadata, state);
     })
 
@@ -230,10 +227,10 @@ inputElement.addEventListener("change", getFile, false);
 
 
 
-/* GET FILE FROM FILE PICKER AND PULL OUT TESTING DATA */
+/* Get file from file picker and call metadata function */
 function getFile() {
 
-    updateStatus(".upload-status", `File chosen`)
+    printMessage(".upload-status", "neutral", `File chosen`)
     state.fileList = this.files;
 
     Papa.parse(state.fileList[0], {
@@ -249,9 +246,25 @@ function addMetadata(data, meta) {
     state.raw = data;
     metadata.headers = meta.fields;
     metadata.length = data.length;
-    console.log("adding metadata", state)
     console.log("adding metadata", metadata)
     updateBackendFields(input, metadata, state);
+    val.checkHeaders(state, metadata, dictionary);
+
+    console.log("Post-match", state.raw)
+
+    /* let validation = new Validator(state.raw, rules, customErrorMessages)
+    let errorMessages = validation.errors.all()
+    console.log(validation)
+    console.log(errorMessages)
+    console.log(validation.errors.errorCount)
+
+    printMessage(".upload-status", "neutral", `Errors: ${validation.errors.errorCount} errors found.`)
+    printMessage(".upload-status", "neutral", `Passed validation? ${validation.passes()}`) */
+
+    /*     for (let i = 0; i < metadata.headers.length; i++) {
+            printMessage(".error-status", "fail", errorMessages[i])
+        } */
+
 }
 
 function updateBackendFields(input, metadata, state) {

@@ -92,3 +92,21 @@ select {
     padding: 5%;
     background-color: grey;
 }
+
+/* SUCCESS / FAIL */
+
+.success {
+    color: green;
+    font-weight: 400;
+}
+
+.fail {
+    color: red;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.neutral {
+    color: grey;
+    font-weight: 400;
+}

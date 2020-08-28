@@ -1,12 +1,7 @@
 class ValidatorEngine {
 
     constructor(state, dictionary, rules, input, metadata, customErrorMessages) {
-        console.log("validation engine starting");
-        require('dotenv').config();
-        const d3 = require('d3')
-        const AWS = require('aws-sdk');
-        const Papa = require('papaparse');
-        const Validator = require('validatorjs');
+
     }
 
 
@@ -46,31 +41,22 @@ class ValidatorEngine {
         return cleanArr;
     }
 
-    // Takes arrays and returns an array with subpopulation
-    getSubpop(householdType, chronicArray, veteranArray) {
-        const subpopArray = [];
-        for (let i = 0; i < householdType.length; i++) {
-            if (householdType[i] === "single adult" && chronicArray[i] === "chronic" && veteranArray[i] === "no") {
-                let s = "chronic";
-                subpopArray.push(s);
-            }
-        }
-        return subpopArray;
-    }
 
     // Validates a data source against a set of rules, and then returns pass / fail
-    validateData(state, dictionary, data, rules) {
+    validateData(data, rules, customErrorMessages) {
+        const Validator = require('validatorjs');
         console.log("validateData function")
+        let validation = new Validator(data, rules, customErrorMessages)
+        console.log("Passed validation?", validation.passes())
+        return Object.values(validation.errors.errors)
     }
 
-    // Prints the error message at the error location
-    throwError(state, dictionary, errorMessage, errorLocation) {
-        console.log("throwError function")
-    }
-
-    // Prints the success message at the success location
-    throwSuccess(state, dictionary, successMessage, successLocation) {
-        console.log("throwSuccess function")
+    // Updates an object's keys
+    updateKeys(oldArr, newArr) {
+        for (let i = 0; i < oldArr.length; i++) {
+            newArr[i] = oldArr[i];
+            console.log(`Matched ${oldArr[i]} with ${newArr[i]}`)
+        }
     }
 
 
@@ -78,8 +64,12 @@ class ValidatorEngine {
     /* VALIDATION FUNCTIONS */
 
     // Checks that the data file contains the right headers
-    checkHeaders(state, data, dictionary, rules) {
-        console.log("Checking headers")
+    checkHeaders(state, metadata, dictionary) {
+        let matchedHeaders = this.fuzzyMatchArray(metadata.headers, dictionary.headers)
+        let originalHeaders = Object.keys(state.raw[0])
+        this.updateKeys(originalHeaders, matchedHeaders)
+        console.log("Old keys", Object.keys(state.raw[0]))
+        console.log("New keys", matchedHeaders)
     }
 
     // Checks that required columns are 100% filled in
@@ -98,10 +88,16 @@ class ValidatorEngine {
     }
 
     // Calculates subpopulation from fuzzy-matched chronic and veteran status
-    getSubpop(state) {
-        console.log("Calculating subpop field")
+    getSubpop(householdType, chronicArray, veteranArray) {
+        const subpopArray = [];
+        for (let i = 0; i < householdType.length; i++) {
+            if (householdType[i] === "single adult" && chronicArray[i] === "chronic" && veteranArray[i] === "no") {
+                let s = "chronic";
+                subpopArray.push(s);
+            }
+        }
+        return subpopArray;
     }
-
 
 
 
