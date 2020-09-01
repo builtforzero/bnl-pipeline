@@ -16,7 +16,184 @@ import {
 let val, agg;
 
 
-// Global state
+
+let state = {
+
+    // Metadata
+    meta_timestamp: null,
+    meta_community: null,
+    meta_fileName_title: null,
+    meta_fileName_date: null,
+    meta_reportingDate: null,
+
+    // Data
+    fileList: null,
+    data_raw: null,
+    data_headers: null,
+    data_length: null,
+
+    // Validation checks pass/fail
+    check_headers: false,
+    check_required: false,
+    check_dataType: false,
+    check_ssn: false,
+
+    // Open/close HTML sections
+    section_headers_open: false,
+    section_required_open: false,
+    section_dataType_open: false,
+    section_ssn_open: false,
+}
+
+
+/* INITIALIZE APP */
+function init() {
+    val = new ValidatorEngine(state, dictionary, rules, input, metadata, customErrorMessages);
+    agg = new AggregatorEngine(state, dictionary, rules, input, metadata, customErrorMessages);
+
+}
+
+
+/* GLOBAL HELPER FUNCTIONS */
+let helper = {
+    // Date and time parsing
+    formatTime: d3.timeFormat("%X"),
+    formatReportingDate: d3.timeFormat("%Y-%m-%d"),
+    formatTimestamp: d3.timeFormat("%Y-%m-%d %X"),
+    formatFileDate: d3.timeFormat("%Y%m%d"),
+    parseDate: d3.timeParse("%Y-%m-%d"),
+
+    // Message printing
+    printMessage: function printMessage(location, className, message) {
+        d3.select(location)
+            .append("div")
+            .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br>")
+    },
+    overwriteStatus: function overwriteStatus(location, className, message) {
+        d3.select(location)
+            .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br>")
+    }
+}
+
+
+/* EVENT LISTENERS */
+let eventListeners = {
+
+    // Community dropdown field
+    communityInput: d3
+        .select("#community-dropdown")
+        .on("change", function () {
+            state.meta_timestamp = helper.formatTimestamp(Date.now());
+            state.meta_community = this.value.replace(/[^A-Z0-9]/ig, "");
+            state.meta_fileName_title = state.meta_community + state.meta_fileName_date + ".csv";
+        }),
+
+    // Reporting date input
+    dateInput: d3
+        .select("#date-input")
+        .on("change", function () {
+            state.meta_timestamp = helper.formatTimestamp(Date.now());
+            state.meta_reportingDate = helper.formatReportingDate(parseDate(this.value));
+            state.meta_fileName_date = helper.formatFileDate(parseDate(this.value));
+            state.meta_fileName_title = state.meta_community + state.meta_fileName_date + ".csv";
+        }),
+
+
+}
+
+
+/* Get file from file picker and call metadata function */
+function getFile() {
+    state.fileList = this.files;
+
+    Papa.parse(state.fileList[0], {
+        dynamicTyping: true,
+        header: true,
+        complete: function (results) {
+            parseData(results.data, results.meta);
+        },
+    });
+}
+
+function parseData(data, meta) {
+    state.data_raw = data;
+    state.data_headers = meta.fields;
+    state.data_length = data.length;
+}
+
+d3.select("#headers-name")
+    .on('click', function () {
+        state.section_headers_open = !state.section_headers_open;
+        toggleValInfo("#headers-info", "#headers-name-toggle", state.section_headers_open);
+    })
+
+d3.select("#required-name")
+    .on('click', function () {
+        state.section_required_open = !state.section_required_open;
+        toggleValInfo("#required-info", "#required-name-toggle", state.section_required_open);
+    })
+
+d3.select("#dataType-name")
+    .on('click', function () {
+        state.section_dataType_open = !state.section_dataType_open;
+        toggleValInfo("#dataType-info", "#dataType-name-toggle", state.section_dataType_open);
+    })
+
+d3.select("#ssn-name")
+    .on('click', function () {
+        state.section_ssn_open = !state.section_ssn_open;
+        toggleValInfo("#ssn-info", "#ssn-name-toggle", state.section_ssn_open);
+    })
+
+function openValInfo(infoLocation, toggleLocation) {
+    console.log("Opening", infoLocation)
+    d3.select(infoLocation)
+        .style("opacity", "0")
+        .transition()
+        .duration(200)
+        .style("opacity", "1")
+
+    d3.select(infoLocation).classed("hide", false)
+
+    d3.select(toggleLocation)
+        .text("HIDE DETAILS ▲")
+}
+
+function closeValInfo(infoLocation, toggleLocation) {
+    console.log("Closing", infoLocation)
+    d3.select(infoLocation)
+        .style("opacity", "1")
+        .transition()
+        .duration(200)
+        .style("opacity", "0")
+
+    d3.select(infoLocation).classed("hide", true)
+
+    d3.select(toggleLocation)
+        .text("SHOW DETAILS ▼")
+}
+
+function toggleValInfo(infoLocation, toggleLocation, stateField) {
+    if (stateField === true) {
+        openValInfo(infoLocation, toggleLocation)
+    } else closeValInfo(infoLocation, toggleLocation)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* WAIT */
+
+/* // Global state
 let state = {
     // Environment variables
     bucket: process.env.BUCKET_NAME,
@@ -151,144 +328,4 @@ let input = {
     disPhysical_matched: [],
     disDaAbuse_matched: [],
     test_matched: [],
-}
-
-console.log(input)
-
-
-/* GLOBAL HELPER FUNCTIONS */
-const formatTime = d3.timeFormat("%X");
-const formatReportingDate = d3.timeFormat("%Y-%m-%d");
-const formatTimestamp = d3.timeFormat("%Y-%m-%d %X");
-const formatFileDate = d3.timeFormat("%Y%m%d");
-const parseDate = d3.timeParse("%Y-%m-%d")
-
-function printMessage(location, className, message) {
-    d3.select(location)
-        .append("div")
-        .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br>")
-}
-
-function overwriteStatus(location, className, message) {
-    d3.select(location)
-        .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br>")
-}
-
-
-
-/* INITIALIZE APP */
-
-function init() {
-    val = new ValidatorEngine(state, dictionary, rules, input, metadata, customErrorMessages);
-    printMessage(".success-status", "success", "Validator engine starting");
-    agg = new AggregatorEngine(state, dictionary, rules, input, metadata, customErrorMessages);
-    printMessage(".success-status", "success", "Aggregator engine starting");
-
-}
-
-
-/* FORM FIELD EVENT LISTENERS */
-
-// Event listener on community name field
-let communityInput = d3
-    .select("#community-dropdown")
-    .on("change", function () {
-        state.timestamp = formatTimestamp(Date.now());
-        state.community = this.value.replace(/[^A-Z0-9]/ig, "");
-        state.fileTitle = state.community + state.fileDate + ".csv";
-        overwriteStatus(".file-name-status", "neutral", `File name set: <b>${state.title}</b>`);
-        updateBackendFields(input, metadata, state);
-    })
-
-// Event listener on reported date field
-let dateInput = d3
-    .select("#date-input")
-    .on("change", function () {
-        state.timestamp = formatTimestamp(Date.now());
-        state.reportingDate = formatReportingDate(parseDate(this.value));
-        state.fileDate = formatFileDate(parseDate(this.value));
-        state.fileTitle = state.community + state.fileDate + ".csv";
-        overwriteStatus(".file-name-status", "neutral", `File name set: <b>${state.title}</b>`);
-        updateBackendFields(input, metadata, state);
-    })
-
-// Event listener on submit button
-let uploadElement = d3
-    .select("#fileSubmit")
-    .on("click", function () {
-        state.timestamp = formatTimestamp(Date.now());
-        updateBackendFields(input, metadata, state);
-        uploadToAws(state.output, state.fileTitle);
-    });
-
-let inputElement = document.getElementById("fileUpload");
-inputElement.addEventListener("change", getFile, false);
-
-
-
-
-/* Get file from file picker and call metadata function */
-function getFile() {
-
-    printMessage(".upload-status", "neutral", `File chosen`)
-    state.fileList = this.files;
-
-    Papa.parse(state.fileList[0], {
-        dynamicTyping: true,
-        header: true,
-        complete: function (results) {
-            addMetadata(results.data, results.meta);
-        },
-    });
-}
-
-function addMetadata(data, meta) {
-    state.raw = data;
-    metadata.headers = meta.fields;
-    metadata.length = data.length;
-    console.log("adding metadata", metadata)
-    updateBackendFields(input, metadata, state);
-    val.checkHeaders(state, metadata, dictionary);
-
-    console.log("Post-match", state.raw)
-
-    /* let validation = new Validator(state.raw, rules, customErrorMessages)
-    let errorMessages = validation.errors.all()
-    console.log(validation)
-    console.log(errorMessages)
-    console.log(validation.errors.errorCount)
-
-    printMessage(".upload-status", "neutral", `Errors: ${validation.errors.errorCount} errors found.`)
-    printMessage(".upload-status", "neutral", `Passed validation? ${validation.passes()}`) */
-
-    /*     for (let i = 0; i < metadata.headers.length; i++) {
-            printMessage(".error-status", "fail", errorMessages[i])
-        } */
-
-}
-
-function updateBackendFields(input, metadata, state) {
-    // Clear out all backend data
-    input.community = [];
-    input.email = [];
-    input.name = [];
-    input.reportingDate = [];
-    input.timestamp = [];
-
-    // Append backend fields to each row of data
-    for (let row = 0; row < metadata.length; row++) {
-        input.community.push(state.community);
-        input.email.push(state.email);
-        input.name.push(state.name);
-        input.reportingDate.push(state.reportingDate);
-        input.timestamp.push(state.timestamp);
-    }
-
-    // Update the final CSV file
-    state.output = Papa.unparse([input])
-
-    console.log("input", input)
-    console.log("output", state.output)
-}
-
-init();
+} */

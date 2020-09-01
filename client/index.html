@@ -14,66 +14,64 @@
 <body>
     <div id="root">
 
-        <section class="header">
-            <div>
-                <h1 class="header-title">BY-NAME LIST FILE UPLOAD</h1>
-            </div>
-            <div class="header-description">
-                <p>
-                    This is a description of what this form is and how to fill it out.
-                </p>
-            </div>
-        </section>
-
         <section class="columns">
 
             <section class="column1">
-                <form>
 
-                    <!-- Community Name -->
-                    <div class="form-field">
-                        <div class="question-text">What is your community name?</div>
-                        <select class="input" name="Community" id="community-dropdown" placeholder="Select a Community">
-                            <option>Select a Community</option>
-                            <option>Arlington County CoC</option>
-                            <option>Bakersfield/Kern County CoC</option>
-                            <option>Watsonville/Santa Cruz City & County CoC</option>
-                            <option>Richmond/Henrico, Chesterfield, Hanover Counties CoC</option>
-                            <option>Jacksonville-Duval, Clay Counties CoC</option>
-                        </select>
-                    </div>
+                <div class="step-header">
+                    <h2>STEP 1: UPLOAD</h2>
+                    <p>Upload your by-name list for validation.</p>
+                </div>
 
-                    <!-- Reporting Date -->
-                    <div class="form-field">
-                        <div class="form-label">
-                            <div class="question-text">Enter the date you are reporting for:</span></div>
-                            <input class="input" type="date" name="Reporting Date" id="date-input">
+                <div class="step-content">
+
+                    <form>
+
+                        <!-- Community Name -->
+                        <div class="form-field">
+                            <div class="question-text">What is your community name?</div>
+                            <select class="input" name="Community" id="community-dropdown" placeholder="Select a Community">
+                                <option>Select a Community</option>
+                                <option>Arlington County CoC</option>
+                                <option>Bakersfield/Kern County CoC</option>
+                                <option>Watsonville/Santa Cruz City & County CoC</option>
+                                <option>Richmond/Henrico, Chesterfield, Hanover Counties CoC</option>
+                                <option>Jacksonville-Duval, Clay Counties CoC</option>
+                            </select>
                         </div>
-                    </div>
 
-                    <!-- Your Name -->
-                    <div class="form-field">
-                        <div class="question-text">What is your name?</div>
-                        <input class="input" name="Name" id="name-input" placeholder="Name of Contact Person">
-                    </div>
-
-                    <!-- Email -->
-                    <div class="form-field">
-                        <div class="question-text">What is your email address?</div>
-                        <input class="input" name="Email" id="email-input" placeholder="example@email.com">
-                    </div>
-
-
-                    <div class="form-field upload-file">
-                        <div>
-                            <label for="fileUpload" class="question-text input-file-label">Choose a File</label>
-                            <input type="file" id="fileUpload" name="fileUpload" accept=".csv">
+                        <!-- Reporting Date -->
+                        <div class="form-field">
+                            <div class="form-label">
+                                <div class="question-text">Enter the date you are reporting for:</span></div>
+                                <input class="input" type="date" name="Reporting Date" id="date-input">
+                            </div>
                         </div>
-                        <div>
-                            <button type='button' id="fileSubmit">Upload File</button>
-                        </div>
-                    </div>
 
+                        <!-- Your Name -->
+                        <div class="form-field">
+                            <div class="question-text">What is your name?</div>
+                            <input class="input" name="Name" id="name-input" placeholder="Name of Contact Person">
+                        </div>
+
+                        <!-- Email -->
+                        <div class="form-field">
+                            <div class="question-text">What is your email address?</div>
+                            <input class="input" name="Email" id="email-input" placeholder="example@email.com">
+                        </div>
+
+
+                        <div class="form-field upload-file">
+                            <div>
+                                <label for="fileUpload" class="question-text input-file-label">Choose a File</label>
+                                <input type="file" id="filePicker" name="filePicker" accept=".csv">
+                            </div>
+                            <div class="center">
+                                <button type='button' id="fileSubmit">VALIDATE FILE</button>
+                            </div>
+                        </div>
+
+                </div>
 
 
                 </form>
@@ -81,20 +79,100 @@
 
             <section class="column2">
 
-                <div class="status">
-                    <h2>STATUS</h2>
-                    <div class="file-name-status"></div>
-                    <div class="upload-status"></div>
+                <div class="step-header">
+                    <h2>STEP 2: VALIDATE & SUBMIT</h2>
+                    <p>Validate the by-name list file.</p>
                 </div>
 
-                <div class="status">
-                    <h2>SUCCESS</h2>
-                    <div class="success-status"></div>
-                </div>
+                <div class="step-content">
+                    <div class="validation">
 
-                <div class="status">
-                    <h2>ERROR</h2>
-                    <div class="error-status"></div>
+                        <div class="validation-step" id="headers-step">
+                            <div class="validation-name" id="headers-name">Required columns must be present.
+                                <span>
+                                    <div class="toggle" id="headers-name-toggle">SHOW DETAILS ▼</div>
+                                </span>
+                            </div>
+                            <div class="validation-symbol center">PASS</div>
+                            <div class="validation-info hide" id="headers-info">
+                                <p>These 14 columns must be present in your upload file:</p>
+                                <ul>
+                                    <li>Date of Identification / Date Added to List</li>
+                                    <li>Homeless Start Date</li>
+                                    <li>Housing Move-In Date</li>
+                                    <li>Inactive Date</li>
+                                    <li>Returned to Active Date</li>
+                                    <li>Age</li>
+                                    <li>Client ID</li>
+                                    <li>BNL Status</li>
+                                    <li>Household Type</li>
+                                    <li>Chronic Status</li>
+                                    <li>Veteran Status</li>
+                                    <li>Ethnicity</li>
+                                    <li>Race</li>
+                                    <li>Gender</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="validation-step">
+                            <div class="validation-name" id="required-name">Required columns must be 100% filled in.
+                                <span>
+                                    <div class="toggle" id="required-name-toggle">SHOW DETAILS ▼</div>
+                                </span>
+                            </div>
+                            <div class="validation-symbol center">FAIL</div>
+                            <div class="validation-info hide" id="required-info">
+                                <p>These 14 columns must be filled in for each client:</p>
+                                <ul>
+                                    <li>Date of Identification / Date Added to List</li>
+                                    <li>Homeless Start Date</li>
+                                    <li>Housing Move-In Date</li>
+                                    <li>Inactive Date</li>
+                                    <li>Returned to Active Date</li>
+                                    <li>Age</li>
+                                    <li>Client ID</li>
+                                    <li>BNL Status</li>
+                                    <li>Household Type</li>
+                                    <li>Chronic Status</li>
+                                    <li>Veteran Status</li>
+                                    <li>Ethnicity</li>
+                                    <li>Race</li>
+                                    <li>Gender</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="validation-step">
+
+                            <div class="validation-name" id="dataType-name">Columns should contain the right data type.
+                                <span>
+                                    <div class="toggle" id="dataType-name-toggle">SHOW DETAILS ▼</div>
+                                </span>
+                            </div>
+                            <div class="validation-symbol center">FAIL</div>
+                            <div class="validation-info hide" id="dataType-info">
+                                These fields are required
+                            </div>
+                        </div>
+
+                        <div class="validation-step">
+                            <div class="validation-name" id="ssn-name">Columns cannot contain Social Security Numbers.
+                                <span>
+                                    <div class="toggle" id="ssn-name-toggle">SHOW DETAILS ▼</div>
+                                </span>
+                            </div>
+                            <div class="validation-symbol center">PASS</div>
+                            <div class="validation-info hide" id="ssn-info">
+                                These fields are required
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="center">
+                        <button type='button' id="fileSubmit">SUBMIT FILE</button>
+                    </div>
                 </div>
 
             </section>
@@ -104,6 +182,7 @@
     </div>
 
     <script src="./main.js"></script>
+    <script type="module" src="./validator.js"></script>
 </body>
 
 </html>

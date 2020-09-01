@@ -12,8 +12,11 @@
     /* Font Sizes */
     --root-size: 16px;
     --h1-size: 3.2em;
-    --h2-size: 1.8em;
+    --h2-size: 2.2em;
+    --h3-size: 1.3em;
+    --h4-size: 1.1em;
     --subtitle-size: 0.8em;
+    --tiny-size: 0.6em;
 }
 
 html,
@@ -29,6 +32,7 @@ p {
 html {
     font-size: var(--root-size);
     font-family: var(--font-body);
+    background-color: lightgrey;
 }
 
 body {
@@ -45,8 +49,32 @@ h2 {
     font-size: var(--h2-size);
 }
 
+.center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 button {
-    padding: 2%;
+    padding: 10px;
+    margin: 5% 0%;
+    width: 50%;
+    font-family: var(--font-body);
+    font-size: var(--h3-size);
+    font-weight: 900;
+    background-color: var(--color-main);
+    color: white;
+    border: 3px solid var(--color-main);
+}
+
+button:hover {
+    font-family: var(--font-body);
+    font-size: var(--h3-size);
+    font-weight: 900;
+    background-color: white;
+    color: var(--color-main);
+    border: 3px solid var(--color-main);
+    cursor: pointer;
 }
 
 .hide {
@@ -61,8 +89,8 @@ button {
 .columns {
     display: grid;
     grid-template-columns: 1fr 2fr;
-    column-gap: 5%;
-    margin: 1%;
+    column-gap: 10px;
+    margin: 10px;
 }
 
 .status {
@@ -71,11 +99,18 @@ button {
     padding: 5%;
 }
 
-.column2-test {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: 1%;
-    margin: 1%;
+.step-header {
+    padding: 20px;
+    margin: 0%;
+    line-height: 200%;
+    background-color: var(--color-main);
+    color: white;
+}
+
+.step-content {
+    padding: 4%;
+    margin: 0%;
+    background-color: white;
 }
 
 /* FORM FIELDS */
@@ -84,13 +119,20 @@ input,
 select {
     font-family: var(--font-body);
     font-size: 1rem;
-    margin: 2%;
-    padding: 2%;
+    margin: 5px 0px;
+    padding: 10px;
+    width: 95.5%;
+    font-weight: 500;
+}
+
+select {
+    width: 100%;
 }
 
 .form-field {
-    padding: 5%;
-    background-color: grey;
+    padding: 15px 10px;
+    background-color: white;
+    font-weight: 600;
 }
 
 /* SUCCESS / FAIL */
@@ -109,4 +151,58 @@ select {
 .neutral {
     color: grey;
     font-weight: 400;
+}
+
+
+/* VALIDATION STEPS */
+
+.validation-step {
+    display: grid;
+    grid-template-columns: 5fr 2fr;
+    column-gap: 10px;
+    border-bottom: 1px solid lightgrey;
+}
+
+.validation-name {
+    font-size: var(--h3-size);
+    font-weight: 500;
+    margin: 0%;
+    padding: 15px 10px;
+}
+
+.validation-name:hover {
+    background-color: rgb(233, 232, 232);
+    cursor: pointer;
+}
+
+.validation-info {
+    margin: 0%;
+    padding: 2%;
+    color: grey;
+}
+
+.validation-symbol {
+    font-size: var(--h3-size);
+    font-weight: 900;
+}
+
+.toggle {
+    font-size: var(--tiny-size);
+    padding: 10px 0px 0px 0px;
+    color: var(--color-main);
+    font-weight: 600;
+}
+
+
+/* MEDIA BREAKPOINTS */
+
+/* Smartphones (portrait) ----------- */
+@media only screen and (max-width : 800px) {
+    .columns {
+        display: grid;
+        grid-template-columns: 1fr;
+        column-gap: 10px;
+        row-gap: 20px;
+        margin: 5px;
+    }
 }
