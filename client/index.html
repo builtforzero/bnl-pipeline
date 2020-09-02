@@ -88,81 +88,90 @@
                     <div class="validation">
 
                         <div class="validation-step" id="headers-step">
-                            <div class="validation-name" id="headers-name">Required columns must be present.
+                            <div class="validation-name" id="headers-name">1. Required column headers must be present.
                                 <span>
                                     <div class="toggle" id="headers-name-toggle">SHOW DETAILS ▼</div>
                                 </span>
                             </div>
-                            <div class="validation-symbol center">PASS</div>
+                            <div class="validation-symbol center headers-val-symbol">N/A</div>
                             <div class="validation-info hide" id="headers-info">
-                                <p>These 14 columns must be present in your upload file:</p>
-                                <ul>
-                                    <li>Date of Identification / Date Added to List</li>
-                                    <li>Homeless Start Date</li>
-                                    <li>Housing Move-In Date</li>
-                                    <li>Inactive Date</li>
-                                    <li>Returned to Active Date</li>
-                                    <li>Age</li>
-                                    <li>Client ID</li>
-                                    <li>BNL Status</li>
-                                    <li>Household Type</li>
-                                    <li>Chronic Status</li>
-                                    <li>Veteran Status</li>
-                                    <li>Ethnicity</li>
-                                    <li>Race</li>
-                                    <li>Gender</li>
-                                </ul>
+                                <div class="info">
+                                    <h3>Requirement</h3>
+                                    <p>These 14 headers must be present in the <b>first row</b> of your upload file:</p>
+                                    <ul class="list">
+                                        <li>Date of Identification / Date Added to List</li>
+                                        <li>Homeless Start Date</li>
+                                        <li>Housing Move-In Date</li>
+                                        <li>Inactive Date</li>
+                                        <li>Returned to Active Date</li>
+                                        <li>Age</li>
+                                        <li>Client ID</li>
+                                        <li>BNL Status</li>
+                                        <li>Household Type</li>
+                                        <li>Chronic Status</li>
+                                        <li>Veteran Status</li>
+                                        <li>Ethnicity</li>
+                                        <li>Race</li>
+                                        <li>Gender</li>
+                                    </ul>
+                                    </list>
+                                </div>
+                                <div class="result">
+                                    <div class="header-error"></div>
+                                </div>
                             </div>
                         </div>
 
                         <div class="validation-step">
-                            <div class="validation-name" id="required-name">Required columns must be 100% filled in.
+                            <div class="validation-name" id="required-name">2. Required columns must be 100% filled in.
                                 <span>
                                     <div class="toggle" id="required-name-toggle">SHOW DETAILS ▼</div>
                                 </span>
                             </div>
-                            <div class="validation-symbol center">FAIL</div>
+                            <div class="validation-symbol center">N/A</div>
                             <div class="validation-info hide" id="required-info">
-                                <p>These 14 columns must be filled in for each client:</p>
-                                <ul>
-                                    <li>Date of Identification / Date Added to List</li>
-                                    <li>Homeless Start Date</li>
-                                    <li>Housing Move-In Date</li>
-                                    <li>Inactive Date</li>
-                                    <li>Returned to Active Date</li>
-                                    <li>Age</li>
-                                    <li>Client ID</li>
-                                    <li>BNL Status</li>
-                                    <li>Household Type</li>
-                                    <li>Chronic Status</li>
-                                    <li>Veteran Status</li>
-                                    <li>Ethnicity</li>
-                                    <li>Race</li>
-                                    <li>Gender</li>
-                                </ul>
+                                <div class="info">
+                                    <p>These 14 columns must be filled in for each client:</p>
+                                    <ul class="list">
+                                        <li>Date of Identification / Date Added to List</li>
+                                        <li>Homeless Start Date</li>
+                                        <li>Housing Move-In Date</li>
+                                        <li>Inactive Date</li>
+                                        <li>Returned to Active Date</li>
+                                        <li>Age</li>
+                                        <li>Client ID</li>
+                                        <li>BNL Status</li>
+                                        <li>Household Type</li>
+                                        <li>Chronic Status</li>
+                                        <li>Veteran Status</li>
+                                        <li>Ethnicity</li>
+                                        <li>Race</li>
+                                        <li>Gender</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
 
                         <div class="validation-step">
 
-                            <div class="validation-name" id="dataType-name">Columns should contain the right data type.
+                            <div class="validation-name" id="dataType-name">3. Columns should contain the right data type.
                                 <span>
                                     <div class="toggle" id="dataType-name-toggle">SHOW DETAILS ▼</div>
                                 </span>
                             </div>
-                            <div class="validation-symbol center">FAIL</div>
+                            <div class="validation-symbol center">N/A</div>
                             <div class="validation-info hide" id="dataType-info">
                                 These fields are required
                             </div>
                         </div>
 
                         <div class="validation-step">
-                            <div class="validation-name" id="ssn-name">Columns cannot contain Social Security Numbers.
+                            <div class="validation-name" id="ssn-name">4. Columns cannot contain Social Security Numbers.
                                 <span>
                                     <div class="toggle" id="ssn-name-toggle">SHOW DETAILS ▼</div>
                                 </span>
                             </div>
-                            <div class="validation-symbol center">PASS</div>
+                            <div class="validation-symbol center">N/A</div>
                             <div class="validation-info hide" id="ssn-info">
                                 These fields are required
                             </div>

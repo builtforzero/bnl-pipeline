@@ -15,7 +15,7 @@ class ValidatorEngine {
 
         // If the Dice's coefficient falls below threshold, return null
         if (a.bestMatch.rating <= 0.25) {
-            return null
+            return "No Match"
         } else {
             return a.bestMatch.target;
         }

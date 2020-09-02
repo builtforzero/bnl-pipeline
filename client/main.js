@@ -31,6 +31,7 @@ let state = {
     data_raw: null,
     data_headers: null,
     data_length: null,
+    data_diceCoefficient: 0.4, // How sensitive should fuzzy matching be?
 
     // Validation checks pass/fail
     check_headers: false,
@@ -43,14 +44,38 @@ let state = {
     section_required_open: false,
     section_dataType_open: false,
     section_ssn_open: false,
+
+    // Dictionary
+    dict_headers: ['Date of Identification / Date Added to List',
+        'Homeless Start Date',
+        'Housing Move-In Date',
+        'Inactive Date',
+        'Returned to Active Date',
+        'Age',
+        'Client ID',
+        'Household ID',
+        'BNL Status',
+        'Literal Homeless Status',
+        'Household Type',
+        'Chronic Status',
+        'Veteran Status',
+        'Ethnicity',
+        'Race',
+        'Gender',
+        'Current Living Situation',
+        'Disabling Condition - General',
+        'Disabling Condition - HIV/AIDS Diagnosis',
+        'Disabling Condition - Mental Health Condition',
+        'Disabling Condition - Physical Disability',
+        'Disabling Condition - DA Abuse',
+    ],
 }
 
 
 /* INITIALIZE APP */
 function init() {
-    val = new ValidatorEngine(state, dictionary, rules, input, metadata, customErrorMessages);
-    agg = new AggregatorEngine(state, dictionary, rules, input, metadata, customErrorMessages);
-
+    val = new ValidatorEngine(state);
+    agg = new AggregatorEngine(state);
 }
 
 
@@ -69,6 +94,7 @@ let helper = {
             .append("div")
             .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br>")
     },
+
     overwriteStatus: function overwriteStatus(location, className, message) {
         d3.select(location)
             .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br>")
@@ -99,51 +125,44 @@ let eventListeners = {
         }),
 
 
+
+
+    /* Toggle additional information for validation steps */
+
+    // Headers
+    toggleHeaderInfo: d3.select("#headers-name")
+        .on('click', function () {
+            state.section_headers_open = !state.section_headers_open;
+            toggleValInfo("#headers-info", "#headers-name-toggle", state.section_headers_open);
+        }),
+
+    // Required columns
+    toggleRequiredInfo: d3.select("#required-name")
+        .on('click', function () {
+            state.section_required_open = !state.section_required_open;
+            toggleValInfo("#required-info", "#required-name-toggle", state.section_required_open);
+        }),
+
+    // Data type
+    toggleDataTypeInfo: d3.select("#dataType-name")
+        .on('click', function () {
+            state.section_dataType_open = !state.section_dataType_open;
+            toggleValInfo("#dataType-info", "#dataType-name-toggle", state.section_dataType_open);
+        }),
+
+    // Social security numbers
+    toggleSsnInfo: d3.select("#ssn-name")
+        .on('click', function () {
+            state.section_ssn_open = !state.section_ssn_open;
+            toggleValInfo("#ssn-info", "#ssn-name-toggle", state.section_ssn_open);
+        }),
+
+
 }
 
 
-/* Get file from file picker and call metadata function */
-function getFile() {
-    state.fileList = this.files;
 
-    Papa.parse(state.fileList[0], {
-        dynamicTyping: true,
-        header: true,
-        complete: function (results) {
-            parseData(results.data, results.meta);
-        },
-    });
-}
-
-function parseData(data, meta) {
-    state.data_raw = data;
-    state.data_headers = meta.fields;
-    state.data_length = data.length;
-}
-
-d3.select("#headers-name")
-    .on('click', function () {
-        state.section_headers_open = !state.section_headers_open;
-        toggleValInfo("#headers-info", "#headers-name-toggle", state.section_headers_open);
-    })
-
-d3.select("#required-name")
-    .on('click', function () {
-        state.section_required_open = !state.section_required_open;
-        toggleValInfo("#required-info", "#required-name-toggle", state.section_required_open);
-    })
-
-d3.select("#dataType-name")
-    .on('click', function () {
-        state.section_dataType_open = !state.section_dataType_open;
-        toggleValInfo("#dataType-info", "#dataType-name-toggle", state.section_dataType_open);
-    })
-
-d3.select("#ssn-name")
-    .on('click', function () {
-        state.section_ssn_open = !state.section_ssn_open;
-        toggleValInfo("#ssn-info", "#ssn-name-toggle", state.section_ssn_open);
-    })
+/* VALIDATION INFO OPEN / CLOSE FUNCTIONS */
 
 function openValInfo(infoLocation, toggleLocation) {
     console.log("Opening", infoLocation)
@@ -181,6 +200,117 @@ function toggleValInfo(infoLocation, toggleLocation, stateField) {
 
 
 
+/* Get file from file picker and call metadata function */
+let uploadElement = d3
+    .select("#fileSubmit")
+    .on("click", function () {
+        state.timestamp = formatTimestamp(Date.now());
+        updateBackendFields(input, metadata, state);
+        uploadToAws(state.output, state.fileTitle);
+    });
+
+let inputElement = document.getElementById("filePicker");
+inputElement.addEventListener("change", getFile, false);
+
+
+function getFile() {
+    state.fileList = this.files;
+
+    Papa.parse(state.fileList[0], {
+        dynamicTyping: true,
+        header: true,
+        complete: function (results) {
+            parseData(results.data, results.meta);
+        },
+    });
+}
+
+function parseData(data, meta) {
+
+    state.data_raw = data;
+    state.data_headers = meta.fields;
+    state.data_length = data.length;
+
+    console.log(state)
+
+}
+
+let validateButton = d3
+    .select("#fileSubmit")
+    .on("click", function () {
+        testHeaders(state.data_headers)
+    })
+
+// Loop through headers in the file, compare to list of acceptable headers
+// Count the nulls
+
+function testHeaders(headerArray) {
+    const resultLocation = d3.select(".headers-val-symbol");
+    const errorLocation = d3.select(".header-error");
+    const stepLocation = d3.select("#headers-name");
+
+    resultLocation
+        .text("TESTING...")
+        .classed("neutral", true);
+
+    const output = {
+        match: [],
+        noMatch: []
+    }
+
+    const matchedHeaders = headerArray.map(header => matchHeader(header, output));
+
+    console.log(matchedHeaders)
+
+    if (output.noMatch.length > 0) {
+        state.check_headers = false;
+        resultLocation
+            .text("NO PASS")
+            .classed("neutral", false);
+
+        resultLocation.classed("fail", true);
+
+        stepLocation.style("background-color", "#FFB9B9");
+
+        errorLocation
+            .html(`<h3>Result</h3><br><b>${output.noMatch.length} / ${headerArray.length} headers</b> did not have a match. <ul class='list'> ${output.noMatch.map(i => `<li>${i}</li>`).join('')} </ul> <br> <b>${output.match.length} / ${headerArray.length} headers</b> did have a match. <ul class='list'> ${output.match.map(i => `<li>${i}</li>`).join('')} </ul><h4>Please check that the required column headers are included in your file and try again.</h4>`);
+
+    } else {
+        state.check_headers = true;
+        resultLocation
+            .text("PASS")
+            .classed("neutral", false);
+
+        resultLocation.classed("success", true);
+
+        stepLocation.style("background-color", "lightblue");
+
+        errorLocation
+            .html(`<h3>Result</h3><br><b>${output.noMatch.length} / ${headerArray.length} headers</b> did not have a match. <ul class='list'> ${output.noMatch.map(i => `<li>${i}</li>`).join('')} </ul> <br> <b>${output.match.length} / ${headerArray.length} headers</b> did have a match. <ul class='list'> ${output.match.map(i => `<li>${i}</li>`).join('')} </ul>`);
+    }
+}
+
+
+function matchHeader(searchTerm, output) {
+    const dictionary = state.dict_headers;
+    const a = stringSimilarity.findBestMatch(searchTerm, dictionary);
+
+    console.log(searchTerm, a)
+
+    // If the Dice's coefficient falls below threshold, return null
+    if (a.bestMatch.rating < state.data_diceCoefficient) {
+        output.noMatch.push(searchTerm)
+    } else {
+        output.match.push(searchTerm)
+    }
+
+    return output;
+
+}
+
+
+
+
 
 
 
@@ -193,31 +323,7 @@ function toggleValInfo(infoLocation, toggleLocation, stateField) {
 
 /* WAIT */
 
-/* // Global state
-let state = {
-    // Environment variables
-    bucket: process.env.BUCKET_NAME,
-    bucketRegion: process.env.BUCKET_REGION,
-    identityPoolId: process.env.IDENTITY_POOL_ID,
-
-    // Form fields
-    community: "na",
-    email: "na",
-    name: "na",
-    reportingDate: "na",
-    timestamp: "na",
-
-    // File processing
-    fileList: "na",
-    fileTitle: "na",
-    fileDate: "na",
-
-    // Data
-    raw: null,
-    clean: null,
-    output: null,
-}
-
+/* 
 
 // Dictionary of fuzzy-matching fields
 let dictionary = {
