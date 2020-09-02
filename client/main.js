@@ -46,7 +46,8 @@ let state = {
     section_ssn_open: false,
 
     // Dictionary
-    dict_headers: ['Date of Identification / Date Added to List',
+    dict_headers_all: [
+        'Date of Identification / Date Added to List',
         'Homeless Start Date',
         'Housing Move-In Date',
         'Inactive Date',
@@ -68,6 +69,22 @@ let state = {
         'Disabling Condition - Mental Health Condition',
         'Disabling Condition - Physical Disability',
         'Disabling Condition - DA Abuse',
+    ],
+    dict_headers_required: [
+        'Date of Identification / Date Added to List',
+        'Homeless Start Date',
+        'Housing Move-In Date',
+        'Inactive Date',
+        'Returned to Active Date',
+        'Age',
+        'Client ID',
+        'BNL Status',
+        'Household Type',
+        'Chronic Status',
+        'Veteran Status',
+        'Ethnicity',
+        'Race',
+        'Gender',
     ],
 }
 
@@ -239,73 +256,83 @@ let validateButton = d3
     .select("#fileSubmit")
     .on("click", function () {
         testHeaders(state.data_headers)
+        console.log(state)
     })
 
-// Loop through headers in the file, compare to list of acceptable headers
-// Count the nulls
 
 function testHeaders(headerArray) {
-    const resultLocation = d3.select(".headers-val-symbol");
-    const errorLocation = d3.select(".header-error");
+    // Frontend update locations
     const stepLocation = d3.select("#headers-name");
+    const resultLocation = d3.select(".headers-val-symbol");
+    const errorLocation = d3.select(".error-table");
 
-    resultLocation
-        .text("TESTING...")
-        .classed("neutral", true);
+    // Set initial status of "testing"
+    resultLocation.text("TESTING...").classed("neutral", true);
 
     const output = {
-        match: [],
-        noMatch: []
+        dataSourceMatches: [],
+        dataSourceNoMatches: [],
+        dictionaryMatches: [],
+        dictionaryNoMatches: [],
     }
 
-    const matchedHeaders = headerArray.map(header => matchHeader(header, output));
+    output.dictionaryNoMatches = state.dict_headers_required;
 
+    const matchedHeaders = headerArray.map(header => matchHeader(header, output));
     console.log(matchedHeaders)
 
-    if (output.noMatch.length > 0) {
+    if (output.dataSourceNoMatches.length > 0) {
         state.check_headers = false;
-        resultLocation
-            .text("NO PASS")
-            .classed("neutral", false);
-
+        resultLocation.text("NO PASS").classed("neutral", false);
         resultLocation.classed("fail", true);
-
         stepLocation.style("background-color", "#FFB9B9");
-
-        errorLocation
-            .html(`<h3>Result</h3><br><b>${output.noMatch.length} / ${headerArray.length} headers</b> did not have a match. <ul class='list'> ${output.noMatch.map(i => `<li>${i}</li>`).join('')} </ul> <br> <b>${output.match.length} / ${headerArray.length} headers</b> did have a match. <ul class='list'> ${output.match.map(i => `<li>${i}</li>`).join('')} </ul><h4>Please check that the required column headers are included in your file and try again.</h4>`);
+        errorLocation.html(`<h3>Result</h3><br>
+        
+        <b class='fail'>${output.dictionaryNoMatches.length} / ${state.dict_headers_required.length} required headers DID NOT have a match in your file. <br> Please check that these column headers are included in your file and try again.</b>
+        
+        <ul class='list'> ${output.dictionaryNoMatches.map(i => `<li><b>${i}</b></li>`).join('')} </ul> <br> 
+        
+        <b class='success'>${output.dictionaryMatches.length} / ${state.dict_headers_required.length} required headers DID have a match in your file.</b> 
+        
+        <ul class='list'> ${output.dataSourceMatches.map(i => `<li><b class='success'>${i}</b> in your file matched with <i>${output.dictionaryMatches[output.dataSourceMatches.indexOf(i)]}</i></li>`).join('')}</ul> <br>
+    
+        `);
 
     } else {
         state.check_headers = true;
-        resultLocation
-            .text("PASS")
-            .classed("neutral", false);
-
+        resultLocation.text("PASS").classed("neutral", false);
         resultLocation.classed("success", true);
-
         stepLocation.style("background-color", "lightblue");
-
-        errorLocation
-            .html(`<h3>Result</h3><br><b>${output.noMatch.length} / ${headerArray.length} headers</b> did not have a match. <ul class='list'> ${output.noMatch.map(i => `<li>${i}</li>`).join('')} </ul> <br> <b>${output.match.length} / ${headerArray.length} headers</b> did have a match. <ul class='list'> ${output.match.map(i => `<li>${i}</li>`).join('')} </ul>`);
+        errorLocation.html(`<h3>Result</h3><br>
+        
+        <b class='success'>${output.dictionaryMatches.length} / ${state.dict_headers_required.length} required headers DID have a match in your file.</b> 
+        
+        <ul class='list'> ${output.dataSourceMatches.map(i => `<li><b class='success'>${i}</b> in your file matched with <i>${output.dictionaryMatches[output.dataSourceMatches.indexOf(i)]}</i></li>`).join('')}</ul> <br>`);
     }
+}
+
+// helper function to remove an element from an array, and return the new array
+function arrayRemove(arr, value) {
+    return arr.filter(function (i) {
+        return i != value;
+    });
 }
 
 
 function matchHeader(searchTerm, output) {
-    const dictionary = state.dict_headers;
-    const a = stringSimilarity.findBestMatch(searchTerm, dictionary);
 
-    console.log(searchTerm, a)
+    const a = stringSimilarity.findBestMatch(searchTerm, output.dictionaryNoMatches);
 
     // If the Dice's coefficient falls below threshold, return null
     if (a.bestMatch.rating < state.data_diceCoefficient) {
-        output.noMatch.push(searchTerm)
+        output.dataSourceNoMatches.push(searchTerm)
     } else {
-        output.match.push(searchTerm)
+        output.dataSourceMatches.push(searchTerm)
+        output.dictionaryMatches.push(a.bestMatch.target)
+        output.dictionaryNoMatches = arrayRemove(output.dictionaryNoMatches, a.bestMatch.target)
     }
 
     return output;
-
 }
 
 
