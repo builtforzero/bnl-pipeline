@@ -3,12 +3,6 @@ const d3 = require('d3')
 const Papa = require('papaparse');
 const stringSimilarity = require('string-similarity');
 
-// Import engines
-const ValidatorEngine = require("./validator.js")
-const AggregatorEngine = require("./aggregator.js")
-
-let val, agg;
-
 
 
 let state = {
@@ -92,15 +86,16 @@ let output = {
 
 
 /* INITIALIZE APP */
-function init() {
+/* function init() {
     val = new ValidatorEngine(state);
     agg = new AggregatorEngine(state);
 }
 
 init();
+ */
 
 /* GLOBAL HELPER FUNCTIONS */
-let helper = {
+let script = {
     // Date and time parsing
     formatTime: d3.timeFormat("%X"),
     formatReportingDate: d3.timeFormat("%Y-%m-%d"),
@@ -112,18 +107,30 @@ let helper = {
     printMessage: function printMessage(location, className, message) {
         d3.select(location)
             .append("div")
-            .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${helper.formatTime(Date.now())} </b>` + "<br>")
+            .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${script.formatTime(Date.now())} </b>` + "<br>")
     },
 
     overwriteStatus: function overwriteStatus(location, className, message) {
         d3.select(location)
-            .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${helper.formatTime(Date.now())} </b>` + "<br>")
+            .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${script.formatTime(Date.now())} </b>` + "<br>")
     },
 
+    // Remove a value from an array and return the updated array
     arrayRemove: function arrayRemove(arr, value) {
         return arr.filter(function (i) {
             return i != value;
         });
+    },
+
+    getCol: function getCol(arr, columnIndex) {
+        const columnName = state.data_headers[columnIndex]
+        const col = [];
+
+        for (let row = 0; row < arr.length - 1; row++) {
+            const value = Object.values(arr)[row][columnName];
+            col.push(value);
+        }
+        return col;
     },
 }
 
@@ -135,7 +142,7 @@ let eventListeners = {
     communityInput: d3
         .select("#community-dropdown")
         .on("change", function () {
-            state.meta_timestamp = helper.formatTimestamp(Date.now());
+            state.meta_timestamp = script.formatTimestamp(Date.now());
             state.meta_community = this.value.replace(/[^A-Z0-9]/ig, "");
             state.meta_fileName_title = state.meta_community + state.meta_fileName_date + ".csv";
         }),
@@ -144,12 +151,18 @@ let eventListeners = {
     dateInput: d3
         .select("#date-input")
         .on("change", function () {
-            state.meta_timestamp = helper.formatTimestamp(Date.now());
-            state.meta_reportingDate = helper.formatReportingDate(helper.parseDate(this.value));
-            state.meta_fileName_date = helper.formatFileDate(helper.parseDate(this.value));
+            state.meta_timestamp = script.formatTimestamp(Date.now());
+            state.meta_reportingDate = script.formatReportingDate(script.parseDate(this.value));
+            state.meta_fileName_date = script.formatFileDate(script.parseDate(this.value));
             state.meta_fileName_title = state.meta_community + state.meta_fileName_date + ".csv";
         }),
 
+    // Validate button
+    validateButton: d3
+        .select("#fileSubmit")
+        .on("click", function () {
+            testHeaders(state.data_headers);
+        }),
 
 
 
@@ -185,7 +198,6 @@ let eventListeners = {
 
 
 }
-
 
 
 /* VALIDATION INFO OPEN / CLOSE FUNCTIONS */
@@ -224,11 +236,12 @@ function toggleValInfo(infoLocation, toggleLocation, stateField) {
     } else closeValInfo(infoLocation, toggleLocation)
 }
 
-
-
 let inputElement = document.getElementById("filePicker");
 inputElement.addEventListener("change", getFile, false);
 
+
+
+/* GET AND PARSE DATA */
 
 function getFile() {
     state.fileList = this.files;
@@ -243,35 +256,20 @@ function getFile() {
 }
 
 function parseData(data, meta) {
-
     state.data_raw = data;
     state.data_headers = meta.fields;
     state.data_length = data.length;
-
-    console.log("Parse Data State", state)
-    console.log(Object.keys(state.data_raw[0]))
-    console.log(Object.values(state.data_raw[0])[0])
-
-    const extractColumn = (arr, col) => arr.map(a => a.col)
-
-    console.log(state.data_raw)
-    console.log(extractColumn(state.data_raw, 0))
-
 }
 
-const validateButton = d3
-    .select("#fileSubmit")
-    .on("click", function () {
-        testHeaders(state.data_headers);
-    })
 
+/* VALIDATION STEP #1: TEST HEADERS */
 
 function testHeaders(headerArray) {
 
     // Frontend update locations
     const stepLocation = d3.select("#headers-name");
     const resultLocation = d3.select(".headers-val-symbol");
-    const errorLocation = d3.select(".error-table");
+    const errorLocation = d3.select(".header-error");
 
     // Set initial status of "testing"
     resultLocation.text("TESTING...").classed("neutral", true);
@@ -280,10 +278,21 @@ function testHeaders(headerArray) {
     output.dictHeaderNoMatches = state.dict_headers_required;
 
     // Apply matchHeader function to file header array
-    headerArray.map(header => matchHeader(header, output));
+    headerArray.map(header => {
+        const a = stringSimilarity.findBestMatch(header, output.dictHeaderNoMatches);
+        // If the Dice's coefficient falls below threshold, return null
+        if (a.bestMatch.rating < state.data_diceCoefficient) {
+            output.srcHeaderNoMatches.push(header)
+        } else {
+            output.srcHeaderMatches.push(header)
+            output.dictHeaderMatches.push(a.bestMatch.target)
+            output.dictHeaderNoMatches = script.arrayRemove(output.dictHeaderNoMatches, a.bestMatch.target)
+        }
+    });
 
+    console.log(output)
     // If there is at least one lack of match, throw an error
-    if (output.srcHeaderNoMatches.length > 0) {
+    if (output.dictHeaderNoMatches.length > 0) {
         state.check_headers = false;
         resultLocation.text("NO PASS").classed("neutral", false);
         resultLocation.classed("fail", true);
@@ -307,139 +316,116 @@ function testHeaders(headerArray) {
         stepLocation.style("background-color", "lightblue");
         errorLocation.html(`<h3>Result</h3><br>
         
-        <b class='success'>${output.dictionaryMatches.length} / ${state.dict_headers_required.length} required headers DID have a match in your file.</b> 
+        <b class='success'>${output.dictHeaderMatches.length} / ${state.dict_headers_required.length} required headers DID have a match in your file.</b> 
         
         <ul class='list'> ${output.srcHeaderMatches.map(i => `<li><b class='success'>${i}</b> in your file matched with <i>${output.dictHeaderMatches[output.srcHeaderMatches.indexOf(i)]}</i></li>`).join('')}</ul> <br>`);
     }
+
+    testSsn(state.data_headers, state.data_raw);
 }
 
 
-function matchHeader(searchTerm, output) {
+/* VALIDATION STEP #4: CHECK FOR SOCIAL SECURITY NUMBERS */
 
-    const a = stringSimilarity.findBestMatch(searchTerm, output.dictHeaderNoMatches);
+// Reduce the arrResult array to sum up the match column for each test value
+// If the sum is more than 0, then flag the test value in a separate array
+// Then, get the length of that array - if more than 0, the test fails
 
-    // If the Dice's coefficient falls below threshold, return null
-    if (a.bestMatch.rating < state.data_diceCoefficient) {
-        output.srcHeaderNoMatches.push(searchTerm)
-    } else {
-        output.srcHeaderMatches.push(searchTerm)
-        output.dictHeaderMatches.push(a.bestMatch.target)
-        output.dictHeaderNoMatches = helper.arrayRemove(output.dictHeaderNoMatches, a.bestMatch.target)
+function testSsn(headerList, data) {
+
+    // Frontend update locations
+    const stepLocation = d3.select("#ssn-name");
+    const resultLocation = d3.select(".ssn-val-symbol");
+    const errorLocation = d3.select(".ssn-error");
+
+    // Set initial status of "testing"
+    resultLocation.text("TESTING...").classed("neutral", true);
+
+    let col = 0;
+    let ssnFail = [];
+    let ssnPassed = [];
+
+    for (col; col < headerList.length; col++) {
+        const header = headerList[col]
+        const output = testSsnInArray(script.getCol(data, col))
+
+        if (output > 0) {
+            ssnFail.push([header, output])
+        } else {
+            ssnPassed.push([header, output])
+        }
     }
 
+    console.log("Failed Headers", ssnFail)
+    console.log("Passed Headers", ssnPassed)
+
+    if (ssnFail.length > 0) {
+        state.check_ssn = false;
+        resultLocation.text("NO PASS").classed("neutral", false);
+        resultLocation.classed("fail", true);
+        stepLocation.style("background-color", "#FFB9B9");
+        errorLocation.html(`<h3>Result</h3><br>
+            There were ${ssnFail.length} columns in your file that contained values that could be Social Security Numbers. <br>
+
+            ${ssnFail.map(value => `<ul>
+                <li> <b>${value[0]}</b>: has <b>${value[1]}</b> potential SSN(s). </li>
+            </ul>`).join('')}
+
+            <br>
+
+            Please remove the SSN values from these columns and try again.
+            
+        `);
+
+    } else {
+        state.check_headers = true;
+        resultLocation.text("PASS").classed("neutral", false);
+        resultLocation.classed("success", true);
+        stepLocation.style("background-color", "lightblue");
+        errorLocation.html(`<h3>Result</h3><br>
+        Passed
+        `);
+    }
+
+
+
 }
 
 
-// For every header in the source file that matches the required list,
-// calculate the percentage of fields that are filled in
+function testSsnInArray(arr) {
 
+    let ssnTestResult = [];
+    let ssnTestReduced = [];
+    let ssnArrReduced;
 
+    arr.map(value => {
 
+        let regex = [/^\d{3}-?\d{2}-?\d{4}$/, /^\d{3} ?\d{2} ?\d{4}$/, /\d{9}$/, /\d{4}$/];
 
+        if (value != null) {
+            const result = regex.map(i => {
+                const pattern = new RegExp(i, "gim")
+                const match = value.toString().match(pattern)
+                return match && value === match[0]
+            });
+            ssnTestResult.push([value, result]);
+        } else {
+            const nullValue = 0
+            const result = regex.map(i => {
+                const pattern = new RegExp(i, "gim")
+                const match = nullValue.toString().match(pattern)
+                return match && value === match[0]
+            });
+            ssnTestResult.push([value, result]);
+        }
+    });
 
+    for (let k = 0; k < arr.length; k++) {
+        const col = ssnTestResult[k][1]
+        const sum = col.reduce((a, b) => a + b)
+        ssnTestReduced.push(sum)
+        ssnArrReduced = ssnTestReduced.reduce((a, b) => a + b)
+    }
 
-
-
-
-
-
-
-
-
-
-
-/* WAIT */
-
-/* 
-
-
-// Rules for Validator.js
-let rules = {
-    'Date of Identification / Date Added to List': 'date|required',
-    'Homeless Start Date': 'date|required',
-    dateMoveIn: 'date|required',
-    dateInactive: 'date|required',
-    dateReturned: 'date|required',
-    age: 'required|integer',
-    clientId: 'required',
-    householdId: 'present',
-    bnlStatus: 'required',
-    literalStatus: 'present',
-    householdType: 'required',
-    chronicStatus: 'required',
-    veteranStatus: 'required',
-    ethnicity: 'required',
-    race: 'required',
-    gender: 'required',
-    currentSituation: 'present',
-    disGeneral: 'present',
-    disHiv: 'present',
-    disMental: 'present',
-    disPhysical: 'present',
-    disDaAbuse: 'present',
+    return ssnArrReduced;
 }
-
-// Custom error messages for Validator.jss
-let customErrorMessages = {
-    "headers.not_in": "The file cannot contain personally-identifiable information (PII) like name, birthday, and SSN.",
-    "headers.required": "The file requires a header row.",
-}
-
-let metadata = {
-    headers: [],
-    length: null,
-}
-
-// Parsed data file in column format
-let input = {
-    // Backend
-    community: [],
-    email: [],
-    name: [],
-    reportingDate: [],
-    timestamp: [],
-    subpop: [], // Calculated in validation step
-
-    // Date & numeric fields
-    dateAdded: [],
-    dateHomeless: [],
-    dateMoveIn: [],
-    dateInactive: [],
-    dateReturned: [],
-    age: [],
-    clientId: [],
-    householdId: [],
-
-    // Picklists
-    bnlStatus: [],
-    literalStatus: [],
-    householdType: [],
-    chronicStatus: [],
-    veteranStatus: [],
-    ethnicity: [],
-    race: [],
-    gender: [],
-    currentSituation: [],
-    disGeneral: [],
-    disHiv: [],
-    disMental: [],
-    disPhysical: [],
-    disDaAbuse: [],
-
-    // Fuzzy-matched fields
-    bnlStatus_matched: [],
-    literalStatus_matched: [],
-    householdType_matched: [],
-    chronicStatus_matched: [],
-    veteranStatus_matched: [],
-    ethnicity_matched: [],
-    race_matched: [],
-    gender_matched: [],
-    currentSituation_matched: [],
-    disGeneral_matched: [],
-    disHiv_matched: [],
-    disMental_matched: [],
-    disPhysical_matched: [],
-    disDaAbuse_matched: [],
-    test_matched: [],
-} */

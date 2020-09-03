@@ -4,13 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "build-watch": "parcel watch ./client/index.html",
     "start-watch": "nodemon server/index.js",
     "dev": "concurrently --kill-others \"npm run start-watch\" \"npm run build-watch\"",
     "build": "parcel build ./client/index.html",
     "start": "npm run build && node server/index.js",
-    "predeploy": "rm -rf dist && parcel build ./client/index.html --public-url https://builtforzero.github.io/bnl-pipeline",
+    "predeploy": "rm -rf .tmp .cache dist && parcel build ./client/index.html --public-url https://builtforzero.github.io/bnl-pipeline",
     "deploy": "gh-pages -d dist"
   },
   "repository": {
