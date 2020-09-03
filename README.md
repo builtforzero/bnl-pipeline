@@ -4,20 +4,15 @@ Project structure adapted from [this tutorial](https://github.com/witchard/tutor
 
 ## Development with auto reloading
 - `npm run dev`
-- Visit `http://localhost:3000`
-- Change some files!
+- Visit **http://localhost:3000**
+- `npx eslint yourfile.js` (for linting a specific file)
 
-## Deploy
+## Deployment
 - `npm run predeploy`
 - `npm run deploy`
 - Push changes to github
-- Visit https://builtforzero.github.io/bnl-pipeline/index.html
+- Visit **https://builtforzero.github.io/bnl-pipeline/index.html**
 
-<br />
-
------
-
-<br />
 
 ## Validator Engine
 

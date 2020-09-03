@@ -1,15 +1,5 @@
 class AggregatorEngine {
 
-    constructor(state, dictionary, rules, input, metadata, customErrorMessages) {
-        console.log("aggregator engine starting");
-        require('dotenv').config();
-        const d3 = require('d3')
-        const AWS = require('aws-sdk');
-        const Papa = require('papaparse');
-        const Validator = require('validatorjs');
-        const stringSimilarity = require('string-similarity');
-    }
-
 
     /* HELPER FUNCTIONS */
 
@@ -23,6 +13,8 @@ class AggregatorEngine {
 
     // Upload a file to AWS
     uploadToAws(state, dictionary, file, docTitle) {
+        require('dotenv').config();
+        const AWS = require('aws-sdk');
 
         this.updateStatus(".upload-status", `Uploading file to AWS`)
 
@@ -56,15 +48,11 @@ class AggregatorEngine {
         s3.upload(params, function (err, data) {
             if (err) {
                 throw err,
-                    updateStatus(".upload-status", `File was not uploaded. ${err}`)
+                    console.log(".upload-status", `File was not uploaded. ${err}`)
             }
-            updateStatus(".upload-status", `File uploaded successfully to ${data.Location}`);
+            console.log(".upload-status", `File uploaded successfully to ${data.Location}`);
         });
 
     }
 
-};
-
-export {
-    AggregatorEngine
-};
+}

@@ -1,17 +1,11 @@
 require('dotenv').config();
 const d3 = require('d3')
 const Papa = require('papaparse');
-const Validator = require('validatorjs');
 const stringSimilarity = require('string-similarity');
 
 // Import engines
-import {
-    ValidatorEngine
-} from "./validator.js"
-
-import {
-    AggregatorEngine
-} from "./aggregator.js";
+const ValidatorEngine = require("./validator.js")
+const AggregatorEngine = require("./aggregator.js")
 
 let val, agg;
 
@@ -88,6 +82,14 @@ let state = {
     ],
 }
 
+// Store output variables
+let output = {
+    srcHeaderMatches: [], // Source file headers that match required fields
+    srcHeaderNoMatches: [], // Source file headers that DO NOT match required fields
+    dictHeaderMatches: [], // Dictionary headers that match the source file
+    dictHeaderNoMatches: [], // Dictionary headers that DO NOT match the source file
+}
+
 
 /* INITIALIZE APP */
 function init() {
@@ -95,6 +97,7 @@ function init() {
     agg = new AggregatorEngine(state);
 }
 
+init();
 
 /* GLOBAL HELPER FUNCTIONS */
 let helper = {
@@ -109,13 +112,19 @@ let helper = {
     printMessage: function printMessage(location, className, message) {
         d3.select(location)
             .append("div")
-            .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br>")
+            .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${helper.formatTime(Date.now())} </b>` + "<br>")
     },
 
     overwriteStatus: function overwriteStatus(location, className, message) {
         d3.select(location)
-            .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${formatTime(Date.now())} </b>` + "<br>")
-    }
+            .html(`<br><b class='${className}'>${message}</b> <b style='color:gray;'> | ${helper.formatTime(Date.now())} </b>` + "<br>")
+    },
+
+    arrayRemove: function arrayRemove(arr, value) {
+        return arr.filter(function (i) {
+            return i != value;
+        });
+    },
 }
 
 
@@ -136,8 +145,8 @@ let eventListeners = {
         .select("#date-input")
         .on("change", function () {
             state.meta_timestamp = helper.formatTimestamp(Date.now());
-            state.meta_reportingDate = helper.formatReportingDate(parseDate(this.value));
-            state.meta_fileName_date = helper.formatFileDate(parseDate(this.value));
+            state.meta_reportingDate = helper.formatReportingDate(helper.parseDate(this.value));
+            state.meta_fileName_date = helper.formatFileDate(helper.parseDate(this.value));
             state.meta_fileName_title = state.meta_community + state.meta_fileName_date + ".csv";
         }),
 
@@ -182,7 +191,7 @@ let eventListeners = {
 /* VALIDATION INFO OPEN / CLOSE FUNCTIONS */
 
 function openValInfo(infoLocation, toggleLocation) {
-    console.log("Opening", infoLocation)
+
     d3.select(infoLocation)
         .style("opacity", "0")
         .transition()
@@ -196,7 +205,7 @@ function openValInfo(infoLocation, toggleLocation) {
 }
 
 function closeValInfo(infoLocation, toggleLocation) {
-    console.log("Closing", infoLocation)
+
     d3.select(infoLocation)
         .style("opacity", "1")
         .transition()
@@ -216,15 +225,6 @@ function toggleValInfo(infoLocation, toggleLocation, stateField) {
 }
 
 
-
-/* Get file from file picker and call metadata function */
-let uploadElement = d3
-    .select("#fileSubmit")
-    .on("click", function () {
-        state.timestamp = formatTimestamp(Date.now());
-        updateBackendFields(input, metadata, state);
-        uploadToAws(state.output, state.fileTitle);
-    });
 
 let inputElement = document.getElementById("filePicker");
 inputElement.addEventListener("change", getFile, false);
@@ -248,19 +248,26 @@ function parseData(data, meta) {
     state.data_headers = meta.fields;
     state.data_length = data.length;
 
-    console.log(state)
+    console.log("Parse Data State", state)
+    console.log(Object.keys(state.data_raw[0]))
+    console.log(Object.values(state.data_raw[0])[0])
+
+    const extractColumn = (arr, col) => arr.map(a => a.col)
+
+    console.log(state.data_raw)
+    console.log(extractColumn(state.data_raw, 0))
 
 }
 
-let validateButton = d3
+const validateButton = d3
     .select("#fileSubmit")
     .on("click", function () {
-        testHeaders(state.data_headers)
-        console.log(state)
+        testHeaders(state.data_headers);
     })
 
 
 function testHeaders(headerArray) {
+
     // Frontend update locations
     const stepLocation = d3.select("#headers-name");
     const resultLocation = d3.select(".headers-val-symbol");
@@ -269,32 +276,27 @@ function testHeaders(headerArray) {
     // Set initial status of "testing"
     resultLocation.text("TESTING...").classed("neutral", true);
 
-    const output = {
-        dataSourceMatches: [],
-        dataSourceNoMatches: [],
-        dictionaryMatches: [],
-        dictionaryNoMatches: [],
-    }
+    // Set initial dictionary to column headers
+    output.dictHeaderNoMatches = state.dict_headers_required;
 
-    output.dictionaryNoMatches = state.dict_headers_required;
+    // Apply matchHeader function to file header array
+    headerArray.map(header => matchHeader(header, output));
 
-    const matchedHeaders = headerArray.map(header => matchHeader(header, output));
-    console.log(matchedHeaders)
-
-    if (output.dataSourceNoMatches.length > 0) {
+    // If there is at least one lack of match, throw an error
+    if (output.srcHeaderNoMatches.length > 0) {
         state.check_headers = false;
         resultLocation.text("NO PASS").classed("neutral", false);
         resultLocation.classed("fail", true);
         stepLocation.style("background-color", "#FFB9B9");
         errorLocation.html(`<h3>Result</h3><br>
         
-        <b class='fail'>${output.dictionaryNoMatches.length} / ${state.dict_headers_required.length} required headers DID NOT have a match in your file. <br> Please check that these column headers are included in your file and try again.</b>
+        <b class='fail'>${output.dictHeaderNoMatches.length} / ${state.dict_headers_required.length} required headers DID NOT have a match in your file. <br> Please check that these column headers are included in your file and try again.</b>
         
-        <ul class='list'> ${output.dictionaryNoMatches.map(i => `<li><b>${i}</b></li>`).join('')} </ul> <br> 
+        <ul class='list'> ${output.dictHeaderNoMatches.map(i => `<li><b>${i}</b></li>`).join('')} </ul> <br> 
         
-        <b class='success'>${output.dictionaryMatches.length} / ${state.dict_headers_required.length} required headers DID have a match in your file.</b> 
+        <b class='success'>${output.dictHeaderMatches.length} / ${state.dict_headers_required.length} required headers DID have a match in your file.</b> 
         
-        <ul class='list'> ${output.dataSourceMatches.map(i => `<li><b class='success'>${i}</b> in your file matched with <i>${output.dictionaryMatches[output.dataSourceMatches.indexOf(i)]}</i></li>`).join('')}</ul> <br>
+        <ul class='list'> ${output.srcHeaderMatches.map(i => `<li><b class='success'>${i}</b> in your file matched with <i>${output.dictHeaderMatches[output.srcHeaderMatches.indexOf(i)]}</i></li>`).join('')}</ul> <br>
     
         `);
 
@@ -307,33 +309,31 @@ function testHeaders(headerArray) {
         
         <b class='success'>${output.dictionaryMatches.length} / ${state.dict_headers_required.length} required headers DID have a match in your file.</b> 
         
-        <ul class='list'> ${output.dataSourceMatches.map(i => `<li><b class='success'>${i}</b> in your file matched with <i>${output.dictionaryMatches[output.dataSourceMatches.indexOf(i)]}</i></li>`).join('')}</ul> <br>`);
+        <ul class='list'> ${output.srcHeaderMatches.map(i => `<li><b class='success'>${i}</b> in your file matched with <i>${output.dictHeaderMatches[output.srcHeaderMatches.indexOf(i)]}</i></li>`).join('')}</ul> <br>`);
     }
-}
-
-// helper function to remove an element from an array, and return the new array
-function arrayRemove(arr, value) {
-    return arr.filter(function (i) {
-        return i != value;
-    });
 }
 
 
 function matchHeader(searchTerm, output) {
 
-    const a = stringSimilarity.findBestMatch(searchTerm, output.dictionaryNoMatches);
+    const a = stringSimilarity.findBestMatch(searchTerm, output.dictHeaderNoMatches);
 
     // If the Dice's coefficient falls below threshold, return null
     if (a.bestMatch.rating < state.data_diceCoefficient) {
-        output.dataSourceNoMatches.push(searchTerm)
+        output.srcHeaderNoMatches.push(searchTerm)
     } else {
-        output.dataSourceMatches.push(searchTerm)
-        output.dictionaryMatches.push(a.bestMatch.target)
-        output.dictionaryNoMatches = arrayRemove(output.dictionaryNoMatches, a.bestMatch.target)
+        output.srcHeaderMatches.push(searchTerm)
+        output.dictHeaderMatches.push(a.bestMatch.target)
+        output.dictHeaderNoMatches = helper.arrayRemove(output.dictHeaderNoMatches, a.bestMatch.target)
     }
 
-    return output;
 }
+
+
+// For every header in the source file that matches the required list,
+// calculate the percentage of fields that are filled in
+
+
 
 
 
@@ -351,25 +351,6 @@ function matchHeader(searchTerm, output) {
 /* WAIT */
 
 /* 
-
-// Dictionary of fuzzy-matching fields
-let dictionary = {
-    headers: ["date of identification date added to list", "homeless start date", "housing move in date", "inactive date", "returned to active date", "age", "client id", "household id", "bnl status", "literal homeless status", "household type", "chronic status", "veteran status", "ethnicity", "race", "gender", "current living situation", "disabling condition general", "disabling condition hiv aids diagnosis", "disabling condition mental health condition", "disabling condition physical disability", "disabling condition da abuse"],
-    bnlStatus: ["active", "inactive", "housed"],
-    literalStatus: ["literally homeless", "not literally homeless"],
-    householdType: ["single adult / individual", "family", "youth"],
-    chronicStatus: ["chronic", "not chronic", "na"],
-    veteranStatus: ["yes", "yes validated", "no", "unconfirmed", "na"],
-    ethnicity: ["hispanic", "nonhispanic", "client doesnt know", "data not collected", "na", "unknown"],
-    race: ["american indian or alaska native", "asian", "black or african american", "native hawaiian or other pacific islander", "white", "multi racial", "client doesnt know", "data not collected", "na", "unknown"],
-    gender: ["female", "male", "trans female", "trans male", "client doesnt know", "data not collected", "na", "unknown"],
-    currentSituation: ["not literally homeless", "outdoors", "safe haven", "shelters", "transitional housing", "client doesnt know", "data not collected", "na", "unknown"],
-    disGeneral: ["yes", "no", "client doesnt know", "data not collected", "na", "unknown"],
-    disHiv: ["yes", "no", "client doesnt know", "data not collected", "na", "unknown"],
-    disMental: ["yes", "no", "client doesnt know", "data not collected", "na", "unknown"],
-    disPhysical: ["yes", "no", "client doesnt know", "data not collected", "na", "unknown"],
-    disDaAbuse: ["yes", "no", "client doesnt know", "data not collected", "na", "unknown"],
-}
 
 
 // Rules for Validator.js

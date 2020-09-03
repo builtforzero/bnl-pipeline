@@ -73,17 +73,17 @@ class ValidatorEngine {
     }
 
     // Checks that required columns are 100% filled in
-    checkRequired(state) {
+    checkRequired() {
         console.log("Checking required columns are filled in")
     }
 
     // Checks that each column contains the right data type
-    checkDataType(state) {
+    checkDataType() {
         console.log("Checking data types")
     }
 
     // Generates a fuzzy-matched version of each picklist column
-    fuzzyMatchPicklists(state) {
+    fuzzyMatchPicklists() {
         console.log("Fuzzy-matching picklist columns")
     }
 
@@ -102,7 +102,3 @@ class ValidatorEngine {
 
 
 }
-
-export {
-    ValidatorEngine
-};
