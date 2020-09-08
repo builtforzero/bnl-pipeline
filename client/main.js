@@ -122,6 +122,7 @@ let script = {
         });
     },
 
+    // Get a column of values from array
     getCol: function getCol(arr, columnIndex) {
         const columnName = state.data_headers[columnIndex]
         const col = [];
@@ -157,7 +158,12 @@ let eventListeners = {
             state.meta_fileName_title = state.meta_community + state.meta_fileName_date + ".csv";
         }),
 
-    // Validate button
+    // File Picker: call getFile() function
+    filePicker: d3.select("#filePicker")
+        .on("change", getFile, false),
+
+
+    // Validate button: start 
     validateButton: d3
         .select("#fileSubmit")
         .on("click", function () {
@@ -165,44 +171,43 @@ let eventListeners = {
         }),
 
 
-
     /* Toggle additional information for validation steps */
 
-    // Headers
+    // Step 1: Headers
     toggleHeaderInfo: d3.select("#headers-name")
         .on('click', function () {
             state.section_headers_open = !state.section_headers_open;
-            toggleValInfo("#headers-info", "#headers-name-toggle", state.section_headers_open);
+            toggleStepInfo("#headers-info", "#headers-name-toggle", state.section_headers_open);
         }),
 
     // Required columns
     toggleRequiredInfo: d3.select("#required-name")
         .on('click', function () {
             state.section_required_open = !state.section_required_open;
-            toggleValInfo("#required-info", "#required-name-toggle", state.section_required_open);
+            toggleStepInfo("#required-info", "#required-name-toggle", state.section_required_open);
         }),
 
     // Data type
     toggleDataTypeInfo: d3.select("#dataType-name")
         .on('click', function () {
             state.section_dataType_open = !state.section_dataType_open;
-            toggleValInfo("#dataType-info", "#dataType-name-toggle", state.section_dataType_open);
+            toggleStepInfo("#dataType-info", "#dataType-name-toggle", state.section_dataType_open);
         }),
 
     // Social security numbers
     toggleSsnInfo: d3.select("#ssn-name")
         .on('click', function () {
             state.section_ssn_open = !state.section_ssn_open;
-            toggleValInfo("#ssn-info", "#ssn-name-toggle", state.section_ssn_open);
+            toggleStepInfo("#ssn-info", "#ssn-name-toggle", state.section_ssn_open);
         }),
 
 
 }
 
 
-/* VALIDATION INFO OPEN / CLOSE FUNCTIONS */
+/* VALIDATION STEP INFO OPEN / CLOSE FUNCTIONS */
 
-function openValInfo(infoLocation, toggleLocation) {
+function openStepInfo(infoLocation, toggleLocation) {
 
     d3.select(infoLocation)
         .style("opacity", "0")
@@ -216,7 +221,7 @@ function openValInfo(infoLocation, toggleLocation) {
         .text("HIDE DETAILS ▲")
 }
 
-function closeValInfo(infoLocation, toggleLocation) {
+function closeStepInfo(infoLocation, toggleLocation) {
 
     d3.select(infoLocation)
         .style("opacity", "1")
@@ -230,10 +235,10 @@ function closeValInfo(infoLocation, toggleLocation) {
         .text("SHOW DETAILS ▼")
 }
 
-function toggleValInfo(infoLocation, toggleLocation, stateField) {
+function toggleStepInfo(infoLocation, toggleLocation, stateField) {
     if (stateField === true) {
-        openValInfo(infoLocation, toggleLocation)
-    } else closeValInfo(infoLocation, toggleLocation)
+        openStepInfo(infoLocation, toggleLocation)
+    } else closeStepInfo(infoLocation, toggleLocation)
 }
 
 let inputElement = document.getElementById("filePicker");
@@ -290,7 +295,6 @@ function testHeaders(headerArray) {
         }
     });
 
-    console.log(output)
     // If there is at least one lack of match, throw an error
     if (output.dictHeaderNoMatches.length > 0) {
         state.check_headers = false;
@@ -327,10 +331,6 @@ function testHeaders(headerArray) {
 
 /* VALIDATION STEP #4: CHECK FOR SOCIAL SECURITY NUMBERS */
 
-// Reduce the arrResult array to sum up the match column for each test value
-// If the sum is more than 0, then flag the test value in a separate array
-// Then, get the length of that array - if more than 0, the test fails
-
 function testSsn(headerList, data) {
 
     // Frontend update locations
@@ -349,31 +349,33 @@ function testSsn(headerList, data) {
         const header = headerList[col]
         const output = testSsnInArray(script.getCol(data, col))
 
-        if (output > 0) {
+        if (output.length > 0) {
             ssnFail.push([header, output])
         } else {
             ssnPassed.push([header, output])
         }
     }
 
-    console.log("Failed Headers", ssnFail)
-    console.log("Passed Headers", ssnPassed)
-
     if (ssnFail.length > 0) {
+        // Update state and front-end locations
         state.check_ssn = false;
         resultLocation.text("NO PASS").classed("neutral", false);
         resultLocation.classed("fail", true);
         stepLocation.style("background-color", "#FFB9B9");
+
+        // Error message
         errorLocation.html(`<h3>Result</h3><br>
-            There were ${ssnFail.length} columns in your file that contained values that could be Social Security Numbers. <br>
+            <b>${ssnFail.length} / ${headerList.length} columns</b> in your file contain values that could be Social Security Numbers. <b style='color:grey; font-weight:400;'> &nbsp (Potential SSNs include values with 9 digits, 4 digits, or in the format ###-##-####)</b>. <br>
 
-            ${ssnFail.map(value => `<ul>
-                <li> <b>${value[0]}</b>: has <b>${value[1]}</b> potential SSN(s). </li>
-            </ul>`).join('')}
+            <ul>
+            ${ssnFail.map(value => `
+                <li>
+                    <b class='fail'>${value[0]}</b> has <b>${value[1].length} potential SSN(s)</b> at the following location(s): &nbsp ${value[1].map(v => `<br> &nbsp &nbsp <b style='color:lightgrey;'>></b> Row <b>${v}</b> &nbsp `).join('')}
+                </li><br>`
+                ).join('')}
+            </ul>
 
-            <br>
-
-            Please remove the SSN values from these columns and try again.
+            Please remove the Social Security Numbers from your data file and try again.
             
         `);
 
@@ -383,7 +385,7 @@ function testSsn(headerList, data) {
         resultLocation.classed("success", true);
         stepLocation.style("background-color", "lightblue");
         errorLocation.html(`<h3>Result</h3><br>
-        Passed
+        ${ssnPassed.length} / ${headerList.length} columns passed.
         `);
     }
 
@@ -394,11 +396,17 @@ function testSsn(headerList, data) {
 
 function testSsnInArray(arr) {
 
+    // Tests each value against 
     let ssnTestResult = [];
+    // 
     let ssnTestReduced = [];
-    let ssnArrReduced;
+    let indexOfFailedValues = [];
+    let ssnColTestOutput;
 
-    arr.map(value => {
+    arr.map((value, index) => {
+        /* console.log(value, index) */
+
+        value = Number(value)
 
         let regex = [/^\d{3}-?\d{2}-?\d{4}$/, /^\d{3} ?\d{2} ?\d{4}$/, /\d{9}$/, /\d{4}$/];
 
@@ -406,26 +414,28 @@ function testSsnInArray(arr) {
             const result = regex.map(i => {
                 const pattern = new RegExp(i, "gim")
                 const match = value.toString().match(pattern)
-                return match && value === match[0]
+                if (match === null) {
+                    return false;
+                } else {
+                    return value.toString() === match[0].toString();
+                }
             });
             ssnTestResult.push([value, result]);
-        } else {
-            const nullValue = 0
-            const result = regex.map(i => {
-                const pattern = new RegExp(i, "gim")
-                const match = nullValue.toString().match(pattern)
-                return match && value === match[0]
-            });
-            ssnTestResult.push([value, result]);
+        } else if (value === null) {
+            ssnTestResult.push([value, false]);
         }
     });
 
     for (let k = 0; k < arr.length; k++) {
         const col = ssnTestResult[k][1]
         const sum = col.reduce((a, b) => a + b)
-        ssnTestReduced.push(sum)
-        ssnArrReduced = ssnTestReduced.reduce((a, b) => a + b)
+
+        if (sum > 0) {
+            indexOfFailedValues.push(k + 1)
+        }
+
+        ssnColTestOutput = indexOfFailedValues;
     }
 
-    return ssnArrReduced;
+    return ssnColTestOutput;
 }

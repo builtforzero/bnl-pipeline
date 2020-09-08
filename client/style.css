@@ -154,6 +154,10 @@ select {
     color: grey;
 }
 
+.double-space {
+    line-height: 20px;
+}
+
 
 /* VALIDATION STEPS */
 
