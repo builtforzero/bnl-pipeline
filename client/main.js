@@ -6,6 +6,17 @@ const stringSimilarity = require('string-similarity');
 
 
 let state = {
+    // Validation checks pass/fail
+    check_headers: null,
+    check_pii: null,
+    check_ssn: null,
+
+    // Form Fields
+    form_community_clean: null,
+    form_reporting_date: null,
+    form_name: null,
+    form_email: null,
+    form_file_upload: null,
 
     // Metadata
     meta_timestamp: null,
@@ -20,11 +31,6 @@ let state = {
     data_headers: null,
     data_length: null,
     data_diceCoefficient: 0.6, // How sensitive should fuzzy matching be?
-
-    // Validation checks pass/fail
-    check_headers: false,
-    check_pii: false,
-    check_ssn: false,
 
     // Open/close HTML sections
     section_headers_open: false,
@@ -112,22 +118,19 @@ function resetValues() {
     state.data_headers = null;
     state.data_length = null;
 
-    // Validation checks pass/fail
-    state.check_headers = false;
-    state.check_pii = false;
-    state.check_ssn = false;
-
     // Required headers
-    output.srcHeaderMatches = []; // Source file headers that match required fields
-    output.srcHeaderNoMatches = []; // Source file headers that DO NOT match required fields
-    output.dictHeaderMatches = []; // Dictionary headers that match the source file
-    output.dictHeaderNoMatches = []; // Dictionary headers that DO NOT match the source file
+    output.srcHeaderMatches = [];
+    output.srcHeaderNoMatches = [];
+    output.dictHeaderMatches = [];
+    output.dictHeaderNoMatches = [];
 
     // PII Headers
-    output.srcPiiMatches = []; // Source file headers that match PII fields
-    output.srcPiiNoMatches = []; // Source file headers that DO NOT match PII fields
-    output.dictPiiMatches = []; // PII headers that match the source file
-    output.dictPiiNoMatches = []; // PII headers that DO NOT match the source file
+    output.srcPiiMatches = [];
+    output.srcPiiNoMatches = [];
+    output.dictPiiMatches = [];
+    output.dictPiiNoMatches = [];
+
+    d3.select("#filePicker").value = "";
 }
 
 /* GLOBAL HELPER SCRIPTS */
@@ -171,6 +174,7 @@ let script = {
     },
 }
 
+checkFormStatus();
 
 /* EVENT LISTENERS */
 let eventListeners = {
@@ -179,8 +183,11 @@ let eventListeners = {
     communityInput: d3
         .select("#community-dropdown")
         .on("change", function () {
+            checkFormStatus(state);
+            state.form_community_clean = this.value;
+            state.meta_community = state.form_community_clean.replace(/[^A-Z0-9]/ig, "");
+            // Name of file upload
             state.meta_timestamp = script.formatTimestamp(Date.now());
-            state.meta_community = this.value.replace(/[^A-Z0-9]/ig, "");
             state.meta_fileName_title = state.meta_community + state.meta_fileName_date + ".csv";
         }),
 
@@ -188,24 +195,62 @@ let eventListeners = {
     dateInput: d3
         .select("#date-input")
         .on("change", function () {
+            state.form_reporting_date = this.value;
+            state.meta_reportingDate = script.formatReportingDate(script.parseDate(state.form_reporting_date));
+            state.meta_fileName_date = script.formatFileDate(script.parseDate(state.form_reporting_date));
+            // Name of file upload
             state.meta_timestamp = script.formatTimestamp(Date.now());
-            state.meta_reportingDate = script.formatReportingDate(script.parseDate(this.value));
-            state.meta_fileName_date = script.formatFileDate(script.parseDate(this.value));
             state.meta_fileName_title = state.meta_community + state.meta_fileName_date + ".csv";
+            checkFormStatus();
+        }),
+
+    contactName: d3
+        .select("#name-input")
+        .on("change", function () {
+            state.form_name = this.value;
+            checkFormStatus();
+        }),
+
+    email: d3
+        .select("#email-input")
+        .on("change", function () {
+            state.form_email = this.value;
+            checkFormStatus();
         }),
 
     // File Picker: call getFile() function
     filePicker: d3.select("#filePicker")
-        .on("change", getFile, false),
+        .on("change", function () {
+            state.form_file_upload = this.value;
+            checkFormStatus();
+
+            state.fileList = this.files
+            Papa.parse(state.fileList[0], {
+                dynamicTyping: true,
+                header: true,
+                complete: function (results) {
+                    parseData(results.data, results.meta);
+                },
+            });
+        }),
+
+    // Reupload button
+    reupload: d3.select(".submitBtn-msg")
+        .on("click", function () {
+            location.reload();
+        }),
 
 
     // Validate button: start 
     validateButton: d3
-        .select("#fileSubmit")
+        .select("#validateButton")
         .on("click", function () {
-            testRequiredHeaders(state.data_headers);
+            testRequiredHeaders(state.data_headers, state);
             resetValues();
         }),
+
+    submitButton: d3
+        .select("#submitButton"),
 
 
     /* Toggle additional information for validation steps */
@@ -269,21 +314,6 @@ function toggleStepInfo(infoLocation, toggleLocation, stateField) {
     } else closeStepInfo(infoLocation, toggleLocation)
 }
 
-
-/* GET AND PARSE DATA */
-
-function getFile() {
-    state.fileList = this.files;
-
-    Papa.parse(state.fileList[0], {
-        dynamicTyping: true,
-        header: true,
-        complete: function (results) {
-            parseData(results.data, results.meta);
-        },
-    });
-}
-
 function parseData(data, meta) {
     state.data_raw = data;
     state.data_headers = meta.fields;
@@ -292,7 +322,7 @@ function parseData(data, meta) {
 
 
 /* VALIDATION STEP #1: TEST FOR REQUIRED HEADERS */
-function testRequiredHeaders(headerArray) {
+function testRequiredHeaders(headerArray, state) {
 
     // Frontend update locations
     const stepLocation = d3.select("#headers-name");
@@ -368,12 +398,12 @@ function testRequiredHeaders(headerArray) {
         `);
     }
 
-    testPiiHeaders(state.data_headers);
+    testPiiHeaders(state.data_headers, state);
 }
 
 
 /* VALIDATION STEP #2: TEST FOR PII HEADERS */
-function testPiiHeaders(headerArray) {
+function testPiiHeaders(headerArray, state) {
 
     // Frontend update locations
     const stepLocation = d3.select("#pii-name");
@@ -399,19 +429,19 @@ function testPiiHeaders(headerArray) {
         }
     });
 
-    // If there is at least one lack of match, throw an error
+    // If there is at least one lack of match, throw a success
     if (output.dictPiiMatches.length > 0) {
-        state.check_headers = false;
+        state.check_pii = false;
         resultLocation.text("NO PASS").classed("neutral", false);
         resultLocation.classed("fail", true);
         stepLocation.style("background-color", "#FFB9B9");
         errorLocation.html(`<h3>Result</h3><br>
 
-        <b class='fail'>${output.dictPiiMatches.length} column header(s) in your file may contain PII:</b>
+        <b class='fail'>${output.dictPiiMatches.length} column header(s) are flagged as potentially containing PII:</b>
         
         <ul> ${output.srcPiiMatches.map(i => `<li><b>${i}`).join('')}</ul> <br>
 
-        Please remove the column(s) from your data file and try again.
+        Please remove the PII column(s) from your data file and try again.
     
         `);
     } else if (output.dictPiiMatches.length === 0) {
@@ -425,12 +455,12 @@ function testPiiHeaders(headerArray) {
         <b class='success'>Passed: No headers in your file contained PII.</b>`);
     }
 
-    testSsn(state.data_headers, state.data_raw);
+    testSsn(state.data_headers, state.data_raw, state);
 }
 
 
 /* VALIDATION STEP #3: CHECK FOR SOCIAL SECURITY NUMBERS */
-function testSsn(headerList, data) {
+function testSsn(headerList, data, state) {
     // Tests each column in the data for SSN values
     // Sorts columns into pass / fail
     // Prints result to front-end
@@ -480,7 +510,7 @@ function testSsn(headerList, data) {
         `);
     } else {
         // Update state and front-end locations
-        state.check_headers = true;
+        state.check_ssn = true;
         resultLocation.text("PASS").classed("neutral", false);
         resultLocation.text("PASS").classed("fail", false);
         resultLocation.classed("success", true);
@@ -491,13 +521,19 @@ function testSsn(headerList, data) {
         `);
     }
 
+    checkValidationStatus(state);
+
 }
-/* Takes in an array and returns an array with the *row
-numbers* (indices + 1) that contain SSN values in the dataset.
-E.g. let arr = [333, "testValue", 123456789, "", null, NaN, 666666, 4444]
-then getIndexOfSsnValues(arr) ==> [3, 8]
-*/
+
 function getRowsOfSsnValues(arr) {
+
+    /* 
+    Takes in an array and returns an array with the *row
+    numbers* (indices + 1) that contain SSN values in the dataset.
+    E.g. let arr = [333, "testValue", 123456789, "", null, NaN, 666666, 4444]
+    then getIndexOfSsnValues(arr) ==> [3, 8]
+    */
+
     // SSN patterns to match each value against
     let regex = [
         /^\d{3}-?\d{2}-?\d{4}$/, // ###-##-####
@@ -542,4 +578,96 @@ function getRowsOfSsnValues(arr) {
     }
 
     return rowsWithSsnValues;
+}
+
+
+/* FORM VALIDATION */
+
+function checkFormStatus() {
+    if (
+        state.form_community_clean === null ||
+        state.form_community_clean === "" ||
+        state.form_reporting_date === null ||
+        state.form_reporting_date === "" ||
+        state.form_name === null ||
+        state.form_name === "" ||
+        state.form_email === null ||
+        state.form_email === "" ||
+        state.form_file_upload === null ||
+        state.form_file_upload === ""
+    ) {
+        // Failure: any one of the form fields is not filled or empty
+        d3.select("#validateButton").classed("inactive", true);
+        d3.select("#validateButton").classed("active", false);
+        d3.select("#validateButton").attr("disabled", true);
+        d3.select(".validateBtn-msg").html("Please fill in all required fields to continue.");
+        d3.select(".submitBtn-msg").html("");
+    } else if (
+        state.form_community_clean != null &&
+        state.form_reporting_date != null &&
+        state.form_name != null &&
+        state.form_email != null &&
+        state.form_file_upload != null
+    ) {
+        // Success: all of the form fields are filled in
+        d3.select("#validateButton").classed("inactive", false);
+        d3.select("#validateButton").classed("active", true);
+        d3.select("#validateButton").attr("disabled", null);
+
+        d3.select(".validateBtn-msg").text("");
+        d3.select(".submitBtn-msg").text("");
+    }
+}
+
+function checkValidationStatus() {
+    if (
+        state.check_headers === null ||
+        state.check_headers === false ||
+        state.check_pii === null ||
+        state.check_pii === false ||
+        state.check_ssn === null ||
+        state.check_ssn === false
+    ) {
+        // Failure: The data did not pass any one of the tests
+        // Inactivate the validate button
+        d3.select("#validateButton").classed("inactive", true);
+        d3.select("#validateButton").classed("active", false);
+        d3.select("#validateButton").attr("disabled", true);
+        // Inactivate and hide the submit button
+        d3.select("#submitButton").classed("inactive", true);
+        d3.select("#submitButton").classed("active", false);
+        d3.select("#submitButton").attr("disabled", true);
+        d3.select("#submitButton").classed("hide", true);
+        // Reset values
+        resetValues();
+        // Add a reupload button instead
+        d3.select(".submitBtn-msg").html(`
+        <div class='center' style='margin:15px;'>
+        <button class='waiting' id='reupload-button'>
+            REUPLOAD CORRECTED FILE &nbsp &#8630
+        </button>
+        </div>`);
+    } else if (
+        state.check_headers === true &&
+        state.check_pii === true &&
+        state.check_ssn === true
+    ) {
+        // Success: All of the tests passed
+        // Activate the submit button
+        d3.select("#submitButton").classed("inactive", false);
+        d3.select("#submitButton").classed("active", true);
+        d3.select("#submitButton").attr("disabled", null);
+        d3.select("#submitButton").classed("hide", false);
+        // Replace the error helptext
+        d3.select(".submitBtn-msg").html(`
+        <div class='center'>
+        <button class='waiting' id='reupload-button'>
+        REUPLOAD CORRECTED FILE &nbsp &#8630
+        </button>
+        </div>`);
+        // Inactivate the validate button
+        d3.select("#validateButton").classed("inactive", true);
+        d3.select("#validateButton").classed("active", false);
+        d3.select("#validateButton").attr("disabled", true);
+    }
 }

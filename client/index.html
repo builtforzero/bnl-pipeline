@@ -25,11 +25,12 @@
 
                 <div class="step-content">
 
-                    <form>
+                    <form class='submission-form'>
 
                         <!-- Community Name -->
                         <div class="form-field">
-                            <div class="question-text">What is your community name?</div>
+                            <div class="question-text">What is your community name? <b class='asterisk'>*</b>
+                            </div>
                             <select class="input" name="Community" id="community-dropdown" placeholder="Select a Community">
                                 <option>Select a Community</option>
                                 <option>Arlington County CoC</option>
@@ -43,33 +44,36 @@
                         <!-- Reporting Date -->
                         <div class="form-field">
                             <div class="form-label">
-                                <div class="question-text">Enter the date you are reporting for:</span></div>
+                                <div class="question-text">What date are you reporting for? <b class='asterisk'>*</b></span></div>
                                 <input class="input" type="date" name="Reporting Date" id="date-input">
                             </div>
                         </div>
 
                         <!-- Your Name -->
                         <div class="form-field">
-                            <div class="question-text">What is your name?</div>
+                            <div class="question-text">What is your name? <b class='asterisk'>*</b></div>
                             <input class="input" name="Name" id="name-input" placeholder="Name of Contact Person">
                         </div>
 
                         <!-- Email -->
                         <div class="form-field">
-                            <div class="question-text">What is your email address?</div>
-                            <input class="input" name="Email" id="email-input" placeholder="example@email.com">
+                            <div class="question-text">What is your email address? <b class='asterisk'>*</b></div>
+                            <input class="input" type="email" name="Email" id="email-input" placeholder="example@email.com">
                         </div>
 
-
+                        <!-- File picker -->
                         <div class="form-field upload-file">
                             <div>
-                                <label for="fileUpload" class="question-text input-file-label">Choose a File</label>
+                                <label for="fileUpload" class="question-text input-file-label">Choose your by-name list file <b class='asterisk'>*</b></label>
                                 <input type="file" id="filePicker" name="filePicker" accept=".csv">
                             </div>
-                            <div class="center">
-                                <button type='button' id="fileSubmit">VALIDATE FILE</button>
-                            </div>
                         </div>
+
+                        <!-- Validate button -->
+                        <div class="center">
+                            <button class="inactive" type='button' id="validateButton" disabled>VALIDATE FILE</button>
+                        </div>
+                        <div class="validateBtn-msg helptext"></div>
 
                 </div>
 
@@ -170,8 +174,9 @@
                     </div>
 
                     <div class="center">
-                        <button type='button' id="fileSubmit">SUBMIT FILE</button>
+                        <button class="inactive" type='button' id="submitButton" disabled>SUBMIT FILE</button>
                     </div>
+                    <div class="submitBtn-msg"></div>
                 </div>
 
             </section>

@@ -1,8 +1,8 @@
 :root {
     /* Colors */
-    --color-main: #a50a51;
+    --color-main: #0494cb;
     --color-second: #0494cb;
-    --color-neutral: #636467;
+    --color-neutral: #abacaf;
     --color-alert: rgb(235, 51, 51);
 
     /* Fonts */
@@ -13,7 +13,7 @@
     --root-size: 16px;
     --h1-size: 3.2em;
     --h2-size: 2.2em;
-    --h3-size: 1.3em;
+    --h3-size: 21px;
     --h4-size: 1.1em;
     --subtitle-size: 0.8em;
     --tiny-size: 0.6em;
@@ -62,30 +62,11 @@ h2 {
 
 button {
     padding: 10px;
-    margin: 5% 0%;
+    margin: 20px 0px;
     width: 50%;
     font-family: var(--font-body);
     font-size: var(--h3-size);
     font-weight: 900;
-    background-color: var(--color-main);
-    color: white;
-    border: 3px solid var(--color-main);
-}
-
-button:hover {
-    font-family: var(--font-body);
-    font-size: var(--h3-size);
-    font-weight: 900;
-    background-color: white;
-    color: var(--color-main);
-    border: 3px solid var(--color-main);
-    cursor: pointer;
-}
-
-.hide {
-    position: absolute !important;
-    top: -9999px !important;
-    left: -9999px !important;
 }
 
 
@@ -113,8 +94,8 @@ button:hover {
 }
 
 .step-content {
-    padding: 4%;
-    margin: 0%;
+    padding: 20px;
+    margin: 0;
     background-color: white;
 }
 
@@ -140,7 +121,7 @@ select {
     font-weight: 600;
 }
 
-/* SUCCESS / FAIL */
+/* STATUS */
 
 .success {
     color: var(--color-second);
@@ -154,8 +135,44 @@ select {
     color: grey;
 }
 
-.double-space {
-    line-height: 20px;
+.inactive {
+    background-color: var(--color-neutral);
+    color: white;
+    border: 3px solid var(--color-neutral);
+}
+
+.active {
+    background-color: var(--color-main);
+    color: white;
+    border: 3px solid var(--color-main);
+    font-size: var(--h3-size);
+}
+
+.active:hover {
+    background-color: white;
+    color: var(--color-main);
+    border: 3px solid var(--color-main);
+    cursor: pointer;
+}
+
+.waiting {
+    margin: 0px;
+    padding: 15px;
+    background-color: white;
+    color: rgb(77, 77, 77);
+    font-size: var(--h4-size);
+    border: none;
+}
+
+.waiting:hover {
+    background-color: lightgrey;
+    cursor: pointer;
+}
+
+.hide {
+    position: absolute !important;
+    top: -9999px !important;
+    left: -9999px !important;
 }
 
 
@@ -208,6 +225,23 @@ select {
     padding: 10px;
     margin: 10px 0px;
 }
+
+.helptext {
+    margin: 5px;
+    font-size: var(--subtitle-size);
+    font-weight: 600;
+    color: var(--color-alert);
+    text-align: center;
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+.asterisk {
+    color: var(--color-alert);
+    font-size: var(--h4-size);
+    font-weight: 900;
+}
+
 
 
 /* MEDIA BREAKPOINTS */
