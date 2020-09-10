@@ -27,6 +27,7 @@ let state = {
     // Data
     fileList: null,
     data_raw: null,
+    data_clean: null,
     data_headers: null,
     data_length: null,
 
@@ -142,6 +143,17 @@ let script = {
         }
         return col;
     },
+
+    getColByName: function getCol(arr, columnName) {
+        const col = [];
+
+        for (let row = 0; row < arr.length - 1; row++) {
+            const value = Object.values(arr)[row][columnName];
+            col.push(value);
+        }
+        return col;
+    },
+
 }
 
 /* EVENT LISTENERS */
@@ -197,6 +209,7 @@ let eventListeners = {
                 header: true,
                 complete: function (results) {
                     state.data_raw = results.data;
+                    state.data_clean = results.data;
                     state.data_headers = results.meta.fields;
                     state.data_length = results.data.length;
                 },
@@ -215,13 +228,6 @@ let eventListeners = {
         .select("#validateButton")
         .on("click", function () {
             runTests(state.data_headers, state.data_raw, state);
-            resetValues();
-        }),
-
-    aggregateButton: d3
-        .select("#aggregateButton")
-        .on("click", function () {
-            console.log("Submitting!")
         }),
 
 }
@@ -341,14 +347,19 @@ function testRequiredHeaders(headerArray, state) {
 
     // Apply matchHeader function to file header array
     headerArray.map(header => {
-        const a = stringSimilarity.findBestMatch(header, output.dictHeadersNoMatches);
-        // If the Dice's coefficient falls below threshold, return null
-        if (a.bestMatch.rating < 0.4) {
-            output.srcHeaderNoMatches.push(header)
+        const dictLength = output.dictHeadersNoMatches.length;
+        if (dictLength > 0) {
+            const a = stringSimilarity.findBestMatch(header, output.dictHeadersNoMatches);
+            // If the Dice's coefficient falls below threshold, return null
+            if (a.bestMatch.rating < 0.45) {
+                output.srcHeaderNoMatches.push(header)
+            } else {
+                output.srcHeaderMatches.push(header)
+                output.dictHeaderMatches.push(a.bestMatch.target)
+                output.dictHeadersNoMatches = script.arrayRemove(output.dictHeadersNoMatches, a.bestMatch.target)
+            }
         } else {
-            output.srcHeaderMatches.push(header)
-            output.dictHeaderMatches.push(a.bestMatch.target)
-            output.dictHeadersNoMatches = script.arrayRemove(output.dictHeadersNoMatches, a.bestMatch.target)
+            output.srcHeaderNoMatches.push(header)
         }
     });
 
@@ -671,4 +682,137 @@ function checkTestStatus() {
         d3.select("#validateButton").classed("active", false);
         d3.select("#validateButton").attr("disabled", true);
     }
+}
+
+// ["All", "Single Adult Veteran", "Single Adult Chronic", "Youth", "Family"],
+
+let agg = {
+    // Dictionary
+    dict_headers: [
+        'Timestamp', 'Community', 'Month', 'Your Name:', 'Your Email Address:', 'Your Organization:', 'Population', 'Subpopulation', 'Demographic', 'ACTIVELY HOMELESS NUMBER', 'AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT', 'HOUSING PLACEMENTS', 'MOVED TO INACTIVE NUMBER', 'NO LONGER MEETS POPULATION CRITERIA', 'NEWLY IDENTIFIED NUMBER', 'RETURNED TO ACTIVE LIST FROM HOUSING NUMBER', 'RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER'
+    ],
+    dict_calcs: [
+        'ACTIVELY HOMELESS NUMBER', 'AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT', 'HOUSING PLACEMENTS', 'MOVED TO INACTIVE NUMBER', 'NO LONGER MEETS POPULATION CRITERIA', 'NEWLY IDENTIFIED NUMBER', 'RETURNED TO ACTIVE LIST FROM HOUSING NUMBER', 'RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER'
+    ],
+    dict_pops: ["All"],
+
+    // Data
+    timestamp: [],
+    community: [],
+    month: [],
+    name: [],
+    email: [],
+    organization: [],
+    population: [],
+    subpopulation: [],
+    demographic: [],
+    calc_AHNumber: [],
+    calc_AvgLengthOfTime: [],
+    calc_HousingPlacements: [],
+    calc_MovedToInactive: [],
+    calc_NoLongerPop: [],
+    calc_NewlyId: [],
+    calc_ReturnedFromHousing: [],
+    calc_ReturnFromInactive: []
+}
+
+let all = {
+    calc_AHNumber: null,
+    calc_AvgLengthOfTime: null,
+    calc_HousingPlacements: null,
+    calc_MovedToInactive: null,
+    calc_NoLongerPop: null,
+    calc_NewlyId: null,
+    calc_ReturnedFromHousing: null,
+    calc_ReturnFromInactive: null
+}
+
+let aggButton = d3
+    .select("#aggregateButton")
+    .on("click", function () {
+        console.log("Submitting!")
+        addMetadata(state, agg);
+        console.log("Total Length", state.data_raw.length)
+        console.log("All Unique", calcAH(state.data_raw, "Unique", "Client ID"))
+        console.log("All AH", calcAH(state.data_raw, "All", "Client ID"))
+        console.log("Chronic AH", calcAH(state.data_raw, "Chronic", "Client ID"))
+        console.log("Veteran AH", calcAH(state.data_raw, "Veteran", "Client ID"))
+        console.log("Youth AH", calcAH(state.data_raw, "Youth", "Client ID"))
+        console.log("Family AH", calcAH(state.data_raw, "Family", "Client ID"))
+    });
+
+function pushToArr(value, length, location) {
+    for (let i = 0; i < length; i++) {
+        location.push(value);
+    }
+}
+
+function addMetadata(state, agg) {
+    let len = agg.dict_pops.length * agg.dict_calcs.length;
+    agg.timestamp = [];
+    agg.community = [];
+    agg.month = [];
+    agg.name = [];
+    agg.email = [];
+    agg.organization = [];
+    // Timestamp
+    pushToArr(state.meta_timestamp, len, agg.timestamp);
+    // Community
+    pushToArr(state.form_community_clean, len, agg.community);
+    // Reporting Month
+    pushToArr(state.meta_reportingDate, len, agg.month);
+    // Name
+    pushToArr(state.form_name, len, agg.name);
+    // Email
+    pushToArr(state.form_email, len, agg.email);
+}
+
+function calcAH(data, target, uniqueCol) {
+
+    if (target === "Unique") {
+        const uniqueArray = script.getColByName(data, uniqueCol);
+        return new Set(uniqueArray).size;
+
+    } else if (target === "All") {
+        const filtered = data.filter(d => {
+            return d['BNL Status'] === "Active"
+        })
+        const uniqueArray = script.getColByName(filtered, uniqueCol);
+        return new Set(uniqueArray).size;
+
+    } else if (target === "Veteran") {
+        const filtered = data.filter(d => {
+            return d['BNL Status'] === "Active" &&
+                d['Household Type'] === "Single Adult" &&
+                d['Veteran Status'] === "Yes Validated"
+        })
+        const uniqueArray = script.getColByName(filtered, uniqueCol);
+        return new Set(uniqueArray).size;
+
+    } else if (target === "Chronic") {
+        const filtered = data.filter(d => {
+            return d['BNL Status'] === "Active" &&
+                d['Household Type'] === "Single Adult" &&
+                d['Chronic Status'] === "Chronically Homeless"
+        })
+        const uniqueArray = script.getColByName(filtered, uniqueCol);
+        return new Set(uniqueArray).size;
+
+    } else if (target === "Youth") {
+        const filtered = data.filter(d => {
+            return d['BNL Status'] === "Active" &&
+                d['Household Type'] === "Youth"
+        })
+        const uniqueArray = script.getColByName(filtered, uniqueCol);
+        return new Set(uniqueArray).size;
+
+    } else if (target === "Family") {
+        const filtered = data.filter(d => {
+            return d['BNL Status'] === "Active" &&
+                d['Household Type'] === "Family"
+        })
+        const uniqueArray = script.getColByName(filtered, uniqueCol);
+        return new Set(uniqueArray).size;
+
+    } else return "Incorrect target chosen"
 }
