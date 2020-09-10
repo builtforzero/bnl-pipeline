@@ -32,7 +32,7 @@ p {
 html {
     font-size: var(--root-size);
     font-family: var(--font-body);
-    background-color: lightgrey;
+    background-color: #ececec;
 }
 
 body {
@@ -74,8 +74,9 @@ button {
 
 .columns {
     display: grid;
-    grid-template-columns: 1fr 2fr;
-    column-gap: 10px;
+    grid-template-columns: 1fr 2fr 2fr;
+    grid-template-rows: 1fr 1fr;
+    column-gap: 15px;
     margin: 10px;
 }
 

@@ -3,10 +3,9 @@ const d3 = require('d3')
 const Papa = require('papaparse');
 const stringSimilarity = require('string-similarity');
 
-
-
+/* APPLICATION STATE */
 let state = {
-    // Validation checks pass/fail
+    // Validation tests pass/fail
     check_headers: null,
     check_pii: null,
     check_ssn: null,
@@ -30,14 +29,8 @@ let state = {
     data_raw: null,
     data_headers: null,
     data_length: null,
-    data_diceCoefficient: 0.6, // How sensitive should fuzzy matching be?
 
-    // Open/close HTML sections
-    section_headers_open: false,
-    section_pii_open: false,
-    section_ssn_open: false,
-
-    // Dictionary of all headers
+    // All headers
     dict_headers_all: [
         'Date of Identification',
         'Homeless Start Date',
@@ -95,7 +88,7 @@ let state = {
     ]
 }
 
-// Store output variables
+// STORE OUTPUT VARIABLES FOR TESTS
 let output = {
     // Required headers
     srcHeaderMatches: [], // Source file headers that match required fields
@@ -110,30 +103,7 @@ let output = {
     dictPiiNoMatches: [], // PII headers that DO NOT match the source file
 }
 
-function resetValues() {
-
-    // Data
-    state.fileList = null;
-    state.data_raw = null;
-    state.data_headers = null;
-    state.data_length = null;
-
-    // Required headers
-    output.srcHeaderMatches = [];
-    output.srcHeaderNoMatches = [];
-    output.dictHeaderMatches = [];
-    output.dictHeaderNoMatches = [];
-
-    // PII Headers
-    output.srcPiiMatches = [];
-    output.srcPiiNoMatches = [];
-    output.dictPiiMatches = [];
-    output.dictPiiNoMatches = [];
-
-    d3.select("#filePicker").value = "";
-}
-
-/* GLOBAL HELPER SCRIPTS */
+/* HELPER SCRIPTS */
 let script = {
     // Date and time parsing
     formatTime: d3.timeFormat("%X"),
@@ -173,8 +143,6 @@ let script = {
         return col;
     },
 }
-
-checkFormStatus();
 
 /* EVENT LISTENERS */
 let eventListeners = {
@@ -223,13 +191,14 @@ let eventListeners = {
         .on("change", function () {
             state.form_file_upload = this.value;
             checkFormStatus();
-
             state.fileList = this.files
             Papa.parse(state.fileList[0], {
                 dynamicTyping: true,
                 header: true,
                 complete: function (results) {
-                    parseData(results.data, results.meta);
+                    state.data_raw = results.data;
+                    state.data_headers = results.meta.fields;
+                    state.data_length = results.data.length;
                 },
             });
         }),
@@ -241,87 +210,122 @@ let eventListeners = {
         }),
 
 
-    // Validate button: start 
+    // Validate button
     validateButton: d3
         .select("#validateButton")
         .on("click", function () {
-            testRequiredHeaders(state.data_headers, state);
+            runTests(state.data_headers, state.data_raw, state);
             resetValues();
         }),
 
-    submitButton: d3
-        .select("#submitButton"),
+    aggregateButton: d3
+        .select("#aggregateButton")
+        .on("click", function () {
+            console.log("Submitting!")
+        }),
 
+}
 
-    /* Toggle additional information for validation steps */
+/* MANAGE SECTION TOGGLING OPEN / CLOSE */
+let section = {
+    // State of each section
+    headers_open: false,
+    pii_open: false,
+    ssn_open: false,
 
-    // Step 1: Required Headers
+    // Toggle function
+    toggle: function (infoLocation, toggleLocation, stateField) {
+        if (stateField === true) {
+            d3.select(infoLocation)
+                .style("opacity", "0")
+                .transition()
+                .duration(200)
+                .style("opacity", "1")
+            d3.select(infoLocation).classed("hide", false)
+            d3.select(toggleLocation).text("HIDE DETAILS ▲")
+
+        } else {
+            d3.select(infoLocation)
+                .style("opacity", "1")
+                .transition()
+                .duration(200)
+                .style("opacity", "0")
+            d3.select(infoLocation).classed("hide", true)
+            d3.select(toggleLocation).text("SHOW DETAILS ▼")
+        }
+    },
+
+    // Event Listeners
     toggleHeaderInfo: d3.select("#headers-name")
         .on('click', function () {
-            state.section_headers_open = !state.section_headers_open;
-            toggleStepInfo("#headers-info", "#headers-name-toggle", state.section_headers_open);
+            // Set opposite status for selected section
+            section.headers_open = !section.headers_open;
+            section.pii_open = false;
+            section.ssn_open = false;
+            // Open/close selected section, close all others
+            section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
+            section.toggle("#pii-info", "#pii-toggle", section.pii_open);
+            section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
         }),
 
-    // Step 2: PII Headers
     togglePiiInfo: d3.select("#pii-name")
         .on('click', function () {
-            state.section_pii_open = !state.section_pii_open;
-            toggleStepInfo("#pii-info", "#pii-toggle", state.section_pii_open);
+            // Set opposite status for selected section
+            section.pii_open = !section.pii_open;
+            section.headers_open = false;
+            section.ssn_open = false;
+            // Open/close selected section, close all others
+            section.toggle("#pii-info", "#pii-toggle", section.pii_open);
+            section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
+            section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
         }),
 
-    // Step 3: SSNs
     toggleSsnInfo: d3.select("#ssn-name")
         .on('click', function () {
-            state.section_ssn_open = !state.section_ssn_open;
-            toggleStepInfo("#ssn-info", "#ssn-name-toggle", state.section_ssn_open);
+            // Set opposite status for selected section
+            section.ssn_open = !section.ssn_open;
+            section.headers_open = false;
+            section.pii_open = false;
+            // Open/close selected section, close all others
+            section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
+            section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
+            section.toggle("#pii-info", "#pii-toggle", section.pii_open);
         }),
-
 }
 
+/* REMOVE DATA FROM STATE */
+function resetValues() {
 
-/* VALIDATION STEP INFO OPEN / CLOSE FUNCTIONS */
-function openStepInfo(infoLocation, toggleLocation) {
+    // Data
+    state.fileList = null;
+    state.data_raw = null;
+    state.data_headers = null;
+    state.data_length = null;
 
-    d3.select(infoLocation)
-        .style("opacity", "0")
-        .transition()
-        .duration(200)
-        .style("opacity", "1")
+    // Required headers
+    output.srcHeaderMatches = [];
+    output.srcHeaderNoMatches = [];
+    output.dictHeaderMatches = [];
+    output.dictHeaderNoMatches = [];
 
-    d3.select(infoLocation).classed("hide", false)
+    // PII Headers
+    output.srcPiiMatches = [];
+    output.srcPiiNoMatches = [];
+    output.dictPiiMatches = [];
+    output.dictPiiNoMatches = [];
 
-    d3.select(toggleLocation)
-        .text("HIDE DETAILS ▲")
+    d3.select("#filePicker").value = "";
 }
 
-function closeStepInfo(infoLocation, toggleLocation) {
-
-    d3.select(infoLocation)
-        .style("opacity", "1")
-        .transition()
-        .duration(200)
-        .style("opacity", "0")
-
-    d3.select(infoLocation).classed("hide", true)
-
-    d3.select(toggleLocation)
-        .text("SHOW DETAILS ▼")
+/* RUN TESTS AND CHECK VALIDATION STATUS */
+function runTests(headerArray, data, state) {
+    testRequiredHeaders(headerArray, state);
+    testPiiHeaders(headerArray, state);
+    testSsn(headerArray, data, state);
+    checkTestStatus();
 }
 
-function toggleStepInfo(infoLocation, toggleLocation, stateField) {
-    if (stateField === true) {
-        openStepInfo(infoLocation, toggleLocation)
-    } else closeStepInfo(infoLocation, toggleLocation)
-}
-
-function parseData(data, meta) {
-    state.data_raw = data;
-    state.data_headers = meta.fields;
-    state.data_length = data.length;
-}
-
-
-/* VALIDATION STEP #1: TEST FOR REQUIRED HEADERS */
+/* TEST #1: REQUIRED HEADERS */
 function testRequiredHeaders(headerArray, state) {
 
     // Frontend update locations
@@ -398,11 +402,9 @@ function testRequiredHeaders(headerArray, state) {
         `);
     }
 
-    testPiiHeaders(state.data_headers, state);
 }
 
-
-/* VALIDATION STEP #2: TEST FOR PII HEADERS */
+/* TEST #2: PII HEADERS */
 function testPiiHeaders(headerArray, state) {
 
     // Frontend update locations
@@ -455,12 +457,11 @@ function testPiiHeaders(headerArray, state) {
         <b class='success'>Passed: No headers in your file contained PII.</b>`);
     }
 
-    testSsn(state.data_headers, state.data_raw, state);
 }
 
 
-/* VALIDATION STEP #3: CHECK FOR SOCIAL SECURITY NUMBERS */
-function testSsn(headerList, data, state) {
+/* TEST #3: CHECK FOR SOCIAL SECURITY NUMBERS */
+function testSsn(headerArray, data, state) {
     // Tests each column in the data for SSN values
     // Sorts columns into pass / fail
     // Prints result to front-end
@@ -478,8 +479,8 @@ function testSsn(headerList, data, state) {
     let ssnPassed = [];
 
     // Sort headers into pass and fail based on whether they contain SSNs
-    for (let col = 0; col < headerList.length; col++) {
-        const header = headerList[col]
+    for (let col = 0; col < headerArray.length; col++) {
+        const header = headerArray[col]
         const output = getRowsOfSsnValues(script.getCol(data, col))
 
         if (output.length > 0) {
@@ -498,7 +499,7 @@ function testSsn(headerList, data, state) {
         stepLocation.style("background-color", "#FFB9B9");
         // Error message
         errorLocation.html(`<h3>Result</h3><br>
-            <b>${ssnFail.length} / ${headerList.length} columns</b> in your file contain values that could be Social Security Numbers. <b style='color:grey; font-weight:400;'> &nbsp (Potential SSNs include values with 9 digits, 4 digits, or in the format ###-##-####)</b>. <br>
+            <b>${ssnFail.length} / ${headerArray.length} columns</b> in your file contain values that could be Social Security Numbers. <b style='color:grey; font-weight:400;'> &nbsp (Potential SSNs include values with 9 digits, 4 digits, or in the format ###-##-####)</b>. <br>
             <ul>
             ${ssnFail.map(value => `
                 <li>
@@ -521,10 +522,8 @@ function testSsn(headerList, data, state) {
         `);
     }
 
-    checkValidationStatus(state);
-
 }
-
+// SSN helper function: get rows of SSN values
 function getRowsOfSsnValues(arr) {
 
     /* 
@@ -581,8 +580,9 @@ function getRowsOfSsnValues(arr) {
 }
 
 
-/* FORM VALIDATION */
+/* STATUS CHECKING */
 
+// Status of form fields
 function checkFormStatus() {
     if (
         state.form_community_clean === null ||
@@ -619,7 +619,8 @@ function checkFormStatus() {
     }
 }
 
-function checkValidationStatus() {
+// Status of validation tests
+function checkTestStatus() {
     if (
         state.check_headers === null ||
         state.check_headers === false ||
@@ -634,10 +635,10 @@ function checkValidationStatus() {
         d3.select("#validateButton").classed("active", false);
         d3.select("#validateButton").attr("disabled", true);
         // Inactivate and hide the submit button
-        d3.select("#submitButton").classed("inactive", true);
-        d3.select("#submitButton").classed("active", false);
-        d3.select("#submitButton").attr("disabled", true);
-        d3.select("#submitButton").classed("hide", true);
+        d3.select("#aggregateButton").classed("inactive", true);
+        d3.select("#aggregateButton").classed("active", false);
+        d3.select("#aggregateButton").attr("disabled", true);
+        d3.select("#aggregateButton").classed("hide", true);
         // Reset values
         resetValues();
         // Add a reupload button instead
@@ -654,10 +655,10 @@ function checkValidationStatus() {
     ) {
         // Success: All of the tests passed
         // Activate the submit button
-        d3.select("#submitButton").classed("inactive", false);
-        d3.select("#submitButton").classed("active", true);
-        d3.select("#submitButton").attr("disabled", null);
-        d3.select("#submitButton").classed("hide", false);
+        d3.select("#aggregateButton").classed("inactive", false);
+        d3.select("#aggregateButton").classed("active", true);
+        d3.select("#aggregateButton").attr("disabled", null);
+        d3.select("#aggregateButton").classed("hide", false);
         // Replace the error helptext
         d3.select(".submitBtn-msg").html(`
         <div class='center'>
