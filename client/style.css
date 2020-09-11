@@ -74,9 +74,24 @@ button {
 
 .columns {
     display: grid;
-    grid-template-columns: 1fr 2fr 2fr;
+    grid-template-columns: 1fr 1fr;
     column-gap: 15px;
-    margin: 10px;
+    margin: 0px;
+}
+
+.rows {
+    display: grid;
+    grid-template-rows: 1fr 3fr;
+    column-gap: 15px;
+    row-gap: 10px;
+    margin: 0px;
+}
+
+.form-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    column-gap: 50px;
+    margin: 0px;
 }
 
 .status {
