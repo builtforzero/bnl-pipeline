@@ -243,6 +243,53 @@ select {
 }
 
 
+/* AGGREGATION */
+
+.reporting-month {
+    margin: 15px 0px 5px 0px;
+    font-size: var(--h3-size);
+    font-weight: 600;
+    color: var(--color-main)
+}
+
+.reporting-community {
+    margin: 5px 0px 15px 0px;
+    font-size: var(--root-size);
+}
+
+
+.agg-table {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr 1fr;
+    column-gap: 0px;
+}
+
+.agg-header {
+    font-size: var(--h4-size);
+    font-weight: 600;
+    margin: 0px 0px;
+    padding: 6px;
+    background-color: lightgrey;
+}
+
+.agg-value {
+    font-size: var(--root-size);
+    margin: 0px 0px;
+    padding: 6px;
+    border-bottom: 1px solid lightgrey;
+}
+
+.agg-value:hover {
+    background-color: rgb(235, 235, 235);
+}
+
+.agg-spacer {
+    font-size: var(--root-size);
+    margin: 0px 0px;
+    padding: 6px;
+}
+
+
 
 /* MEDIA BREAKPOINTS */
 
