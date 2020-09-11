@@ -13,215 +13,211 @@
 
 <body>
     <div id="root">
-        <section class="rows">
 
-            <section class="row1">
+        <section class="columns">
+            <section class="column1">
 
-                <section class="column1">
+                <div class="step-header">
+                    <h2>STEP 1: UPLOAD</h2>
+                    <p>Upload your by-name list for validation.</p>
+                </div>
+
+                <div class="step-content">
+
+                    <form class='submission-form'>
+
+                        <section class="form-columns">
+
+                            <!-- Community Name -->
+                            <div class="form-field">
+                                <div class="question-text">What is your community name? <b class='asterisk'>*</b>
+                                </div>
+                                <select class="input" name="Community" id="community-dropdown" placeholder="Select a Community">
+                                    <option>Select a Community</option>
+                                    <option>Arlington County CoC</option>
+                                    <option>Bakersfield/Kern County CoC</option>
+                                    <option>Watsonville/Santa Cruz City & County CoC</option>
+                                    <option>Richmond/Henrico, Chesterfield, Hanover Counties CoC</option>
+                                    <option>Jacksonville-Duval, Clay Counties CoC</option>
+                                    <option>Rockford/Winnebago, Boone Counties CoC</option>
+                                </select>
+                            </div>
+
+                            <!-- Reporting Date -->
+                            <div class="form-field">
+                                <div class="form-label">
+                                    <div class="question-text">What date are you reporting for? <b class='asterisk'>*</b></span></div>
+                                    <input class="input" type="date" name="Reporting Date" id="date-input">
+                                </div>
+                            </div>
+
+                            <!-- Your Name -->
+                            <div class="form-field">
+                                <div class="question-text">What is your name? <b class='asterisk'>*</b></div>
+                                <input class="input" name="Name" id="name-input" placeholder="Name of Contact Person">
+                            </div>
+
+                            <!-- Email -->
+                            <div class="form-field">
+                                <div class="question-text">What is your email address? <b class='asterisk'>*</b></div>
+                                <input class="input" type="email" name="Email" id="email-input" placeholder="example@email.com">
+                            </div>
+
+                            <!-- File picker -->
+                            <div class="form-field upload-file">
+                                <div>
+                                    <label for="fileUpload" class="question-text input-file-label">Choose your by-name list file <b class='asterisk'>*</b></label>
+                                    <input type="file" id="filePicker" name="filePicker" accept=".csv">
+                                </div>
+                            </div>
+                        </section>
+                        <!-- Validate button -->
+                        <div class="center">
+                            <button class="inactive" type='button' id="validateButton" disabled>VALIDATE FILE</button>
+                        </div>
+
+
+
+                        <div class="validateBtn-msg helptext"></div>
+
+                </div>
+
+
+                </form>
+            </section>
+
+            <section class="column2">
+
+                <section class="row1">
 
                     <div class="step-header">
-                        <h2>STEP 1: UPLOAD</h2>
-                        <p>Upload your by-name list for validation.</p>
+                        <h2>STEP 2: VALIDATE</h2>
+                        <p>Validate the by-name list file.</p>
                     </div>
 
                     <div class="step-content">
+                        <div class="validation">
 
-                        <form class='submission-form'>
-
-                            <section class="form-columns">
-
-                                <!-- Community Name -->
-                                <div class="form-field">
-                                    <div class="question-text">What is your community name? <b class='asterisk'>*</b>
+                            <!-- STEP 1: REQUIRED COLUMN HEADERS -->
+                            <div class="validation-step">
+                                <div class="validation-name" id="headers-name">1. Required column headers must be present.
+                                    <span>
+                                        <div class="toggle" id="headers-name-toggle">SHOW DETAILS ▼</div>
+                                    </span>
+                                </div>
+                                <div class="validation-symbol center headers-val-symbol">N/A</div>
+                                <div class="validation-info hide" id="headers-info">
+                                    <div class="info">
+                                        <h3>Requirement</h3>
+                                        <p>These 14 headers must be present anywhere in the <b>first row</b> of your upload file:</p>
+                                        <ul class="list">
+                                            <li>Date of Identification</li>
+                                            <li>Homeless Start Date</li>
+                                            <li>Housing Move-In Date</li>
+                                            <li>Inactive Date</li>
+                                            <li>Returned to Active Date</li>
+                                            <li>Age</li>
+                                            <li>Client / HMIS ID</li>
+                                            <li>BNL Status</li>
+                                            <li>Household Type</li>
+                                            <li>Chronic Status</li>
+                                            <li>Veteran Status</li>
+                                            <li>Ethnicity</li>
+                                            <li>Race</li>
+                                            <li>Gender</li>
+                                        </ul>
+                                        </list>
                                     </div>
-                                    <select class="input" name="Community" id="community-dropdown" placeholder="Select a Community">
-                                        <option>Select a Community</option>
-                                        <option>Arlington County CoC</option>
-                                        <option>Bakersfield/Kern County CoC</option>
-                                        <option>Watsonville/Santa Cruz City & County CoC</option>
-                                        <option>Richmond/Henrico, Chesterfield, Hanover Counties CoC</option>
-                                        <option>Jacksonville-Duval, Clay Counties CoC</option>
-                                    </select>
-                                </div>
-
-                                <!-- Reporting Date -->
-                                <div class="form-field">
-                                    <div class="form-label">
-                                        <div class="question-text">What date are you reporting for? <b class='asterisk'>*</b></span></div>
-                                        <input class="input" type="date" name="Reporting Date" id="date-input">
-                                    </div>
-                                </div>
-
-                                <!-- Your Name -->
-                                <div class="form-field">
-                                    <div class="question-text">What is your name? <b class='asterisk'>*</b></div>
-                                    <input class="input" name="Name" id="name-input" placeholder="Name of Contact Person">
-                                </div>
-
-                                <!-- Email -->
-                                <div class="form-field">
-                                    <div class="question-text">What is your email address? <b class='asterisk'>*</b></div>
-                                    <input class="input" type="email" name="Email" id="email-input" placeholder="example@email.com">
-                                </div>
-
-                                <!-- File picker -->
-                                <div class="form-field upload-file">
-                                    <div>
-                                        <label for="fileUpload" class="question-text input-file-label">Choose your by-name list file <b class='asterisk'>*</b></label>
-                                        <input type="file" id="filePicker" name="filePicker" accept=".csv">
+                                    <div class="result">
+                                        <div class="header-error"></div>
                                     </div>
                                 </div>
-                            </section>
-
-                            <!-- Validate button -->
-                            <div class="center">
-                                <button class="inactive" type='button' id="validateButton" disabled>VALIDATE FILE</button>
                             </div>
 
+                            <!-- STEP 2: NO PII HEADERS -->
+                            <div class="validation-step">
+                                <div class="validation-name" id="pii-name">
+                                    2. No headers for personally-identifiable information (PII).
+                                    <span>
+                                        <div class="toggle" id="pii-toggle">SHOW DETAILS ▼</div>
+                                    </span>
+                                </div>
+                                <div class="validation-symbol center pii-val-symbol">N/A</div>
+                                <div class="validation-info hide" id="pii-info">
+                                    <div class="info">
+                                        <h3>Requirement</h3>
+                                        <p>Your file cannot contain headers for <b>personally-identifiable information (PII)</b> such as:</p>
+                                        <ul>
+                                            <li>Social Security Number (SSN)</li>
+                                            <li>Name</li>
+                                            <li>Date of Birth</li>
+                                        </ul>
+                                    </div>
+                                    <div class="result">
+                                        <div class="pii-error"></div>
+                                    </div>
+                                </div>
+                            </div>
 
+                            <!-- STEP 3: NO SSN VALUES -->
+                            <div class="validation-step">
+                                <div class="validation-name" id="ssn-name">3. Data cannot contain Social Security Numbers.
+                                    <span>
+                                        <div class="toggle" id="ssn-name-toggle">SHOW DETAILS ▼</div>
+                                    </span>
+                                </div>
+                                <div class="validation-symbol center ssn-val-symbol">N/A</div>
+                                <div class="validation-info hide" id="ssn-info">
+                                    <div class="info">
+                                        <h3>Requirement</h3>
+                                        <p>Your data file cannot contain any Social Security Numbers (SSNs).</p>
+                                    </div>
+                                    <div class="result">
+                                        <div class="ssn-error"></div>
+                                    </div>
+                                </div>
+                            </div>
 
-                            <div class="validateBtn-msg helptext"></div>
+                        </div>
 
+                        <div class="center">
+                            <button class="inactive" type='button' id="aggregateButton" disabled>AGGREGATE DATA</button>
+                        </div>
+                        <div class="aggregateBtn-msg"></div>
                     </div>
 
-
-                    </form>
                 </section>
 
-            </section>
+                <section class="row2">
+                    <div class="step-header">
+                        <h2>STEP 3: AGGREGATE & SUBMIT</h2>
+                        <p>Aggregate your validated file and submit for reporting.</p>
+                    </div>
 
-            <section class="row2">
-
-                <section class="columns">
-                    <section class="column2">
-
-                        <div class="step-header">
-                            <h2>STEP 2: VALIDATE</h2>
-                            <p>Validate the by-name list file.</p>
+                    <div class="step-content">
+                        <div class='reporting-month'></div>
+                        <div class='reporting-community'></div>
+                        <div class='agg-table'>
+                            <div class='agg-header'>Subpopulation</div>
+                            <div class='agg-header'>Calculation</div>
+                            <div class='agg-header'>Result</div>
+                            <div class='agg-header'>Nulls</div>
                         </div>
 
-                        <div class="step-content">
-                            <div class="validation">
-
-                                <!-- STEP 1: REQUIRED COLUMN HEADERS -->
-                                <div class="validation-step">
-                                    <div class="validation-name" id="headers-name">1. Required column headers must be present.
-                                        <span>
-                                            <div class="toggle" id="headers-name-toggle">SHOW DETAILS ▼</div>
-                                        </span>
-                                    </div>
-                                    <div class="validation-symbol center headers-val-symbol">N/A</div>
-                                    <div class="validation-info hide" id="headers-info">
-                                        <div class="info">
-                                            <h3>Requirement</h3>
-                                            <p>These 14 headers must be present anywhere in the <b>first row</b> of your upload file:</p>
-                                            <ul class="list">
-                                                <li>Date of Identification</li>
-                                                <li>Homeless Start Date</li>
-                                                <li>Housing Move-In Date</li>
-                                                <li>Inactive Date</li>
-                                                <li>Returned to Active Date</li>
-                                                <li>Age</li>
-                                                <li>Client / HMIS ID</li>
-                                                <li>BNL Status</li>
-                                                <li>Household Type</li>
-                                                <li>Chronic Status</li>
-                                                <li>Veteran Status</li>
-                                                <li>Ethnicity</li>
-                                                <li>Race</li>
-                                                <li>Gender</li>
-                                            </ul>
-                                            </list>
-                                        </div>
-                                        <div class="result">
-                                            <div class="header-error"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- STEP 2: NO PII HEADERS -->
-                                <div class="validation-step">
-                                    <div class="validation-name" id="pii-name">
-                                        2. No headers for personally-identifiable information (PII).
-                                        <span>
-                                            <div class="toggle" id="pii-toggle">SHOW DETAILS ▼</div>
-                                        </span>
-                                    </div>
-                                    <div class="validation-symbol center pii-val-symbol">N/A</div>
-                                    <div class="validation-info hide" id="pii-info">
-                                        <div class="info">
-                                            <h3>Requirement</h3>
-                                            <p>Your file cannot contain headers for <b>personally-identifiable information (PII)</b> such as:</p>
-                                            <ul>
-                                                <li>Social Security Number (SSN)</li>
-                                                <li>Name</li>
-                                                <li>Date of Birth</li>
-                                            </ul>
-                                        </div>
-                                        <div class="result">
-                                            <div class="pii-error"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- STEP 3: NO SSN VALUES -->
-                                <div class="validation-step">
-                                    <div class="validation-name" id="ssn-name">3. Data cannot contain Social Security Numbers.
-                                        <span>
-                                            <div class="toggle" id="ssn-name-toggle">SHOW DETAILS ▼</div>
-                                        </span>
-                                    </div>
-                                    <div class="validation-symbol center ssn-val-symbol">N/A</div>
-                                    <div class="validation-info hide" id="ssn-info">
-                                        <div class="info">
-                                            <h3>Requirement</h3>
-                                            <p>Your data file cannot contain any Social Security Numbers (SSNs).</p>
-                                        </div>
-                                        <div class="result">
-                                            <div class="ssn-error"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            <div class="center">
-                                <button class="inactive" type='button' id="aggregateButton" disabled>AGGREGATE DATA</button>
-                            </div>
-                            <div class="aggregateBtn-msg"></div>
+                        <div class="center">
+                            <button class="inactive" type='button' id="submitButton" disabled>SUBMIT DATA</button>
                         </div>
-
-                    </section>
-
-                    <section class="column3">
-                        <div class="step-header">
-                            <h2>STEP 3: AGGREGATE & SUBMIT</h2>
-                            <p>Aggregate your validated file and submit for reporting.</p>
-                        </div>
-
-                        <div class="step-content">
-                            <div class='reporting-month'></div>
-                            <div class='reporting-community'></div>
-                            <div class='agg-table'>
-                                <div class='agg-header'>Subpopulation</div>
-                                <div class='agg-header'>Calculation</div>
-                                <div class='agg-header'>Result</div>
-                                <div class='agg-header'>Nulls</div>
-                            </div>
-
-                            <div class="center">
-                                <button class="inactive" type='button' id="submitButton" disabled>SUBMIT DATA</button>
-                            </div>
-                            <div class="submitBtn-msg"></div>
-                        </div>
-
-                    </section>
+                        <div class="submitBtn-msg"></div>
+                    </div>
 
                 </section>
-
             </section>
 
         </section>
+
+
+
+
 
     </div>
 

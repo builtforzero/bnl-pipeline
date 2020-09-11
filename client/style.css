@@ -74,22 +74,8 @@ button {
 
 .columns {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 2.2fr;
     column-gap: 15px;
-    margin: 0px;
-}
-
-.rows {
-    display: grid;
-    column-gap: 15px;
-    row-gap: 10px;
-    margin: 0px;
-}
-
-.form-columns {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    column-gap: 50px;
     margin: 0px;
 }
 
@@ -97,6 +83,10 @@ button {
     border: 1px solid grey;
     margin: 1%;
     padding: 5%;
+}
+
+.row1 {
+    margin: 0px 0px 15px 0px;
 }
 
 .step-header {
@@ -317,11 +307,4 @@ select {
         margin: 5px;
     }
 
-    .form-columns {
-        display: grid;
-        grid-template-columns: 1fr;
-        column-gap: 0px;
-        row-gap: 0px;
-        margin: 5px;
-    }
 }
