@@ -732,13 +732,21 @@ let aggButton = d3
     .on("click", function () {
         console.log("Submitting!")
         addMetadata(state, agg);
+        console.log("------------------------")
         console.log("Total Length", state.data_raw.length)
-        console.log("All Unique", calcAH(state.data_raw, "Unique", "Client ID"))
-        console.log("All AH", calcAH(state.data_raw, "All", "Client ID"))
-        console.log("Chronic AH", calcAH(state.data_raw, "Chronic", "Client ID"))
-        console.log("Veteran AH", calcAH(state.data_raw, "Veteran", "Client ID"))
-        console.log("Youth AH", calcAH(state.data_raw, "Youth", "Client ID"))
-        console.log("Family AH", calcAH(state.data_raw, "Family", "Client ID"))
+        console.log("All Unique", calcActivelyHomeless(state.data_raw, "Unique", "Client ID"))
+        console.log("All AH", calcActivelyHomeless(state.data_raw, "All", "Client ID"))
+        console.log("Chronic AH", calcActivelyHomeless(state.data_raw, "Chronic", "Client ID"))
+        console.log("Veteran AH", calcActivelyHomeless(state.data_raw, "Veteran", "Client ID"))
+        console.log("Youth AH", calcActivelyHomeless(state.data_raw, "Youth", "Client ID"))
+        console.log("Family AH", calcActivelyHomeless(state.data_raw, "Family", "Client ID"))
+        console.log("------------------------")
+        console.log("All HP", calcHousingPlacements(state.data_raw, "All", "Client ID"))
+        console.log("Chronic HP", calcHousingPlacements(state.data_raw, "Chronic", "Client ID"))
+        console.log("Veteran HP", calcHousingPlacements(state.data_raw, "Veteran", "Client ID"))
+        console.log("Youth HP", calcHousingPlacements(state.data_raw, "Youth", "Client ID"))
+        console.log("Family HP", calcHousingPlacements(state.data_raw, "Family", "Client ID"))
+        console.log("------------------------")
     });
 
 function pushToArr(value, length, location) {
@@ -767,12 +775,13 @@ function addMetadata(state, agg) {
     pushToArr(state.form_email, len, agg.email);
 }
 
-function calcAH(data, target, uniqueCol) {
-
+function calcActivelyHomeless(data, target, uniqueCol) {
+    // All unique
     if (target === "Unique") {
         const uniqueArray = script.getColByName(data, uniqueCol);
         return new Set(uniqueArray).size;
 
+        // All
     } else if (target === "All") {
         const filtered = data.filter(d => {
             return d['BNL Status'] === "Active"
@@ -780,6 +789,7 @@ function calcAH(data, target, uniqueCol) {
         const uniqueArray = script.getColByName(filtered, uniqueCol);
         return new Set(uniqueArray).size;
 
+        // Veteran
     } else if (target === "Veteran") {
         const filtered = data.filter(d => {
             return d['BNL Status'] === "Active" &&
@@ -789,6 +799,7 @@ function calcAH(data, target, uniqueCol) {
         const uniqueArray = script.getColByName(filtered, uniqueCol);
         return new Set(uniqueArray).size;
 
+        // Chronic
     } else if (target === "Chronic") {
         const filtered = data.filter(d => {
             return d['BNL Status'] === "Active" &&
@@ -798,6 +809,7 @@ function calcAH(data, target, uniqueCol) {
         const uniqueArray = script.getColByName(filtered, uniqueCol);
         return new Set(uniqueArray).size;
 
+        // Youth
     } else if (target === "Youth") {
         const filtered = data.filter(d => {
             return d['BNL Status'] === "Active" &&
@@ -806,9 +818,70 @@ function calcAH(data, target, uniqueCol) {
         const uniqueArray = script.getColByName(filtered, uniqueCol);
         return new Set(uniqueArray).size;
 
+        // Family
     } else if (target === "Family") {
         const filtered = data.filter(d => {
             return d['BNL Status'] === "Active" &&
+                d['Household Type'] === "Family"
+        })
+        const uniqueArray = script.getColByName(filtered, uniqueCol);
+        return new Set(uniqueArray).size;
+
+    } else return "Incorrect target chosen"
+}
+
+function calcHousingPlacements(data, target, uniqueCol) {
+    // time formatters
+    let formatMY = d3.timeFormat("%B %Y");
+    let parseYmd = d3.timeParse("%Y-%m-%d");
+    let parsedmY = d3.timeParse("%m/%d/%Y");
+    // All
+    if (target === "All") {
+        const filtered = data.filter(d => {
+            return d['Housing Move-In Date'] != null &&
+                formatMY(parsedmY(d['Housing Move-In Date'])) === formatMY(parseYmd(state.form_reporting_date))
+        })
+        const uniqueArray = script.getColByName(filtered, uniqueCol);
+        return new Set(uniqueArray).size;
+
+
+        // Veteran
+    } else if (target === "Veteran") {
+        const filtered = data.filter(d => {
+            return d['Housing Move-In Date'] != null &&
+                formatMY(parsedmY(d['Housing Move-In Date'])) === formatMY(parseYmd(state.form_reporting_date)) &&
+                d['Household Type'] === "Single Adult" &&
+                d['Veteran Status'] === "Yes Validated"
+        })
+        const uniqueArray = script.getColByName(filtered, uniqueCol);
+        return new Set(uniqueArray).size;
+
+        // Chronic
+    } else if (target === "Chronic") {
+        const filtered = data.filter(d => {
+            return d['Housing Move-In Date'] != null &&
+                formatMY(parsedmY(d['Housing Move-In Date'])) === formatMY(parseYmd(state.form_reporting_date)) &&
+                d['Household Type'] === "Single Adult" &&
+                d['Chronic Status'] === "Chronically Homeless"
+        })
+        const uniqueArray = script.getColByName(filtered, uniqueCol);
+        return new Set(uniqueArray).size;
+
+        // Youth
+    } else if (target === "Youth") {
+        const filtered = data.filter(d => {
+            return d['Housing Move-In Date'] != null &&
+                formatMY(parsedmY(d['Housing Move-In Date'])) === formatMY(parseYmd(state.form_reporting_date)) &&
+                d['Household Type'] === "Youth"
+        })
+        const uniqueArray = script.getColByName(filtered, uniqueCol);
+        return new Set(uniqueArray).size;
+
+        // Family
+    } else if (target === "Family") {
+        const filtered = data.filter(d => {
+            return d['Housing Move-In Date'] != null &&
+                formatMY(parsedmY(d['Housing Move-In Date'])) === formatMY(parseYmd(state.form_reporting_date)) &&
                 d['Household Type'] === "Family"
         })
         const uniqueArray = script.getColByName(filtered, uniqueCol);
