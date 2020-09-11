@@ -204,12 +204,6 @@ let eventListeners = {
             });
         }),
 
-    // Reupload button
-    reupload: d3.select(".aggregateBtn-msg")
-        .on("click", function () {
-            location.reload();
-        }),
-
 
     // Validate button
     validateButton: d3
@@ -600,7 +594,6 @@ function checkFormStatus() {
         d3.select("#validateButton").classed("active", false);
         d3.select("#validateButton").attr("disabled", true);
         d3.select(".validateBtn-msg").html("Please fill in all required fields to continue.");
-        d3.select(".aggregateBtn-msg").html("");
     } else if (
         state.form_community_clean != null &&
         state.form_reporting_date != null &&
@@ -612,9 +605,7 @@ function checkFormStatus() {
         d3.select("#validateButton").classed("inactive", false);
         d3.select("#validateButton").classed("active", true);
         d3.select("#validateButton").attr("disabled", null);
-
         d3.select(".validateBtn-msg").text("");
-        d3.select(".aggregateBtn-msg").text("");
     }
 }
 
@@ -638,15 +629,9 @@ function checkTestStatus() {
         d3.select("#aggregateButton").classed("active", false);
         d3.select("#aggregateButton").attr("disabled", true);
         d3.select("#aggregateButton").classed("hide", true);
+        d3.select("#reupload-button").classed("hide", false);
         // Reset values
         resetValues();
-        // Add a reupload button instead
-        d3.select(".aggregateBtn-msg").html(`
-        <div class='center' style='margin:15px;'>
-        <button class='waiting' id='reupload-button'>
-            REUPLOAD CORRECTED FILE &nbsp &#8630
-        </button>
-        </div>`);
     } else if (
         state.check_headers === true &&
         state.check_pii === true &&
@@ -658,19 +643,19 @@ function checkTestStatus() {
         d3.select("#aggregateButton").classed("active", true);
         d3.select("#aggregateButton").attr("disabled", null);
         d3.select("#aggregateButton").classed("hide", false);
-        // Replace the error helptext
-        d3.select(".aggregateBtn-msg").html(`
-        <div class='center'>
-        <button class='waiting' id='reupload-button'>
-        REUPLOAD CORRECTED FILE &nbsp &#8630
-        </button>
-        </div>`);
+        d3.select("#reupload-button").classed("hide", true);
+
         // Inactivate the validate button
         d3.select("#validateButton").classed("inactive", true);
         d3.select("#validateButton").classed("active", false);
         d3.select("#validateButton").attr("disabled", true);
     }
 }
+
+d3.select("#reupload-button")
+    .on("click", function () {
+        location.reload();
+    })
 
 // ["All", "Single Adult Veteran", "Single Adult Chronic", "Youth", "Family"],
 
@@ -896,82 +881,82 @@ function aggregate() {
     /* ALL */
     all.AH = calcAH(state.data_raw, "All", "Client ID")[0];
     all.AH_null = calcAH(state.data_raw, "All", "Client ID")[1];
-    all.AvgTime = null;
-    all.AvgTime_null = null;
-    all.HP = dateCalc(state.data_raw, "All", "Housing Move-In Date", "Client ID")[0];
-    all.HP_null = dateCalc(state.data_raw, "All", "Housing Move-In Date", "Client ID")[1];
-    all.Inactive = dateCalc(state.data_raw, "All", "Inactive Date", "Client ID")[0];
-    all.Inactive_null = dateCalc(state.data_raw, "All", "Inactive Date", "Client ID")[1];
-    all.NewId = dateCalc(state.data_raw, "All", "Date of Identification", "Client ID")[0];
-    all.NewId_null = dateCalc(state.data_raw, "All", "Date of Identification", "Client ID")[1];
-    all.RetHousing = calcRetHousing(state.data_raw, "All", "Returned to Active Date", "Housing Move-In Date", "Client ID")[0];
-    all.RetHousing_null = calcRetHousing(state.data_raw, "All", "Returned to Active Date", "Housing Move-In Date", "Client ID")[1];
-    all.RetInactive = null;
-    all.RetInactive_null = null;
+    all.AvgTime = calcLOT(state.data_raw, "All", "Housing Move-In Date", "Date of Identification");
+    all.AvgTime_null = "N/A";
+    all.HP = calcDate(state.data_raw, "All", "Housing Move-In Date", "Client ID")[0];
+    all.HP_null = calcDate(state.data_raw, "All", "Housing Move-In Date", "Client ID")[1];
+    all.Inactive = calcDate(state.data_raw, "All", "Inactive Date", "Client ID")[0];
+    all.Inactive_null = calcDate(state.data_raw, "All", "Inactive Date", "Client ID")[1];
+    all.NewId = calcDate(state.data_raw, "All", "Date of Identification", "Client ID")[0];
+    all.NewId_null = calcDate(state.data_raw, "All", "Date of Identification", "Client ID")[1];
+    all.RetHousing = calcReturn(state.data_raw, "All", "Returned to Active Date", "Housing Move-In Date", "Client ID")[0];
+    all.RetHousing_null = calcReturn(state.data_raw, "All", "Returned to Active Date", "Housing Move-In Date", "Client ID")[1];
+    all.RetInactive = calcReturn(state.data_raw, "All", "Returned to Active Date", "Inactive Date", "Client ID")[0];
+    all.RetInactive_null = calcReturn(state.data_raw, "All", "Returned to Active Date", "Inactive Date", "Client ID")[1];
 
     /* CHRONIC */
     chronic.AH = calcAH(state.data_raw, "Chronic", "Client ID")[0];
     chronic.AH_null = calcAH(state.data_raw, "Chronic", "Client ID")[1];
-    chronic.AvgTime = null;
-    chronic.AvgTime_null = null;
-    chronic.HP = dateCalc(state.data_raw, "Chronic", "Housing Move-In Date", "Client ID")[0];
-    chronic.HP_null = dateCalc(state.data_raw, "Chronic", "Housing Move-In Date", "Client ID")[1];
-    chronic.Inactive = dateCalc(state.data_raw, "Chronic", "Inactive Date", "Client ID")[0];
-    chronic.Inactive_null = dateCalc(state.data_raw, "Chronic", "Inactive Date", "Client ID")[1];
-    chronic.NewId = dateCalc(state.data_raw, "Chronic", "Date of Identification", "Client ID")[0];
-    chronic.NewId_null = dateCalc(state.data_raw, "Chronic", "Date of Identification", "Client ID")[1];
-    chronic.RetHousing = calcRetHousing(state.data_raw, "Chronic", "Returned to Active Date", "Housing Move-In Date", "Client ID")[0];
-    chronic.RetHousing_null = calcRetHousing(state.data_raw, "Chronic", "Returned to Active Date", "Housing Move-In Date", "Client ID")[1];
-    chronic.RetInactive = null;
-    chronic.RetInactive_null = null;
+    chronic.AvgTime = calcLOT(state.data_raw, "Chronic", "Housing Move-In Date", "Date of Identification");
+    chronic.AvgTime_null = "N/A";
+    chronic.HP = calcDate(state.data_raw, "Chronic", "Housing Move-In Date", "Client ID")[0];
+    chronic.HP_null = calcDate(state.data_raw, "Chronic", "Housing Move-In Date", "Client ID")[1];
+    chronic.Inactive = calcDate(state.data_raw, "Chronic", "Inactive Date", "Client ID")[0];
+    chronic.Inactive_null = calcDate(state.data_raw, "Chronic", "Inactive Date", "Client ID")[1];
+    chronic.NewId = calcDate(state.data_raw, "Chronic", "Date of Identification", "Client ID")[0];
+    chronic.NewId_null = calcDate(state.data_raw, "Chronic", "Date of Identification", "Client ID")[1];
+    chronic.RetHousing = calcReturn(state.data_raw, "Chronic", "Returned to Active Date", "Housing Move-In Date", "Client ID")[0];
+    chronic.RetHousing_null = calcReturn(state.data_raw, "Chronic", "Returned to Active Date", "Housing Move-In Date", "Client ID")[1];
+    chronic.RetInactive = calcReturn(state.data_raw, "Chronic", "Returned to Active Date", "Inactive Date", "Client ID")[0];
+    chronic.RetInactive_null = calcReturn(state.data_raw, "Chronic", "Returned to Active Date", "Inactive Date", "Client ID")[1];
 
     /* VETERAN */
     veteran.AH = calcAH(state.data_raw, "Veteran", "Client ID")[0];
     veteran.AH_null = calcAH(state.data_raw, "Veteran", "Client ID")[1];
-    veteran.AvgTime = null;
-    veteran.AvgTime_null = null;
-    veteran.HP = dateCalc(state.data_raw, "Veteran", "Housing Move-In Date", "Client ID")[0];
-    veteran.HP_null = dateCalc(state.data_raw, "Veteran", "Housing Move-In Date", "Client ID")[1];
-    veteran.Inactive = dateCalc(state.data_raw, "Veteran", "Inactive Date", "Client ID")[0];
-    veteran.Inactive_null = dateCalc(state.data_raw, "Veteran", "Inactive Date", "Client ID")[1];
-    veteran.NewId = dateCalc(state.data_raw, "Veteran", "Date of Identification", "Client ID")[0];
-    veteran.NewId_null = dateCalc(state.data_raw, "Veteran", "Date of Identification", "Client ID")[1];
-    veteran.RetHousing = calcRetHousing(state.data_raw, "Veteran", "Returned to Active Date", "Housing Move-In Date", "Client ID")[0];
-    veteran.RetHousing_null = calcRetHousing(state.data_raw, "Veteran", "Returned to Active Date", "Housing Move-In Date", "Client ID")[1];
-    veteran.RetInactive = null;
-    veteran.RetInactive_null = null;
+    veteran.AvgTime = calcLOT(state.data_raw, "Veteran", "Housing Move-In Date", "Date of Identification");
+    veteran.AvgTime_null = "N/A";
+    veteran.HP = calcDate(state.data_raw, "Veteran", "Housing Move-In Date", "Client ID")[0];
+    veteran.HP_null = calcDate(state.data_raw, "Veteran", "Housing Move-In Date", "Client ID")[1];
+    veteran.Inactive = calcDate(state.data_raw, "Veteran", "Inactive Date", "Client ID")[0];
+    veteran.Inactive_null = calcDate(state.data_raw, "Veteran", "Inactive Date", "Client ID")[1];
+    veteran.NewId = calcDate(state.data_raw, "Veteran", "Date of Identification", "Client ID")[0];
+    veteran.NewId_null = calcDate(state.data_raw, "Veteran", "Date of Identification", "Client ID")[1];
+    veteran.RetHousing = calcReturn(state.data_raw, "Veteran", "Returned to Active Date", "Housing Move-In Date", "Client ID")[0];
+    veteran.RetHousing_null = calcReturn(state.data_raw, "Veteran", "Returned to Active Date", "Housing Move-In Date", "Client ID")[1];
+    veteran.RetInactive = calcReturn(state.data_raw, "Veteran", "Returned to Active Date", "Inactive Date", "Client ID")[0];
+    veteran.RetInactive_null = calcReturn(state.data_raw, "Veteran", "Returned to Active Date", "Inactive Date", "Client ID")[1];
 
     /* YOUTH */
     youth.AH = calcAH(state.data_raw, "Youth", "Client ID")[0];
     youth.AH_null = calcAH(state.data_raw, "Youth", "Client ID")[1];
-    youth.AvgTime = null;
-    youth.AvgTime_null = null;
-    youth.HP = dateCalc(state.data_raw, "Youth", "Housing Move-In Date", "Client ID")[0];
-    youth.HP_null = dateCalc(state.data_raw, "Youth", "Housing Move-In Date", "Client ID")[1];
-    youth.Inactive = dateCalc(state.data_raw, "Youth", "Inactive Date", "Client ID")[0];
-    youth.Inactive_null = dateCalc(state.data_raw, "Youth", "Inactive Date", "Client ID")[1];
-    youth.NewId = dateCalc(state.data_raw, "Youth", "Date of Identification", "Client ID")[0];
-    youth.NewId_null = dateCalc(state.data_raw, "Youth", "Date of Identification", "Client ID")[1];
-    youth.RetHousing = calcRetHousing(state.data_raw, "Youth", "Returned to Active Date", "Housing Move-In Date", "Client ID")[0];
-    youth.RetHousing_null = calcRetHousing(state.data_raw, "Youth", "Returned to Active Date", "Housing Move-In Date", "Client ID")[1];
-    youth.RetInactive = null;
-    youth.RetInactive_null = null;
+    youth.AvgTime = calcLOT(state.data_raw, "Youth", "Housing Move-In Date", "Date of Identification");
+    youth.AvgTime_null = "N/A";
+    youth.HP = calcDate(state.data_raw, "Youth", "Housing Move-In Date", "Client ID")[0];
+    youth.HP_null = calcDate(state.data_raw, "Youth", "Housing Move-In Date", "Client ID")[1];
+    youth.Inactive = calcDate(state.data_raw, "Youth", "Inactive Date", "Client ID")[0];
+    youth.Inactive_null = calcDate(state.data_raw, "Youth", "Inactive Date", "Client ID")[1];
+    youth.NewId = calcDate(state.data_raw, "Youth", "Date of Identification", "Client ID")[0];
+    youth.NewId_null = calcDate(state.data_raw, "Youth", "Date of Identification", "Client ID")[1];
+    youth.RetHousing = calcReturn(state.data_raw, "Youth", "Returned to Active Date", "Housing Move-In Date", "Client ID")[0];
+    youth.RetHousing_null = calcReturn(state.data_raw, "Youth", "Returned to Active Date", "Housing Move-In Date", "Client ID")[1];
+    youth.RetInactive = calcReturn(state.data_raw, "Youth", "Returned to Active Date", "Inactive Date", "Client ID")[0];
+    youth.RetInactive_null = calcReturn(state.data_raw, "Youth", "Returned to Active Date", "Inactive Date", "Client ID")[1];
 
     /* FAMILY */
     family.AH = calcAH(state.data_raw, "Family", "Client ID")[0];
     family.AH_null = calcAH(state.data_raw, "Family", "Client ID")[1];
-    family.AvgTime = null;
-    family.AvgTime_null = null;
-    family.HP = dateCalc(state.data_raw, "Family", "Housing Move-In Date", "Client ID")[0];
-    family.HP_null = dateCalc(state.data_raw, "Family", "Housing Move-In Date", "Client ID")[1];
-    family.Inactive = dateCalc(state.data_raw, "Family", "Inactive Date", "Client ID")[0];
-    family.Inactive_null = dateCalc(state.data_raw, "Family", "Inactive Date", "Client ID")[1];
-    family.NewId = dateCalc(state.data_raw, "Family", "Date of Identification", "Client ID")[0];
-    family.NewId_null = dateCalc(state.data_raw, "Family", "Date of Identification", "Client ID")[1];
-    family.RetHousing = calcRetHousing(state.data_raw, "Family", "Returned to Active Date", "Housing Move-In Date", "Client ID")[0];
-    family.RetHousing_null = calcRetHousing(state.data_raw, "Family", "Returned to Active Date", "Housing Move-In Date", "Client ID")[1];
-    family.RetInactive = null;
-    family.RetInactive_null = null;
+    family.AvgTime = calcLOT(state.data_raw, "Family", "Housing Move-In Date", "Date of Identification");
+    family.AvgTime_null = "N/A";
+    family.HP = calcDate(state.data_raw, "Family", "Housing Move-In Date", "Client ID")[0];
+    family.HP_null = calcDate(state.data_raw, "Family", "Housing Move-In Date", "Client ID")[1];
+    family.Inactive = calcDate(state.data_raw, "Family", "Inactive Date", "Client ID")[0];
+    family.Inactive_null = calcDate(state.data_raw, "Family", "Inactive Date", "Client ID")[1];
+    family.NewId = calcDate(state.data_raw, "Family", "Date of Identification", "Client ID")[0];
+    family.NewId_null = calcDate(state.data_raw, "Family", "Date of Identification", "Client ID")[1];
+    family.RetHousing = calcReturn(state.data_raw, "Family", "Returned to Active Date", "Housing Move-In Date", "Client ID")[0];
+    family.RetHousing_null = calcReturn(state.data_raw, "Family", "Returned to Active Date", "Housing Move-In Date", "Client ID")[1];
+    family.RetInactive = calcReturn(state.data_raw, "Family", "Returned to Active Date", "Inactive Date", "Client ID")[0];
+    family.RetInactive_null = calcReturn(state.data_raw, "Family", "Returned to Active Date", "Inactive Date", "Client ID")[1];
 
 
     /* PRINT */
@@ -981,8 +966,8 @@ function aggregate() {
     printValue("All", "Moved to Inactive", all.Inactive, all.Inactive_null)
     printValue("All", "Newly Identified Inflow", all.NewId, all.NewId_null)
     printValue("All", "Returned to Active from Housing", all.RetHousing, all.RetHousing_null)
-    printValue("All", "Returned to Active from Inactive", "", "")
-    printValue("All", "Length of Time from ID to Housing", "", "")
+    printValue("All", "Returned to Active from Inactive", all.RetInactive, all.RetInactive_null)
+    printValue("All", "Length of Time from ID to Housing", all.AvgTime, all.AvgTime_null)
 
     printHeader("Chronic")
     printValue("Chronic", "Actively Homeless", chronic.AH, chronic.AH_null)
@@ -990,8 +975,8 @@ function aggregate() {
     printValue("Chronic", "Moved to Inactive", chronic.Inactive, chronic.Inactive_null)
     printValue("Chronic", "Newly Identified Inflow", chronic.NewId, chronic.NewId_null)
     printValue("Chronic", "Returned to Active from Housing", chronic.RetHousing, chronic.RetHousing_null)
-    printValue("Chronic", "Returned to Active from Inactive", "", "")
-    printValue("Chronic", "Length of Time from ID to Housing", "", "")
+    printValue("Chronic", "Returned to Active from Inactive", chronic.RetInactive, chronic.RetInactive_null)
+    printValue("Chronic", "Length of Time from ID to Housing", chronic.AvgTime, chronic.AvgTime_null)
 
     printHeader("Veteran")
     printValue("Veteran", "Actively Homeless", veteran.AH, veteran.AH_null)
@@ -999,8 +984,8 @@ function aggregate() {
     printValue("Veteran", "Moved to Inactive", veteran.Inactive, veteran.Inactive_null)
     printValue("Veteran", "Newly Identified Inflow", veteran.NewId, veteran.NewId_null)
     printValue("Veteran", "Returned to Active from Housing", veteran.RetHousing, veteran.RetHousing_null)
-    printValue("Veteran", "Returned to Active from Inactive", "", "")
-    printValue("Veteran", "Length of Time from ID to Housing", "", "")
+    printValue("Veteran", "Returned to Active from Inactive", veteran.RetInactive, veteran.RetInactive_null)
+    printValue("Veteran", "Length of Time from ID to Housing", veteran.AvgTime, veteran.AvgTime_null)
 
     printHeader("Youth")
     printValue("Youth", "Actively Homeless", youth.AH, youth.AH_null)
@@ -1008,8 +993,8 @@ function aggregate() {
     printValue("Youth", "Moved to Inactive", youth.Inactive, youth.Inactive_null)
     printValue("Youth", "Newly Identified Inflow", youth.NewId, youth.NewId_null)
     printValue("Youth", "Returned to Active from Housing", youth.RetHousing, youth.RetHousing_null)
-    printValue("Youth", "Returned to Active from Inactive", "", "")
-    printValue("Youth", "Length of Time from ID to Housing", "", "")
+    printValue("Youth", "Returned to Active from Inactive", youth.RetInactive, youth.RetInactive_null)
+    printValue("Youth", "Length of Time from ID to Housing", youth.AvgTime, youth.AvgTime_null)
 
     printHeader("Family")
     printValue("Family", "Actively Homeless", family.AH, family.AH_null)
@@ -1017,8 +1002,8 @@ function aggregate() {
     printValue("Family", "Moved to Inactive", family.Inactive, family.Inactive_null)
     printValue("Family", "Newly Identified Inflow", family.NewId, family.NewId_null)
     printValue("Family", "Returned to Active from Housing", family.RetHousing, family.RetHousing_null)
-    printValue("Family", "Returned to Active from Inactive", "", "")
-    printValue("Family", "Length of Time from ID to Housing", "", "")
+    printValue("Family", "Returned to Active from Inactive", family.RetInactive, family.RetInactive_null)
+    printValue("Family", "Length of Time from ID to Housing", family.AvgTime, family.AvgTime_null)
 
 }
 
@@ -1120,7 +1105,7 @@ function calcAH(data, target, uniqueCol) {
 /*  
 COMPARE A MONTH / YEAR TO THE REPORTING MONTH / YEAR
 */
-function dateCalc(data, target, comparisonDate, uniqueCol) {
+function calcDate(data, target, comparisonDate, uniqueCol) {
 
     // All
     if (target === "All") {
@@ -1234,9 +1219,9 @@ function dateCalc(data, target, comparisonDate, uniqueCol) {
 }
 
 /* 
-RETURNED TO ACTIVE FROM HOUSING 
+RETURNED TO ACTIVE FROM HOUSING & INACTIVE
 */
-function calcRetHousing(data, target, returnDateCol, moveInDateCol, uniqueCol) {
+function calcReturn(data, target, returnDateCol, comparisonCol, uniqueCol) {
 
     // All
     if (target === "All") {
@@ -1244,16 +1229,16 @@ function calcRetHousing(data, target, returnDateCol, moveInDateCol, uniqueCol) {
             return d[returnDateCol] != null &&
                 script.format_MY(script.parse_dmY(d[returnDateCol])) ===
                 script.format_MY(script.parse_Ymd(state.form_reporting_date)) &&
-                script.parse_dmY(d[moveInDateCol]) != null &&
-                script.parse_dmY(d[returnDateCol]) > script.parse_dmY(d[moveInDateCol])
+                script.parse_dmY(d[comparisonCol]) != null &&
+                script.parse_dmY(d[returnDateCol]) > script.parse_dmY(d[comparisonCol])
         })
 
         const nulls = data.filter(d => {
             return d[returnDateCol] === null ||
                 script.format_MY(script.parse_dmY(d[returnDateCol])) !=
                 script.format_MY(script.parse_Ymd(state.form_reporting_date)) ||
-                script.parse_dmY(d[moveInDateCol]) === null ||
-                script.parse_dmY(d[returnDateCol]) <= script.parse_dmY(d[moveInDateCol])
+                script.parse_dmY(d[comparisonCol]) === null ||
+                script.parse_dmY(d[returnDateCol]) <= script.parse_dmY(d[comparisonCol])
         })
 
         const uniqueArray = script.getColByName(filtered, uniqueCol);
@@ -1267,8 +1252,8 @@ function calcRetHousing(data, target, returnDateCol, moveInDateCol, uniqueCol) {
             return d[returnDateCol] != null &&
                 script.format_MY(script.parse_dmY(d[returnDateCol])) ===
                 script.format_MY(script.parse_Ymd(state.form_reporting_date)) &&
-                script.parse_dmY(d[moveInDateCol]) != null &&
-                script.parse_dmY(d[returnDateCol]) > script.parse_dmY(d[moveInDateCol]) &&
+                script.parse_dmY(d[comparisonCol]) != null &&
+                script.parse_dmY(d[returnDateCol]) > script.parse_dmY(d[comparisonCol]) &&
                 d['Household Type'] === "Single Adult" &&
                 d['Veteran Status'] === "Yes Validated"
         })
@@ -1277,8 +1262,8 @@ function calcRetHousing(data, target, returnDateCol, moveInDateCol, uniqueCol) {
             return d[returnDateCol] === null ||
                 script.format_MY(script.parse_dmY(d[returnDateCol])) !=
                 script.format_MY(script.parse_Ymd(state.form_reporting_date)) ||
-                script.parse_dmY(d[moveInDateCol]) === null ||
-                script.parse_dmY(d[returnDateCol]) <= script.parse_dmY(d[moveInDateCol]) &&
+                script.parse_dmY(d[comparisonCol]) === null ||
+                script.parse_dmY(d[returnDateCol]) <= script.parse_dmY(d[comparisonCol]) &&
                 d['Household Type'] === "Single Adult" &&
                 d['Veteran Status'] === "Yes Validated"
         })
@@ -1293,8 +1278,8 @@ function calcRetHousing(data, target, returnDateCol, moveInDateCol, uniqueCol) {
             return d[returnDateCol] != null &&
                 script.format_MY(script.parse_dmY(d[returnDateCol])) ===
                 script.format_MY(script.parse_Ymd(state.form_reporting_date)) &&
-                script.parse_dmY(d[moveInDateCol]) != null &&
-                script.parse_dmY(d[returnDateCol]) > script.parse_dmY(d[moveInDateCol]) &&
+                script.parse_dmY(d[comparisonCol]) != null &&
+                script.parse_dmY(d[returnDateCol]) > script.parse_dmY(d[comparisonCol]) &&
                 d['Household Type'] === "Single Adult" &&
                 d['Chronic Status'] === "Chronically Homeless"
         })
@@ -1303,8 +1288,8 @@ function calcRetHousing(data, target, returnDateCol, moveInDateCol, uniqueCol) {
             return d[returnDateCol] === null ||
                 script.format_MY(script.parse_dmY(d[returnDateCol])) !=
                 script.format_MY(script.parse_Ymd(state.form_reporting_date)) ||
-                script.parse_dmY(d[moveInDateCol]) === null ||
-                script.parse_dmY(d[returnDateCol]) <= script.parse_dmY(d[moveInDateCol]) &&
+                script.parse_dmY(d[comparisonCol]) === null ||
+                script.parse_dmY(d[returnDateCol]) <= script.parse_dmY(d[comparisonCol]) &&
                 d['Household Type'] === "Single Adult" &&
                 d['Chronic Status'] === "Chronically Homeless"
         })
@@ -1321,8 +1306,8 @@ function calcRetHousing(data, target, returnDateCol, moveInDateCol, uniqueCol) {
             return d[returnDateCol] != null &&
                 script.format_MY(script.parse_dmY(d[returnDateCol])) ===
                 script.format_MY(script.parse_Ymd(state.form_reporting_date)) &&
-                script.parse_dmY(d[moveInDateCol]) != null &&
-                script.parse_dmY(d[returnDateCol]) > script.parse_dmY(d[moveInDateCol]) &&
+                script.parse_dmY(d[comparisonCol]) != null &&
+                script.parse_dmY(d[returnDateCol]) > script.parse_dmY(d[comparisonCol]) &&
                 d['Household Type'] === "Youth"
         })
 
@@ -1330,8 +1315,8 @@ function calcRetHousing(data, target, returnDateCol, moveInDateCol, uniqueCol) {
             return d[returnDateCol] === null ||
                 script.format_MY(script.parse_dmY(d[returnDateCol])) !=
                 script.format_MY(script.parse_Ymd(state.form_reporting_date)) ||
-                script.parse_dmY(d[moveInDateCol]) === null ||
-                script.parse_dmY(d[returnDateCol]) <= script.parse_dmY(d[moveInDateCol]) &&
+                script.parse_dmY(d[comparisonCol]) === null ||
+                script.parse_dmY(d[returnDateCol]) <= script.parse_dmY(d[comparisonCol]) &&
                 d['Household Type'] === "Youth"
         })
 
@@ -1346,8 +1331,8 @@ function calcRetHousing(data, target, returnDateCol, moveInDateCol, uniqueCol) {
             return d[returnDateCol] != null &&
                 script.format_MY(script.parse_dmY(d[returnDateCol])) ===
                 script.format_MY(script.parse_Ymd(state.form_reporting_date)) &&
-                script.parse_dmY(d[moveInDateCol]) != null &&
-                script.parse_dmY(d[returnDateCol]) > script.parse_dmY(d[moveInDateCol]) &&
+                script.parse_dmY(d[comparisonCol]) != null &&
+                script.parse_dmY(d[returnDateCol]) > script.parse_dmY(d[comparisonCol]) &&
                 d['Household Type'] === "Family"
         })
 
@@ -1355,8 +1340,8 @@ function calcRetHousing(data, target, returnDateCol, moveInDateCol, uniqueCol) {
             return d[returnDateCol] === null ||
                 script.format_MY(script.parse_dmY(d[returnDateCol])) !=
                 script.format_MY(script.parse_Ymd(state.form_reporting_date)) ||
-                script.parse_dmY(d[moveInDateCol]) === null ||
-                script.parse_dmY(d[returnDateCol]) <= script.parse_dmY(d[moveInDateCol]) &&
+                script.parse_dmY(d[comparisonCol]) === null ||
+                script.parse_dmY(d[returnDateCol]) <= script.parse_dmY(d[comparisonCol]) &&
                 d['Household Type'] === "Family"
         })
 
@@ -1369,6 +1354,125 @@ function calcRetHousing(data, target, returnDateCol, moveInDateCol, uniqueCol) {
 
 }
 
+/* CALCULATE LENGTH OF TIME */
+function calcLOT(data, target, comparisonCol, idCol) {
+
+    // All
+    if (target === "All") {
+        const filtered = data.filter(d => {
+            return d[comparisonCol] != null &&
+                d[idCol] != null &&
+                script.format_MY(script.parse_dmY(d[comparisonCol])) ===
+                script.format_MY(script.parse_Ymd(state.form_reporting_date))
+        })
+
+        const moveInDateValues = script.getColByName(filtered, comparisonCol);
+        const idDateValues = script.getColByName(filtered, idCol);
+        const diffValues = [];
+
+        for (let row = 0; row < filtered.length; row++) {
+            const diff = script.parse_dmY(moveInDateValues[row]) - script.parse_dmY(idDateValues[row])
+            diffValues.push(Math.ceil(diff / (1000 * 60 * 60 * 24)));
+        }
+
+        const average = Math.floor(diffValues.reduce((a, b) => a + b, 0) / diffValues.length);
+        return average;
+
+
+        // Veteran
+    } else if (target === "Veteran") {
+        const filtered = data.filter(d => {
+            return d[comparisonCol] != null &&
+                d[idCol] != null &&
+                script.format_MY(script.parse_dmY(d[comparisonCol])) ===
+                script.format_MY(script.parse_Ymd(state.form_reporting_date)) &&
+                d['Household Type'] === "Single Adult" &&
+                d['Veteran Status'] === "Yes Validated"
+        })
+
+        const moveInDateValues = script.getColByName(filtered, comparisonCol);
+        const idDateValues = script.getColByName(filtered, idCol);
+        const diffValues = [];
+
+        for (let row = 0; row < filtered.length; row++) {
+            const diff = script.parse_dmY(moveInDateValues[row]) - script.parse_dmY(idDateValues[row])
+            diffValues.push(Math.ceil(diff / (1000 * 60 * 60 * 24)));
+        }
+
+        const average = Math.floor(diffValues.reduce((a, b) => a + b, 0) / diffValues.length);
+        return average;
+
+        // Chronic
+    } else if (target === "Chronic") {
+        const filtered = data.filter(d => {
+            return d[comparisonCol] != null &&
+                d[idCol] != null &&
+                script.format_MY(script.parse_dmY(d[comparisonCol])) ===
+                script.format_MY(script.parse_Ymd(state.form_reporting_date)) &&
+                d['Household Type'] === "Single Adult" &&
+                d['Chronic Status'] === "Chronically Homeless"
+        })
+
+        const moveInDateValues = script.getColByName(filtered, comparisonCol);
+        const idDateValues = script.getColByName(filtered, idCol);
+        const diffValues = [];
+
+        for (let row = 0; row < filtered.length; row++) {
+            const diff = script.parse_dmY(moveInDateValues[row]) - script.parse_dmY(idDateValues[row])
+            diffValues.push(Math.ceil(diff / (1000 * 60 * 60 * 24)));
+        }
+
+        const average = Math.floor(diffValues.reduce((a, b) => a + b, 0) / diffValues.length);
+        return average;
+
+
+        // Youth
+    } else if (target === "Youth") {
+        const filtered = data.filter(d => {
+            return d[comparisonCol] != null &&
+                d[idCol] != null &&
+                script.format_MY(script.parse_dmY(d[comparisonCol])) ===
+                script.format_MY(script.parse_Ymd(state.form_reporting_date)) &&
+                d['Household Type'] === "Youth"
+        })
+
+        const moveInDateValues = script.getColByName(filtered, comparisonCol);
+        const idDateValues = script.getColByName(filtered, idCol);
+        const diffValues = [];
+
+        for (let row = 0; row < filtered.length; row++) {
+            const diff = script.parse_dmY(moveInDateValues[row]) - script.parse_dmY(idDateValues[row])
+            diffValues.push(Math.ceil(diff / (1000 * 60 * 60 * 24)));
+        }
+
+        const average = Math.floor(diffValues.reduce((a, b) => a + b, 0) / diffValues.length);
+        return average;
+
+        // Family
+    } else if (target === "Family") {
+        const filtered = data.filter(d => {
+            return d[comparisonCol] != null &&
+                d[idCol] != null &&
+                script.format_MY(script.parse_dmY(d[comparisonCol])) ===
+                script.format_MY(script.parse_Ymd(state.form_reporting_date)) &&
+                d['Household Type'] === "Family"
+        })
+
+        const moveInDateValues = script.getColByName(filtered, comparisonCol);
+        const idDateValues = script.getColByName(filtered, idCol);
+        const diffValues = [];
+
+        for (let row = 0; row < filtered.length; row++) {
+            const diff = script.parse_dmY(moveInDateValues[row]) - script.parse_dmY(idDateValues[row])
+            diffValues.push(Math.ceil(diff / (1000 * 60 * 60 * 24)));
+        }
+
+        const average = Math.floor(diffValues.reduce((a, b) => a + b, 0) / diffValues.length);
+        return average;
+
+    } else return "Incorrect target chosen"
+
+}
 
 
 /* PRINT TO TABLE */
@@ -1423,15 +1527,15 @@ function printHeader(value) {
     d3.select('.agg-table')
         .append('div')
         .classed('agg-header', true)
-        .text(" ")
+        .text("Calculation")
 
     d3.select('.agg-table')
         .append('div')
         .classed('agg-header', true)
-        .text(" ")
+        .text("Result")
 
     d3.select('.agg-table')
         .append('div')
         .classed('agg-header', true)
-        .text(" ")
+        .text("Nulls")
 }
