@@ -981,6 +981,8 @@ function aggregate() {
     printValue("All", "Moved to Inactive", all.Inactive, all.Inactive_null)
     printValue("All", "Newly Identified Inflow", all.NewId, all.NewId_null)
     printValue("All", "Returned to Active from Housing", all.RetHousing, all.RetHousing_null)
+    printValue("All", "Returned to Active from Inactive", "", "")
+    printValue("All", "Length of Time from ID to Housing", "", "")
 
     printHeader("Chronic")
     printValue("Chronic", "Actively Homeless", chronic.AH, chronic.AH_null)
@@ -988,6 +990,8 @@ function aggregate() {
     printValue("Chronic", "Moved to Inactive", chronic.Inactive, chronic.Inactive_null)
     printValue("Chronic", "Newly Identified Inflow", chronic.NewId, chronic.NewId_null)
     printValue("Chronic", "Returned to Active from Housing", chronic.RetHousing, chronic.RetHousing_null)
+    printValue("Chronic", "Returned to Active from Inactive", "", "")
+    printValue("Chronic", "Length of Time from ID to Housing", "", "")
 
     printHeader("Veteran")
     printValue("Veteran", "Actively Homeless", veteran.AH, veteran.AH_null)
@@ -995,6 +999,8 @@ function aggregate() {
     printValue("Veteran", "Moved to Inactive", veteran.Inactive, veteran.Inactive_null)
     printValue("Veteran", "Newly Identified Inflow", veteran.NewId, veteran.NewId_null)
     printValue("Veteran", "Returned to Active from Housing", veteran.RetHousing, veteran.RetHousing_null)
+    printValue("Veteran", "Returned to Active from Inactive", "", "")
+    printValue("Veteran", "Length of Time from ID to Housing", "", "")
 
     printHeader("Youth")
     printValue("Youth", "Actively Homeless", youth.AH, youth.AH_null)
@@ -1002,6 +1008,8 @@ function aggregate() {
     printValue("Youth", "Moved to Inactive", youth.Inactive, youth.Inactive_null)
     printValue("Youth", "Newly Identified Inflow", youth.NewId, youth.NewId_null)
     printValue("Youth", "Returned to Active from Housing", youth.RetHousing, youth.RetHousing_null)
+    printValue("Youth", "Returned to Active from Inactive", "", "")
+    printValue("Youth", "Length of Time from ID to Housing", "", "")
 
     printHeader("Family")
     printValue("Family", "Actively Homeless", family.AH, family.AH_null)
@@ -1009,6 +1017,8 @@ function aggregate() {
     printValue("Family", "Moved to Inactive", family.Inactive, family.Inactive_null)
     printValue("Family", "Newly Identified Inflow", family.NewId, family.NewId_null)
     printValue("Family", "Returned to Active from Housing", family.RetHousing, family.RetHousing_null)
+    printValue("Family", "Returned to Active from Inactive", "", "")
+    printValue("Family", "Length of Time from ID to Housing", "", "")
 
 }
 
