@@ -1,5 +1,5 @@
 require('dotenv').config();
-const d3 = require('d3')
+const d3 = require('d3');
 const Papa = require('papaparse');
 const stringSimilarity = require('string-similarity');
 
@@ -1008,8 +1008,8 @@ function aggregate() {
 }
 
 /* 
-ACTIVELY HOMELESS NUMBER
-*/
+ *ACTIVELY HOMELESS NUMBER
+ */
 function calcAH(data, target, uniqueCol) {
     // All unique
     if (target === "Unique") {
@@ -1103,8 +1103,8 @@ function calcAH(data, target, uniqueCol) {
 }
 
 /*  
-COMPARE A MONTH / YEAR TO THE REPORTING MONTH / YEAR
-*/
+ *COMPARE A MONTH / YEAR TO THE REPORTING MONTH / YEAR
+ */
 function calcDate(data, target, comparisonDate, uniqueCol) {
 
     // All
@@ -1219,8 +1219,8 @@ function calcDate(data, target, comparisonDate, uniqueCol) {
 }
 
 /* 
-RETURNED TO ACTIVE FROM HOUSING & INACTIVE
-*/
+ *RETURNED TO ACTIVE FROM HOUSING & INACTIVE
+ */
 function calcReturn(data, target, returnDateCol, comparisonCol, uniqueCol) {
 
     // All
@@ -1354,7 +1354,9 @@ function calcReturn(data, target, returnDateCol, comparisonCol, uniqueCol) {
 
 }
 
-/* CALCULATE LENGTH OF TIME */
+/*
+ *CALCULATE LENGTH OF TIME
+ */
 function calcLOT(data, target, comparisonCol, idCol) {
 
     // All
@@ -1475,7 +1477,9 @@ function calcLOT(data, target, comparisonCol, idCol) {
 }
 
 
-/* PRINT TO TABLE */
+/*
+ * PRINT TO TABLE
+ */
 function printValue(population, calculation, result, nullValue) {
     d3.select('.agg-table')
         .append('div')
@@ -1539,3 +1543,51 @@ function printHeader(value) {
         .classed('agg-header', true)
         .text("Nulls")
 }
+
+
+/* 
+ * WRITE TO GOOGLE SHEETS
+ */
+
+// Client ID and API key from the Developer Console
+const sheetID = "1vr2jahJzoSfdekaPwzNDJ06VueEF1wIqVOcABH6bCdU"
+
+
+/* const url = "https://spreadsheets.google.com/feeds/cells/1vr2jahJzoSfdekaPwzNDJ06VueEF1wIqVOcABH6bCdU/1/public/full?alt=json"
+
+d3.json(url).then(function (data) {
+    console.log("Data!", data);
+    console.log(data.feed.entry)
+}) */
+
+import 'regenerator-runtime/runtime'
+
+let d;
+
+
+function readJson(sheetId, sheetNumber) {
+    const url = `https://spreadsheets.google.com/feeds/cells/${sheetId}/${sheetNumber}/public/full?alt=json`
+    d3.json(url).then(function (data) {
+        processJson(data, data.feed.entry);
+    })
+}
+
+function processJson(data, entries) {
+    let rawJson = data;
+    let rawData = entries;
+    console.log(rawJson)
+    console.log(rawData)
+}
+
+readJson("1vr2jahJzoSfdekaPwzNDJ06VueEF1wIqVOcABH6bCdU", 1);
+
+
+
+/* .then(function (data) {
+            rawJson = data;
+            rawData = data.feed.entry;
+            return {
+                rawJson,
+                rawData
+            }
+        }) */
