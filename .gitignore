@@ -39,6 +39,8 @@ typings/
 # Optional npm cache directory
 .npm
 cache/
+.cache
+yarn.lock
 
 # Optional eslint cache
 .eslintcache
@@ -58,3 +60,6 @@ cache/
 
 # dist
 dist/
+
+# Google Sheets API credentials
+credentials.json

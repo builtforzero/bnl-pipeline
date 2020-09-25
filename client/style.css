@@ -203,7 +203,7 @@ select {
 
 .validation-info {
     margin: 0%;
-    padding: 2%;
+    padding: 2% 2% 0% 2%;
 }
 
 .validation-symbol {
@@ -213,8 +213,8 @@ select {
 
 .toggle {
     font-size: var(--tiny-size);
-    padding: 10px 0px 0px 0px;
-    color: var(--color-main);
+    padding: 10px 0px 0px 20px;
+    color: rgb(90, 89, 89);
     font-weight: 600;
 }
 

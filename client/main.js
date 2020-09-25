@@ -5,10 +5,7 @@ const stringSimilarity = require('string-similarity');
 
 /* APPLICATION STATE */
 let state = {
-    // Validation tests pass/fail
-    check_headers: null,
-    check_pii: null,
-    check_ssn: null,
+    required: false, // Toggle for required fields; makes for easier testing
 
     // Form Fields
     form_community_clean: null,
@@ -27,7 +24,6 @@ let state = {
     // Data
     fileList: null,
     data_raw: null,
-    data_clean: null,
     data_headers: null,
     data_length: null,
 
@@ -39,7 +35,7 @@ let state = {
         'Inactive Date',
         'Returned to Active Date',
         'Age',
-        'Client / HMIS ID',
+        'Client ID',
         'Household ID',
         'BNL Status',
         'Literal Homeless Status',
@@ -65,15 +61,42 @@ let state = {
         'Inactive Date',
         'Returned to Active Date',
         'Age',
-        'Client / HMIS ID',
+        'Client ID',
         'BNL Status',
         'Household Type',
+        'Household Size',
         'Chronic Status',
         'Veteran Status',
         'Ethnicity',
         'Race',
         'Gender',
     ],
+
+    // Datatype options: date, num, alphanum, any
+    dict_headers_datatype: [
+        'date',
+        'date',
+        'date',
+        'date',
+        'date',
+        'num',
+        'num',
+        'any',
+        'any',
+        'num',
+        'any',
+        'any',
+        'any',
+        'any',
+        'any',
+    ],
+
+    datatype_errors: {
+        date: `must be in the format <b style='color:black'>MM/DD/YYYY</b>, e.g. "12/31/2020".`,
+        num: `must only contain <b style='color:black'>whole numbers</b>. e.g. "3"`,
+        alphanum: `must only be <b style='color:black'>letters or numbers; no special characters</b>. e.g. "Yes (Confirmed)"`,
+        any: `can accept any data type.`,
+    },
 
     // Banned headers
     dict_headers_remove: [
@@ -89,20 +112,7 @@ let state = {
     ]
 }
 
-// STORE OUTPUT VARIABLES FOR TESTS
-let output = {
-    // Required headers
-    srcHeaderMatches: [], // Source file headers that match required fields
-    srcHeaderNoMatches: [], // Source file headers that DO NOT match required fields
-    dictHeaderMatches: [], // Dictionary headers that match the source file
-    dictHeaderNoMatches: [], // Dictionary headers that DO NOT match the source file
-
-    // PII Headers
-    srcPiiMatches: [], // Source file headers that match PII fields
-    srcPiiNoMatches: [], // Source file headers that DO NOT match PII fields
-    dictPiiMatches: [], // PII headers that match the source file
-    dictPiiNoMatches: [], // PII headers that DO NOT match the source file
-}
+checkFormStatus();
 
 /* HELPER SCRIPTS */
 let script = {
@@ -132,7 +142,7 @@ let script = {
         return col;
     },
 
-    getColByName: function getCol(arr, columnName) {
+    getColByName: function getColByName(arr, columnName) {
         const col = [];
 
         for (let row = 0; row < arr.length - 1; row++) {
@@ -140,6 +150,22 @@ let script = {
             col.push(value);
         }
         return col;
+    },
+
+    validate: function validate(value, dataType) {
+        if (value === null) {
+            return null
+        } else if (dataType === "date") {
+            const dateRegex = /(0?[1-9]|1[012])\/(0?[1-9]|[12][0-9]|3[01])\/\d{4}/;
+            return dateRegex.test(value.toString())
+        } else if (dataType === "num") {
+            return Number.isInteger(value);
+        } else if (dataType === "alphanum") {
+            const alphanumRegex = /([^A-Z0-9])/gi
+            return !alphanumRegex.test(value.toString())
+        } else if (dataType === "any") {
+            return true;
+        } else return null;
     },
 
 }
@@ -197,7 +223,6 @@ let eventListeners = {
                 header: true,
                 complete: function (results) {
                     state.data_raw = results.data;
-                    state.data_clean = results.data;
                     state.data_headers = results.meta.fields;
                     state.data_length = results.data.length;
                 },
@@ -220,6 +245,7 @@ let section = {
     headers_open: false,
     pii_open: false,
     ssn_open: false,
+    datatype_open: false,
 
     // Toggle function
     toggle: function (infoLocation, toggleLocation, stateField) {
@@ -250,10 +276,12 @@ let section = {
             section.headers_open = !section.headers_open;
             section.pii_open = false;
             section.ssn_open = false;
+            section.datatype_open = false;
             // Open/close selected section, close all others
             section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
             section.toggle("#pii-info", "#pii-toggle", section.pii_open);
             section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
+            section.toggle("#datatype-info", "#datatype-name-toggle", section.datatype_open);
         }),
 
     togglePiiInfo: d3.select("#pii-name")
@@ -262,10 +290,12 @@ let section = {
             section.pii_open = !section.pii_open;
             section.headers_open = false;
             section.ssn_open = false;
+            section.datatype_open = false;
             // Open/close selected section, close all others
             section.toggle("#pii-info", "#pii-toggle", section.pii_open);
             section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
             section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
+            section.toggle("#datatype-info", "#datatype-name-toggle", section.datatype_open);
         }),
 
     toggleSsnInfo: d3.select("#ssn-name")
@@ -274,7 +304,23 @@ let section = {
             section.ssn_open = !section.ssn_open;
             section.headers_open = false;
             section.pii_open = false;
+            section.datatype_open = false;
             // Open/close selected section, close all others
+            section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
+            section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
+            section.toggle("#pii-info", "#pii-toggle", section.pii_open);
+            section.toggle("#datatype-info", "#datatype-name-toggle", section.datatype_open);
+        }),
+
+    toggleDatatypeInfo: d3.select("#datatype-name")
+        .on('click', function () {
+            // Set opposite status for selected section
+            section.datatype_open = !section.datatype_open;
+            section.ssn_open = false;
+            section.headers_open = false;
+            section.pii_open = false;
+            // Open/close selected section, close all others
+            section.toggle("#datatype-info", "#datatype-name-toggle", section.datatype_open);
             section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
             section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
             section.toggle("#pii-info", "#pii-toggle", section.pii_open);
@@ -290,286 +336,292 @@ function resetValues() {
     state.data_headers = null;
     state.data_length = null;
 
-    // Required headers
-    output.srcHeaderMatches = [];
-    output.srcHeaderNoMatches = [];
-    output.dictHeaderMatches = [];
-    output.dictHeaderNoMatches = [];
-
-    // PII Headers
-    output.srcPiiMatches = [];
-    output.srcPiiNoMatches = [];
-    output.dictPiiMatches = [];
-    output.dictPiiNoMatches = [];
-
     d3.select("#filePicker").value = "";
 }
 
 /* RUN TESTS AND CHECK VALIDATION STATUS */
-function runTests(headerArray, data, state) {
-    testRequiredHeaders(headerArray, state);
-    testPiiHeaders(headerArray, state);
-    testSsn(headerArray, data, state);
-    checkTestStatus();
+function runTests(headerArray, data) {
+    const headersOutput = requiredHeadersTest(headerArray, d3.select("#headers-name"), d3.select(".headers-val-symbol"), d3.select(".header-error"));
+    const piiOutput = piiHeadersTest(headerArray, d3.select("#pii-name"), d3.select(".pii-val-symbol"), d3.select(".pii-error"));
+    const ssnOutput = ssnValuesTest(headerArray, data, d3.select("#ssn-name"), d3.select(".ssn-val-symbol"), d3.select(".ssn-error"));
+    const datatypeOutput = dataTypeTest(headerArray, data, d3.select("#datatype-name"), d3.select(".datatype-val-symbol"), d3.select(".datatype-error"));
+
+    checkTestStatus(headersOutput, piiOutput, ssnOutput, datatypeOutput);
 }
 
-/* TEST #1: REQUIRED HEADERS */
-function testRequiredHeaders(headerArray, state) {
-
-    // Frontend update locations
-    const stepLocation = d3.select("#headers-name");
-    const resultLocation = d3.select(".headers-val-symbol");
-    const errorLocation = d3.select(".header-error");
-
-    // Set initial status of "testing"
-    resultLocation.text("TESTING...").classed("neutral", true);
-
-    // Set initial dictionary to column headers
-    output.dictHeadersNoMatches = state.dict_headers_required;
-
-    // Apply matchHeader function to file header array
-    headerArray.map(header => {
-        const dictLength = output.dictHeadersNoMatches.length;
-        if (dictLength > 0) {
-            const a = stringSimilarity.findBestMatch(header, output.dictHeadersNoMatches);
-            // If the Dice's coefficient falls below threshold, return null
-            if (a.bestMatch.rating < 0.45) {
-                output.srcHeaderNoMatches.push(header)
-            } else {
-                output.srcHeaderMatches.push(header)
-                output.dictHeaderMatches.push(a.bestMatch.target)
-                output.dictHeadersNoMatches = script.arrayRemove(output.dictHeadersNoMatches, a.bestMatch.target)
-            }
-        } else {
-            output.srcHeaderNoMatches.push(header)
-        }
-    });
-
-    // If there is at least one lack of match, throw an error
-    if (output.dictHeadersNoMatches.length > 0) {
-        state.check_headers = false;
-        resultLocation.text("NO PASS").classed("success", false);
+function showResult(testResult, stepLocation, resultLocation, errorLocation, errorMessage, successMessage) {
+    if (testResult === false) {
         resultLocation.text("NO PASS").classed("neutral", false);
         resultLocation.classed("fail", true);
-        stepLocation.style("background-color", "#FFB9B9");
-        errorLocation.html(`<h3>Result</h3><br>
-        
-        <b class='fail'>${output.dictHeadersNoMatches.length} / ${state.dict_headers_required.length} required headers are NOT PRESENT in your file. <br></b>
-        
-        <ul class='list'> ${output.dictHeadersNoMatches.map(i => `<li><b>${i}</b></li>`).join('')} </ul> <br> 
-        
-        <b class='success'>${output.dictHeaderMatches.length} / ${state.dict_headers_required.length} required headers are present in your file.</b>
-
-        <br><br>
-
-        &nbsp&nbsp&nbsp<b class='success'>Your Column Header</b> <b style='color: grey;'> &nbsp >> &nbsp </b> <b>Matched Required Column Header</b>
-
-        <br>
-
-        <ul> ${output.srcHeaderMatches.map(i => `<li><b class='success'>${i}</b> <b style='color: grey;'> &nbsp >> &nbsp </b> <b>${output.dictHeaderMatches[output.srcHeaderMatches.indexOf(i)]}</b></li>`).join('')}</ul> 
-        <br>
-
-        Please check that all ${state.dict_headers_required.length} required column headers are present in your file and try again.
-    
-        `);
+        stepLocation
+            .style("background-color", "#FFB9B9")
+            .on('mouseover', function (d) {
+                d3.select(this).style("background-color", "#ffa5a5")
+            })
+            .on('mouseout', function (d) {
+                d3.select(this).style("background-color", "#FFB9B9")
+            });
+        errorLocation.html(errorMessage)
     } else {
-        state.check_headers = true;
         resultLocation.text("PASS").classed("neutral", false);
         resultLocation.text("PASS").classed("fail", false);
         resultLocation.classed("success", true);
-        stepLocation.style("background-color", "lightblue");
-        errorLocation.html(`<h3>Result</h3><br>
-        
-        <b class='success'>${output.dictHeaderMatches.length} / ${state.dict_headers_required.length} required headers are present in your file.</b>
+        stepLocation
+            .style("background-color", "lightblue")
+            .on('mouseover', function (d) {
+                d3.select(this).style("background-color", "#9ed1e1")
+            })
+            .on('mouseout', function (d) {
+                d3.select(this).style("background-color", "lightblue")
+            });
+        errorLocation.html(successMessage)
+    }
+}
 
-        <br><br>
+// Are all required headers present?
+function requiredHeadersTest(headerArray, stepLocation, resultLocation, errorLocation) {
+    const input = [...headerArray]
+    const required = [...state.dict_headers_required];
+    const passed = [];
+    const failed = [];
+    let result;
 
-        &nbsp&nbsp&nbsp<b class='success'>Your Column Header</b> <b style='color: grey;'> &nbsp >> &nbsp </b> <b>Matched Required Column Header</b>
+    // Which input headers match a required header?
+    input
+        .map(header => {
+            if (required.includes(header)) {
+                passed.push(header)
+            } else {
+                failed.push(header)
+            }
+        })
 
-        <br>
+    // Which required headers are missing?
+    const missing = [...required]
+        .map(header => {
+            if (passed.includes(header)) {
+                return null
+            } else return header
+        })
+        .filter(header => header != null)
 
-        <ul> ${output.srcHeaderMatches.map(i => `<li><b class='success'>${i}</b> <b style='color: grey;'> &nbsp >> &nbsp </b> <b>${output.dictHeaderMatches[output.srcHeaderMatches.indexOf(i)]}</b></li>`).join('')}</ul> 
-        <br>
+    // Did the test result pass?
+    if (missing.length === 0) {
+        result = true
+    } else if (missing.length > 0) {
+        result = false
+    }
 
-        If this match doesn't look right, please edit your column headers to exactly match the required column name.
-        `);
+    // Set the error message
+    const errorMessage = `<h3>Result</h3><br>
+        <b class='fail'>${missing.length} / ${required.length} required headers are not present (or named differently) in your file. <br></b>
+        <ul class='list'> ${missing.map(i => `<li><b>${i}</b></li>`).join('')} </ul> <br> 
+        <b class='success'>${passed.length} / ${required.length} required headers are present in your file.</b><br>
+        <ul class='list'> ${passed.map(i => `<li><b class='success'>${i}</b></li>`).join('')}</ul><br>
+        Please check that all ${required.length} required column headers are <b>present</b> in your file and <b>named correctly</b>, and try again.`
+
+    // Set the success message
+    const successMessage = `<h3>Result</h3><br>
+    <b class='success'>Passed: All required headers are included in your file.</b>`
+
+    // Show a message on the page based on the test result
+    showResult(result, stepLocation, resultLocation, errorLocation, errorMessage, successMessage);
+
+    return {
+        passed,
+        failed,
+        missing,
+        result
+    }
+}
+
+// Are there headers that are PII?
+function piiHeadersTest(headerArray, stepLocation, resultLocation, errorLocation) {
+    const input = [...headerArray]
+    const pii = [...state.dict_headers_remove];
+    const passed = []
+    const failed = [];
+    let result;
+
+    // Which input headers DO NOT match PII headers?
+    input
+        .map(header => {
+            if (!pii.includes(header)) {
+                passed.push(header)
+            } else {
+                failed.push(header)
+            }
+        })
+
+    // Did the test result pass?
+    if (failed.length === 0) {
+        result = true;
+    } else if (failed.length > 0) {
+        result = false
+    }
+
+    // Set the error message
+    const errorMessage = `<h3>Result</h3><br>
+    <b class='fail'>${failed.length} column header(s) are flagged as potentially containing PII:</b>
+    <ul> ${failed.map(i => `<li><b>${i}`).join('')}</ul> <br>
+    Please remove the PII column(s) from your data file and try again.`
+
+    // Set the success message
+    const successMessage = `<h3>Result</h3><br>
+    <b class='success'>Passed: No headers in your file are PII.</b>`
+
+    // Show a message on the page based on the test result
+    showResult(result, stepLocation, resultLocation, errorLocation, errorMessage, successMessage);
+
+    return {
+        passed,
+        failed,
+        result,
     }
 
 }
 
-/* TEST #2: PII HEADERS */
-function testPiiHeaders(headerArray, state) {
+// Are there values that resemble social security numbers?
+function ssnValuesTest(headerArray, data, stepLocation, resultLocation, errorLocation) {
+    let result;
+    let regex = RegExp('^\\d{9}$');
+    let failedHeaders = [];
+    let failedIndices = [];
 
-    // Frontend update locations
-    const stepLocation = d3.select("#pii-name");
-    const resultLocation = d3.select(".pii-val-symbol");
-    const errorLocation = d3.select(".pii-error");
+    const output = headerArray.map(header => {
+        // Get the values for the header
+        const arr = script.getColByName(data, header);
+        // Map through each value and test against the regex pattern
+        // If the test passes, return the index of the value
+        const fail = arr.map((value, index) => {
+            if (value === null) {
+                return null
+            } else if (regex.test(value.toString()) === true) {
+                return index
+            } else return null
+        }).filter(value => value != null)
+        // If at least one value failed, return the header with the failed indices
+        if (fail.length > 0) {
+            failedHeaders.push(header);
+            failedIndices.push(fail)
+            return [header, fail]
+        } else return null
+    }).filter(header => header != null)
 
-    // Set initial status of "testing"
-    resultLocation.text("TESTING...").classed("neutral", true);
-
-    // Set initial dictionary to column headers
-    output.dictPiiNoMatches = state.dict_headers_remove
-
-    // Apply matchHeader function to file header array
-    headerArray.map(header => {
-        const a = stringSimilarity.findBestMatch(header, output.dictPiiNoMatches);
-        // If the Dice's coefficient falls below threshold, return null
-        if (a.bestMatch.rating < 0.6) {
-            output.srcPiiNoMatches.push(header)
-        } else {
-            output.srcPiiMatches.push(header)
-            output.dictPiiMatches.push(a.bestMatch.target)
-            output.dictPiiNoMatches = script.arrayRemove(output.dictPiiNoMatches, a.bestMatch.target)
-        }
-    });
-
-    // If there is at least one lack of match, throw a success
-    if (output.dictPiiMatches.length > 0) {
-        state.check_pii = false;
-        resultLocation.text("NO PASS").classed("neutral", false);
-        resultLocation.classed("fail", true);
-        stepLocation.style("background-color", "#FFB9B9");
-        errorLocation.html(`<h3>Result</h3><br>
-
-        <b class='fail'>${output.dictPiiMatches.length} column header(s) are flagged as potentially containing PII:</b>
-        
-        <ul> ${output.srcPiiMatches.map(i => `<li><b>${i}`).join('')}</ul> <br>
-
-        Please remove the PII column(s) from your data file and try again.
-    
-        `);
-    } else if (output.dictPiiMatches.length === 0) {
-        state.check_pii = true;
-        resultLocation.text("PASS").classed("neutral", false);
-        resultLocation.text("PASS").classed("fail", false);
-        resultLocation.classed("success", true);
-        stepLocation.style("background-color", "lightblue");
-        errorLocation.html(`<h3>Result</h3><br>
-        
-        <b class='success'>Passed: No headers in your file contained PII.</b>`);
+    // Did the test result pass?
+    if (output.length === 0) {
+        result = true;
+    } else if (output.length > 0) {
+        result = false
     }
 
-}
-
-
-/* TEST #3: CHECK FOR SOCIAL SECURITY NUMBERS */
-function testSsn(headerArray, data, state) {
-    // Tests each column in the data for SSN values
-    // Sorts columns into pass / fail
-    // Prints result to front-end
-
-    // Set frontend update locations
-    const stepLocation = d3.select("#ssn-name");
-    const resultLocation = d3.select(".ssn-val-symbol");
-    const errorLocation = d3.select(".ssn-error");
-
-    // Set initial status of "testing"
-    resultLocation.text("TESTING...").classed("neutral", true);
-
-    // Set empty arrays for pass and fail headers
-    let ssnFail = [];
-    let ssnPassed = [];
-
-    // Sort headers into pass and fail based on whether they contain SSNs
-    for (let col = 0; col < headerArray.length; col++) {
-        const header = headerArray[col]
-        const output = getRowsOfSsnValues(script.getCol(data, col))
-
-        if (output.length > 0) {
-            ssnFail.push([header, output])
-        } else {
-            ssnPassed.push([header, output])
-        }
-    }
-
-    // If there is at least one header in the data that failed, throw an error
-    if (ssnFail.length > 0) {
-        // Update state and front-end locations
-        state.check_ssn = false;
-        resultLocation.text("NO PASS").classed("neutral", false);
-        resultLocation.classed("fail", true);
-        stepLocation.style("background-color", "#FFB9B9");
-        // Error message
-        errorLocation.html(`<h3>Result</h3><br>
-            <b>${ssnFail.length} / ${headerArray.length} columns</b> in your file contain values that could be Social Security Numbers. <b style='color:grey; font-weight:400;'> &nbsp (Potential SSNs include values with 9 digits, 4 digits, or in the format ###-##-####)</b>. <br>
+    const errorMessage = `<h3>Result</h3><br>
+            <b>${output.length} / ${headerArray.length} columns</b> in your file contain values that could be Social Security Numbers. <b style='color:grey; font-weight:400;'> &nbsp (Potential SSNs include values with 9 digits or in the format ###-##-####)</b>. <br>
             <ul>
-            ${ssnFail.map(value => `
-                <li>
-                    <b class='fail'>${value[0]}</b> has <b>${value[1].length} potential SSN(s)</b> at the following location(s): &nbsp ${value[1].map(v => `<br> &nbsp &nbsp <b style='color:lightgrey;'>></b> Row <b>${v}</b> &nbsp `).join('')}
-                </li><br>`
-                ).join('')}
+            ${output.map(value => `<li> <b class='fail'>${value[0]}</b> has <b>${value[1].length} potential SSN(s)</b> at the following location(s): &nbsp ${value[1].map(v => `<br> &nbsp &nbsp <b style='color:lightgrey;'>></b> Row <b>${v + 1}</b> &nbsp `).join('')}</li><br>`).join('')}
             </ul>
-            Please remove the Social Security Numbers from your data file and try again.
-        `);
-    } else {
-        // Update state and front-end locations
-        state.check_ssn = true;
-        resultLocation.text("PASS").classed("neutral", false);
-        resultLocation.text("PASS").classed("fail", false);
-        resultLocation.classed("success", true);
-        stepLocation.style("background-color", "lightblue");
-        // Success message
-        errorLocation.html(`<h3>Result</h3><br>
-        <b class='success'>Passed: No values in your file are SSNs.</b>
-        `);
-    }
+            Please remove the Social Security Numbers from your data file and try again.`
 
+    // Set the success message
+    const successMessage = `<h3>Result</h3><br>
+    <b class='success'>Passed: No values in your file are Social Security Numbers.</b>`
+
+    // Show a message on the page based on the test result
+    showResult(result, stepLocation, resultLocation, errorLocation, errorMessage, successMessage);
+
+    return {
+        failedHeaders,
+        failedIndices,
+        output,
+        result
+    }
 }
-// SSN helper function: get rows of SSN values
-function getRowsOfSsnValues(arr) {
 
-    /* 
-    Takes in an array and returns an array with the *row
-    numbers* (indices + 1) that contain SSN values in the dataset.
-    E.g. let arr = [333, "testValue", 123456789, "", null, NaN, 666666, 4444]
-    then getIndexOfSsnValues(arr) ==> [3, 8]
-    */
+// Do required headers contain the right data type?
+function dataTypeTest(headerArray, data, stepLocation, resultLocation, errorLocation) {
+    let result;
+    let failedHeaders = [];
+    const requiredHeaders = [...state.dict_headers_required];
+    const dataTypes = [...state.dict_headers_datatype]
+    const dataTypeLookup = requiredHeaders.map((value, index) => {
+        const r = {}
+        r[value] = dataTypes[index]
+        return r
+    })
 
-    // SSN patterns to match each value against
-    let regex = [
-        /^\d{3}-?\d{2}-?\d{4}$/, // ###-##-####
-        /^\d{3} ?\d{2} ?\d{4}$/, // ### ## ####
-        /\d{9}$/, // #########
-        /\d{4}$/ // ####
-    ];
+    const output = headerArray.map((header) => {
+        // If the header is in the required header list...
+        if (requiredHeaders.includes(header)) {
+            // Find the datatype that it needs to be
+            const lookupIndex = requiredHeaders.indexOf(header)
+            let dataType = Object.values(dataTypeLookup[lookupIndex]).toString();
+            let errorMessage = state.datatype_errors[dataType];
 
-    // Holds the result of matching each value to each SSN pattern
-    let regexTestOutput = [];
+            // Get the array of values for the header
+            const arr = script.getColByName(data, header);
+            const values = [];
+            const indices = []
 
-    // Holds the row numbers that contain SSN values
-    let rowsWithSsnValues = [];
+            // Loop through each value and check the datatype
+            const fail = arr.map((value, index) => {
+                if (value === null) {
+                    return null
+                } else if (script.validate(value, dataType) === false) {
+                    values.push(value)
+                    indices.push(index)
+                    return value & index
+                } else return null
+            }).filter(value => value != null)
 
-    // Step 1: Match each value in the array against each regex pattern, one at a time.
-    // Return an array with true / false for each pattern.
-    // E.g. if the value is "4444" ==> [false, false, false, true]
-    arr.map((value) => {
-        value = Number(value)
-        const result = regex.map(i => {
-            const pattern = new RegExp(i, "gim")
-            const match = value.toString().match(pattern)
-            if (match === null) {
-                return false;
-            } else {
-                return value.toString() === match[0].toString(); // test for exact match
-            }
-        });
-        regexTestOutput.push(result);
-    });
+            // If at least one value failed, return the header with the failed indices
+            if (fail.length > 0) {
+                failedHeaders.push(header);
+                const r = {
+                    header: header,
+                    failedValues: values,
+                    failedIndices: indices,
+                    errorMessage: errorMessage
+                };
+                return r
+            } else return null
+        } else return null
+    }).filter(header => header != null)
 
-    // Step 2: Loop through the regex matching for each value and grab the row numbers 
-    // that failed the tests.
-    // E.g. if one output from Step 1 is [false, false, false, true] aka [0, 0, 0, 1],
-    // then the reduced "sum" is 1. Since this is >0, grab the index
-    // of that result + 1 to get the dataset row number.
-    for (let k = 0; k < arr.length; k++) {
-        const sum = regexTestOutput[k].reduce((a, b) => a + b)
-        if (sum > 0) {
-            rowsWithSsnValues.push(k + 1)
-        }
+    // Did the test result pass?
+    if (output.length === 0) {
+        result = true;
+    } else if (output.length > 0) {
+        result = false
     }
 
-    return rowsWithSsnValues;
+    const messages = [];
+
+    Object.entries(output).forEach(([key, value]) => {
+        messages.push(`<ul><li><b class='fail'>${value.header}</b><b class='neutral'> contains <b style='color:black;'>${value.failedIndices.length} value(s)</b> to fix. These values ${value.errorMessage}</b></li></ul>`)
+        value.failedValues.map((v, index) => {
+            const str = `<b style='padding: 0px 0px 0px 50px; font-weight:400;'><b style='color:lightgrey;'>></b> &nbsp <b>Row ${value.failedIndices[index] + 1}</b> contains the value <b>'${v}'</b>.<br></b>`
+            messages.push(str)
+        })
+    })
+
+    // Set the error message
+    const errorMessage = `<h3>Result</h3><br>
+    <b>Please fix the following errors:</b><br>
+    ${messages.join('')}`
+
+    // Set the success message
+    const successMessage = `<h3>Result</h3><br><b class='success'>Passed: Your fields contain the right data types.</b>`
+
+    // Show a message on the page based on the test result
+    showResult(result, stepLocation, resultLocation, errorLocation, errorMessage, successMessage);
+
+
+    return {
+        output,
+        failedHeaders,
+        result
+    }
+
 }
 
 
@@ -577,31 +629,39 @@ function getRowsOfSsnValues(arr) {
 
 // Status of form fields
 function checkFormStatus() {
-    if (
-        state.form_community_clean === null ||
-        state.form_community_clean === "" ||
-        state.form_reporting_date === null ||
-        state.form_reporting_date === "" ||
-        state.form_name === null ||
-        state.form_name === "" ||
-        state.form_email === null ||
-        state.form_email === "" ||
-        state.form_file_upload === null ||
-        state.form_file_upload === ""
-    ) {
-        // Failure: any one of the form fields is not filled or empty
-        d3.select("#validateButton").classed("inactive", true);
-        d3.select("#validateButton").classed("active", false);
-        d3.select("#validateButton").attr("disabled", true);
-        d3.select(".validateBtn-msg").html("Please fill in all required fields to continue.");
-    } else if (
-        state.form_community_clean != null &&
-        state.form_reporting_date != null &&
-        state.form_name != null &&
-        state.form_email != null &&
-        state.form_file_upload != null
-    ) {
-        // Success: all of the form fields are filled in
+    if (state.required === true) {
+        if (
+            state.form_community_clean === null ||
+            state.form_community_clean === "" ||
+            state.form_reporting_date === null ||
+            state.form_reporting_date === "" ||
+            state.form_name === null ||
+            state.form_name === "" ||
+            state.form_email === null ||
+            state.form_email === "" ||
+            state.form_file_upload === null ||
+            state.form_file_upload === ""
+        ) {
+            // Failure: any one of the form fields is not filled or empty
+            d3.select("#validateButton").classed("inactive", true);
+            d3.select("#validateButton").classed("active", false);
+            d3.select("#validateButton").attr("disabled", true);
+            d3.select(".validateBtn-msg").html("Please fill in all required fields to continue.");
+        } else if (
+            state.form_community_clean != null &&
+            state.form_reporting_date != null &&
+            state.form_name != null &&
+            state.form_email != null &&
+            state.form_file_upload != null
+        ) {
+            // Success: all of the form fields are filled in
+            d3.select("#validateButton").classed("inactive", false);
+            d3.select("#validateButton").classed("active", true);
+            d3.select("#validateButton").attr("disabled", null);
+            d3.select(".validateBtn-msg").text("");
+        }
+    } else if (state.required === false) {
+        console.log("%c Required fields are currently OFF.", 'background: white; color: red');
         d3.select("#validateButton").classed("inactive", false);
         d3.select("#validateButton").classed("active", true);
         d3.select("#validateButton").attr("disabled", null);
@@ -610,14 +670,13 @@ function checkFormStatus() {
 }
 
 // Status of validation tests
-function checkTestStatus() {
+function checkTestStatus(headersOutput, piiOutput, ssnOutput, datatypeOutput) {
+
     if (
-        state.check_headers === null ||
-        state.check_headers === false ||
-        state.check_pii === null ||
-        state.check_pii === false ||
-        state.check_ssn === null ||
-        state.check_ssn === false
+        headersOutput.result === false ||
+        piiOutput.result === false ||
+        ssnOutput.result === false ||
+        datatypeOutput.result === false
     ) {
         // Failure: The data did not pass any one of the tests
         // Inactivate the validate button
@@ -633,9 +692,10 @@ function checkTestStatus() {
         // Reset values
         resetValues();
     } else if (
-        state.check_headers === true &&
-        state.check_pii === true &&
-        state.check_ssn === true
+        headersOutput.result === true &&
+        piiOutput.result === true &&
+        ssnOutput.result === true &&
+        datatypeOutput.result === true
     ) {
         // Success: All of the tests passed
         // Activate the submit button
@@ -1552,16 +1612,6 @@ function printHeader(value) {
 // Client ID and API key from the Developer Console
 const sheetID = "1vr2jahJzoSfdekaPwzNDJ06VueEF1wIqVOcABH6bCdU"
 
-
-/* const url = "https://spreadsheets.google.com/feeds/cells/1vr2jahJzoSfdekaPwzNDJ06VueEF1wIqVOcABH6bCdU/1/public/full?alt=json"
-
-d3.json(url).then(function (data) {
-    console.log("Data!", data);
-    console.log(data.feed.entry)
-}) */
-
-import 'regenerator-runtime/runtime'
-
 let d;
 
 
@@ -1575,19 +1625,6 @@ function readJson(sheetId, sheetNumber) {
 function processJson(data, entries) {
     let rawJson = data;
     let rawData = entries;
-    console.log(rawJson)
-    console.log(rawData)
 }
 
 readJson("1vr2jahJzoSfdekaPwzNDJ06VueEF1wIqVOcABH6bCdU", 1);
-
-
-
-/* .then(function (data) {
-            rawJson = data;
-            rawData = data.feed.entry;
-            return {
-                rawJson,
-                rawData
-            }
-        }) */

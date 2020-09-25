@@ -109,7 +109,7 @@
                                 <div class="validation-info hide" id="headers-info">
                                     <div class="info">
                                         <h3>Requirement</h3>
-                                        <p>These 14 headers must be present anywhere in the <b>first row</b> of your upload file:</p>
+                                        <p>These <b>15 headers</b> must be present anywhere in the <b>first row</b> of your data file and <b>named exactly</b> as written below:</p>
                                         <ul class="list">
                                             <li>Date of Identification</li>
                                             <li>Homeless Start Date</li>
@@ -117,9 +117,10 @@
                                             <li>Inactive Date</li>
                                             <li>Returned to Active Date</li>
                                             <li>Age</li>
-                                            <li>Client / HMIS ID</li>
+                                            <li>Client ID</li>
                                             <li>BNL Status</li>
                                             <li>Household Type</li>
+                                            <li>Household Size</li>
                                             <li>Chronic Status</li>
                                             <li>Veteran Status</li>
                                             <li>Ethnicity</li>
@@ -174,6 +175,30 @@
                                     </div>
                                     <div class="result">
                                         <div class="ssn-error"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- STEP 4: MATCH DATA TYPE -->
+                            <div class="validation-step">
+                                <div class="validation-name" id="datatype-name">4. Required columns must contain the right data type.
+                                    <span>
+                                        <div class="toggle" id="datatype-name-toggle">SHOW DETAILS ▼</div>
+                                    </span>
+                                </div>
+                                <div class="validation-symbol center datatype-val-symbol">N/A</div>
+                                <div class="validation-info hide" id="datatype-info">
+                                    <div class="info">
+                                        <h3>Requirement</h3>
+                                        <p>The <b>required columns</b> in your file must have values in the <b>right format</b>. Specifically:</p>
+                                        <ul>
+                                            <li><b>Dates</b>, like <i>Homeless Start Date</i>, must be in the format <b>"MM/DD/YYYY"</b> e.g. <b>"12/31/2020"</b>.</li>
+                                            <li><b>Numerical fields</b>, like <i>Age</i> and <i>Household Size</i>, must only contain <b>whole numbers</b> e.g. <b>"31"</b>.</li>
+                                            <li><b>Open text fields</b> like <i>Race</i> and <i>Gender</i> can accept any combination of letters, numbers, and special characters.</li>
+                                        </ul>
+                                    </div>
+                                    <div class="result">
+                                        <div class="datatype-error"></div>
                                     </div>
                                 </div>
                             </div>
