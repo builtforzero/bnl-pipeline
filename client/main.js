@@ -3,7 +3,7 @@ const Papa = require("papaparse");
 
 /* APPLICATION STATE */
 let state = {
-  required: false, // Toggle for required fields; makes for easier testing
+  required: true, // Toggle for required fields; makes for easier testing
 
   // Form Fields
   form_community_clean: null,
