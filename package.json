@@ -27,8 +27,6 @@
   },
   "dependencies": {
     "d3": "^5.16.0",
-    "lodash": "^4.17.20",
-    "lodash.partition": "^4.6.0",
     "papaparse": "^5.2.0"
   }
 }

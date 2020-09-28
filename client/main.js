@@ -1,11 +1,9 @@
-require("dotenv").config();
 const d3 = require("d3");
 const Papa = require("papaparse");
-const partition = require("lodash.partition");
 
 /* APPLICATION STATE */
 let state = {
-  required: true, // Toggle for required fields; makes for easier testing
+  required: false, // Toggle for required fields; makes for easier testing
 
   // Form Fields
   form_community_clean: null,
@@ -1157,9 +1155,31 @@ function aggregate(data) {
     ),
   };
 
+  d3.select(".reporting-month").text(`${state.meta_reportingDate}`);
+  d3.select(".reporting-community").text(state.form_community_clean);
+
   // Remap the results by population and print to the page
   agg.populations.map((pop) => {
     getOutput(pop, agg.raw);
+  });
+
+  d3.select(".button-group-title").text("Select a subpopulation to review");
+
+  agg.populations.map((pop) => {
+    const remainingPops = agg.populations.filter((d) => {
+      return d != pop;
+    });
+    d3.select(".button-group").append("button").classed(`${pop}-btn`, true);
+    d3.select(`.${pop}-btn`)
+      .on("click", function () {
+        d3.selectAll(`.${pop}`).classed("hide", false);
+        remainingPops.map((remaining) => {
+          d3.selectAll(`.${remaining}`).classed("hide", true);
+        });
+      })
+      .append("div")
+      .attr("class", "label")
+      .text(`${pop}`);
   });
 
   console.log(agg);
@@ -1169,7 +1189,7 @@ function getOutput(population, aggRaw) {
   const pops = agg.populations;
   const index = pops.indexOf(population);
   const metrics = agg.metrics;
-  printHeader();
+  printHeader(population);
   const popOutput = {};
 
   // Set the household based on the chosen population
@@ -1200,39 +1220,66 @@ function printValue(population, calculation, result) {
   d3.select(".agg-table")
     .append("div")
     .classed("agg-value", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
     .html(`${population}`);
 
   d3.select(".agg-table")
     .append("div")
     .classed("agg-value", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
     .html(`${calculation}`);
 
   d3.select(".agg-table")
     .append("div")
     .classed("agg-value", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
     .html(`<b>${result}</b>`);
 }
 
-function printHeader(value) {
-  d3.select(".agg-table").append("div").classed("agg-spacer", true).html(``);
+function printHeader(population) {
+  d3.select(".agg-table")
+    .append("div")
+    .classed("agg-spacer", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
+    .html(``);
 
-  d3.select(".agg-table").append("div").classed("agg-spacer", true).html(``);
+  d3.select(".agg-table")
+    .append("div")
+    .classed("agg-spacer", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
+    .html(``);
 
-  d3.select(".agg-table").append("div").classed("agg-spacer", true).html(``);
+  d3.select(".agg-table")
+    .append("div")
+    .classed("agg-spacer", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
+    .html(``);
 
   d3.select(".agg-table")
     .append("div")
     .classed("agg-header", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
     .html(`Subpopulation`);
 
   d3.select(".agg-table")
     .append("div")
     .classed("agg-header", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
     .text("Calculation");
 
   d3.select(".agg-table")
     .append("div")
     .classed("agg-header", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
     .text("Result");
 }
 

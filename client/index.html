@@ -22,7 +22,7 @@
 
                 <div class="step-header">
                     <h2>STEP 1: UPLOAD</h2>
-                    <p>Upload your by-name list for validation.</p>
+                    <p>Upload your by-name list file.</p>
                 </div>
 
                 <div class="step-content">
@@ -76,7 +76,7 @@
                             <div class="form-field upload-file">
                                 <div>
                                     <label for="fileUpload" class="question-text input-file-label">Choose your by-name list file <b class='asterisk'>*</b></label>
-                                    <input type="file" id="filePicker" name="filePicker" accept=".csv">
+                                    <input type="file" id="filePicker" name="filePicker" accept=".csv, .xls, .xlsx">
                                 </div>
                             </div>
                         </section>
@@ -100,7 +100,7 @@
 
                     <div class="step-header">
                         <h2>STEP 2: VALIDATE</h2>
-                        <p>Validate the by-name list file.</p>
+                        <p>Make sure your file contains the right data.</p>
                     </div>
 
                     <div class="step-content">
@@ -228,14 +228,18 @@
                 <section class="row2">
                     <div class="step-header">
                         <h2>STEP 3: AGGREGATE & SUBMIT</h2>
-                        <p>Aggregate your validated file and submit for reporting.</p>
+                        <p>Review your aggregated data and submit to BFZ.</p>
                     </div>
 
                     <div class="step-content">
                         <div class='reporting-month'></div>
                         <div class='reporting-community'></div>
-                        <div class='agg-table'>
+                        <div class='filter-buttons'>
+                            <div class='button-group-title'></div>
+                            <div class='button-group'></div>
                         </div>
+                        
+                        <div class='agg-table'></div>
 
                         <div class="center">
                             <button class="inactive" type='button' id="submitButton" disabled>SUBMIT DATA</button>
