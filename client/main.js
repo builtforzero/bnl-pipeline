@@ -5,13 +5,14 @@ const partition = require("lodash.partition");
 
 /* APPLICATION STATE */
 let state = {
-  required: false, // Toggle for required fields; makes for easier testing
+  required: true, // Toggle for required fields; makes for easier testing
 
   // Form Fields
   form_community_clean: null,
   form_reporting_date: null,
   form_name: null,
   form_email: null,
+  form_org: null,
   form_file_upload: null,
 
   // Metadata
@@ -226,6 +227,11 @@ let eventListeners = {
 
   contactName: d3.select("#name-input").on("change", function () {
     state.form_name = this.value;
+    checkFormStatus();
+  }),
+
+  contactName: d3.select("#org-input").on("change", function () {
+    state.form_org = this.value;
     checkFormStatus();
   }),
 
@@ -824,6 +830,8 @@ function checkFormStatus() {
       state.form_name === "" ||
       state.form_email === null ||
       state.form_email === "" ||
+      state.form_org === null ||
+      state.form_org === "" ||
       state.form_file_upload === null ||
       state.form_file_upload === ""
     ) {
@@ -839,6 +847,7 @@ function checkFormStatus() {
       state.form_reporting_date != null &&
       state.form_name != null &&
       state.form_email != null &&
+      state.form_org != null &&
       state.form_file_upload != null
     ) {
       // Success: all of the form fields are filled in
@@ -1177,7 +1186,7 @@ function getOutput(population, aggRaw) {
     popOutput["Month"] = state.meta_reportingDate;
     popOutput["Name"] = state.form_name;
     popOutput["Email Address"] = state.form_email;
-    popOutput["Organization"] = null; // TODO: Add in organization
+    popOutput["Organization"] = state.form_org; // TODO: Add in organization
     popOutput["Population"] = household;
     popOutput["Subpopulation"] = population;
     popOutput["Demographic"] = "All"; // TODO: Add demographic?
