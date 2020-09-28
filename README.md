@@ -1,7 +1,5 @@
 # BNL PIPELINE PROJECT
 
-Project structure adapted from [this tutorial](https://github.com/witchard/tutorial-react-parcel-express) by `witchard` and `aronhoyer`.
-
 ## Development with auto reloading
 - Run `yarn dev`
 - Visit **http://localhost:1234**
