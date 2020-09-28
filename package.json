@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "parcel ./client/index.html",
-    "predeploy": "rm -rf .tmp .cache dist && parcel build ./client/index.html --public-url https://builtforzero.github.io/bnl-pipeline",
+    "dev": "parcel ./client/index.html --open",
+    "cleanup": "rm -rf .cache dist",
+    "predeploy": "yarn cleanup && parcel build ./client/index.html --public-url https://builtforzero.github.io/bnl-pipeline",
     "deploy": "gh-pages -d dist"
   },
   "repository": {
@@ -25,12 +26,9 @@
     "parcel-bundler": "^1.12.4"
   },
   "dependencies": {
-    "aws-sdk": "^2.715.0",
     "d3": "^5.16.0",
-    "dotenv": "^8.2.0",
-    "google-spreadsheet": "^3.0.13",
     "lodash": "^4.17.20",
-    "papaparse": "^5.2.0",
-    "string-similarity": "^4.0.2"
+    "lodash.partition": "^4.6.0",
+    "papaparse": "^5.2.0"
   }
 }
