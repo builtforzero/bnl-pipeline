@@ -63,7 +63,7 @@ h2 {
 button {
   padding: 10px;
   margin: 20px 0px;
-  width: 50%;
+  width: 70%;
   font-family: var(--font-body);
   font-size: var(--h3-size);
   font-weight: 900;
@@ -324,6 +324,20 @@ select {
 .button-group-title {
   font-weight: 600;
   margin: 30px 0px 0px 0px;
+}
+
+.reupload-button {
+  background-color: white;
+  color: gray;
+  border: 0px solid var(--color-main);
+  font-size: var(--root-size);
+  margin: 25px 0px 0px;
+  padding: 10px;
+}
+
+.reupload-button:hover {
+  color: var(--color-main);
+  cursor: pointer;
 }
 
 /* MEDIA BREAKPOINTS */

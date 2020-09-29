@@ -3,7 +3,7 @@ const Papa = require("papaparse");
 
 /* APPLICATION STATE */
 let state = {
-  required: true, // Toggle for required fields; makes for easier testing
+  required: false, // Toggle for required fields; makes for easier testing
 
   // Form Fields
   form_community_clean: null,
@@ -26,6 +26,7 @@ let state = {
   data_headers: null,
   data_length: null,
   data_csv: null,
+  data_form: null,
 
   // All headers
   dict_headers_all: [
@@ -257,6 +258,17 @@ let eventListeners = {
   // Validate button
   validateButton: d3.select("#validateButton").on("click", function () {
     runTests(state.data_headers, state.data_raw, state);
+    // Remove any lingering values
+    agg.raw = null;
+    agg.output = [];
+    d3.selectAll(".agg-header").remove();
+    d3.selectAll(".agg-value").remove();
+    d3.selectAll(".filter-btn").remove();
+    // Inactivate and hide the submit button
+    d3.select(".reupload-submit").classed("hide", true);
+    d3.select("#submitButton").classed("inactive", true);
+    d3.select("#submitButton").classed("active", false);
+    d3.select("#submitButton").attr("disabled", true);
   }),
 
   reupload: d3.select(".reupload-button").on("click", function () {
@@ -268,6 +280,12 @@ let eventListeners = {
   }),
 
   aggregateButton: d3.select("#aggregateButton").on("click", function () {
+    // Remove any lingering values
+    agg.raw = null;
+    agg.output = [];
+    d3.selectAll(".agg-header").remove();
+    d3.selectAll(".agg-value").remove();
+    d3.selectAll(".filter-btn").remove();
     // Aggregate the data
     aggregate(state.data_raw);
     // Inactivate and hide the aggregate button
@@ -886,7 +904,11 @@ function checkTestStatus(headersOutput, piiOutput, ssnOutput, datatypeOutput) {
     d3.select("#aggregateButton").classed("hide", true);
     d3.select("#reupload-button").classed("hide", false);
     // Reset values
-    resetValues();
+    agg.raw = null;
+    agg.output = [];
+    d3.selectAll(".agg-header").remove();
+    d3.selectAll(".agg-value").remove();
+    d3.selectAll(".filter-btn").remove();
   } else if (
     headersOutput.result === true &&
     piiOutput.result === true &&
@@ -900,11 +922,16 @@ function checkTestStatus(headersOutput, piiOutput, ssnOutput, datatypeOutput) {
     d3.select("#aggregateButton").attr("disabled", null);
     d3.select("#aggregateButton").classed("hide", false);
     d3.select("#reupload-button").classed("hide", true);
-
     // Inactivate the validate button
     d3.select("#validateButton").classed("inactive", true);
     d3.select("#validateButton").classed("active", false);
     d3.select("#validateButton").attr("disabled", true);
+    // Reset values
+    agg.raw = null;
+    agg.output = [];
+    d3.selectAll(".agg-header").remove();
+    d3.selectAll(".agg-value").remove();
+    d3.selectAll(".filter-btn").remove();
   }
 }
 
@@ -946,14 +973,6 @@ const agg = {
 };
 
 function filterData(data, category) {
-  function inArray(value, comparison) {
-    if (comparison.includes(value)) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   const filterMap = {
     "All Unduplicated": data,
     "All Veteran": data.filter((d) => {
@@ -1169,11 +1188,23 @@ function aggregate(data) {
     const remainingPops = agg.populations.filter((d) => {
       return d != pop;
     });
-    d3.select(".button-group").append("button").classed(`${pop}-btn`, true);
+    d3.select(".button-group")
+      .append("button")
+      .classed(`${pop}-btn filter-btn`, true);
     d3.select(`.${pop}-btn`)
       .on("click", function () {
+        d3.selectAll(`.${pop}`)
+          .style("opacity", "0")
+          .transition()
+          .duration(200)
+          .style("opacity", "1");
         d3.selectAll(`.${pop}`).classed("hide", false);
         remainingPops.map((remaining) => {
+          d3.selectAll(`.${remaining}`)
+            .style("opacity", "1")
+            .transition()
+            .duration(100)
+            .style("opacity", "0");
           d3.selectAll(`.${remaining}`).classed("hide", true);
         });
       })
@@ -1242,27 +1273,6 @@ function printValue(population, calculation, result) {
 function printHeader(population) {
   d3.select(".agg-table")
     .append("div")
-    .classed("agg-spacer", true)
-    .classed(`${population}`, true)
-    .classed("hide", true)
-    .html(``);
-
-  d3.select(".agg-table")
-    .append("div")
-    .classed("agg-spacer", true)
-    .classed(`${population}`, true)
-    .classed("hide", true)
-    .html(``);
-
-  d3.select(".agg-table")
-    .append("div")
-    .classed("agg-spacer", true)
-    .classed(`${population}`, true)
-    .classed("hide", true)
-    .html(``);
-
-  d3.select(".agg-table")
-    .append("div")
     .classed("agg-header", true)
     .classed(`${population}`, true)
     .classed("hide", true)
@@ -1283,15 +1293,68 @@ function printHeader(population) {
     .text("Result");
 }
 
+// URL of Google Apps script to get form data
+let scriptURL =
+  "https://script.google.com/macros/s/AKfycbxkuRKFFR192ubCwQ8TWY1NxqcR9SzjmwWnFP3lDqxyuNbq_0M/exec";
+
 // Parses data as a CSV and downloads the file
 function submitData(data) {
   state.data_csv = Papa.unparse(data);
-  const hiddenElement = document.createElement("a");
+
+  // Download the file on submit
+  /* const hiddenElement = document.createElement("a");
   hiddenElement.href =
     "data:text/csv;charset=utf-8," + encodeURI(state.data_csv);
   hiddenElement.target = "_blank";
   hiddenElement.download = `${state.meta_fileName_title}`;
-  hiddenElement.click();
+  hiddenElement.click(); */
+
+  const popNumber = agg.populations.length;
+  d3.select(".progress-msg").text(`0 / ${popNumber} populations submitted`);
+
+  agg.populations.map((value, index) => {
+    let submitForm = document.createElement("form");
+    submitForm.setAttribute("method", "POST");
+    const popIndex = index;
+    let popValue = value;
+
+    state.dict_fields.map((field) => {
+      const fieldName = field;
+      const fieldValue = data[popIndex][field];
+      const i = document.createElement("input");
+      i.setAttribute("type", "text");
+      i.setAttribute("name", fieldName);
+      i.setAttribute("value", fieldValue);
+      submitForm.appendChild(i);
+    });
+
+    const s = document.createElement("button");
+    s.setAttribute("type", "submit");
+    s.setAttribute("value", "Submit");
+
+    submitForm.appendChild(s);
+    submitForm.addEventListener("submit", (e) => {
+      console.log("Submitting Data!");
+      e.preventDefault();
+      fetch(scriptURL, {
+        method: "POST",
+        body: new FormData(submitForm),
+      })
+        .then((response) => console.log("Success!", response))
+        .catch((error) => console.error("Error!", error.message));
+    });
+
+    submitForm.className = "hide";
+    document.body.appendChild(submitForm);
+    s.click();
+
+    d3.select(".progress-msg")
+      .text(`${popIndex + 1} / ${popNumber} populations submitted`)
+      .append("div")
+      .text(`Submitting data for ${popValue}`);
+  });
+
+  d3.select(".progress-msg").append("div").text("Submitted data!");
 }
 
 // Client ID and API key from the Developer Console
