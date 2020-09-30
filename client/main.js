@@ -143,6 +143,7 @@ let script = {
   format_MY: d3.timeFormat("%B %Y"), // September 2020
   parse_Ymd: d3.timeParse("%Y-%m-%d"),
   parse_dmY: d3.timeParse("%m/%d/%Y"),
+  parse_Ym: d3.timeParse("%Y-%m"),
 
   // Remove a value from an array and return the updated array
   arrayRemove: function arrayRemove(arr, value) {
@@ -212,10 +213,10 @@ let eventListeners = {
     console.log(this.value);
     state.form_reporting_date = this.value;
     state.meta_reportingDate = script.format_MY(
-      script.parse_Ymd(state.form_reporting_date)
+      script.parse_Ym(state.form_reporting_date)
     );
     state.meta_fileName_date = script.format_Ymd(
-      script.parse_Ymd(state.form_reporting_date)
+      script.parse_Ym(state.form_reporting_date)
     );
     // Name of file upload
     state.meta_timestamp = script.format_YmdX(Date.now());
@@ -266,6 +267,7 @@ let eventListeners = {
     d3.selectAll(".filter-btn").remove();
     // Inactivate and hide the submit button
     d3.select(".reupload-submit").classed("hide", true);
+    d3.select(".reupload-submit").classed("hide", true);
     d3.select("#submitButton").classed("inactive", true);
     d3.select("#submitButton").classed("active", false);
     d3.select("#submitButton").attr("disabled", true);
@@ -296,6 +298,7 @@ let eventListeners = {
     d3.select("#reupload-button").classed("hide", true);
     // Activate and show the submit button
     d3.select(".reupload-submit").classed("hide", false);
+    d3.select(".submit-intructions").classed("hide", false);
     d3.select("#submitButton").classed("inactive", false);
     d3.select("#submitButton").classed("active", true);
     d3.select("#submitButton").attr("disabled", null);
@@ -304,6 +307,16 @@ let eventListeners = {
 
   submitButton: d3.select("#submitButton").on("click", function () {
     submitData(agg.output);
+    d3.select("#submitButton").classed("hide", true);
+    d3.select(".submit-intructions").classed("hide", true);
+    d3.select("#reupload-button").classed("hide", true);
+
+    d3.select(".progress-msg")
+      .html(`Data submitted for ${state.meta_reportingDate}!`)
+      .style("opacity", "0")
+      .transition()
+      .duration(200)
+      .style("opacity", "1");
   }),
 };
 
@@ -1191,6 +1204,7 @@ function aggregate(data) {
     d3.select(".button-group")
       .append("button")
       .classed(`${pop}-btn filter-btn`, true);
+
     d3.select(`.${pop}-btn`)
       .on("click", function () {
         d3.selectAll(`.${pop}`)
@@ -1212,8 +1226,6 @@ function aggregate(data) {
       .attr("class", "label")
       .text(`${pop}`);
   });
-
-  console.log(agg);
 }
 
 function getOutput(population, aggRaw) {
@@ -1301,16 +1313,7 @@ let scriptURL =
 function submitData(data) {
   state.data_csv = Papa.unparse(data);
 
-  // Download the file on submit
-  /* const hiddenElement = document.createElement("a");
-  hiddenElement.href =
-    "data:text/csv;charset=utf-8," + encodeURI(state.data_csv);
-  hiddenElement.target = "_blank";
-  hiddenElement.download = `${state.meta_fileName_title}`;
-  hiddenElement.click(); */
-
   const popNumber = agg.populations.length;
-  d3.select(".progress-msg").text(`0 / ${popNumber} populations submitted`);
 
   agg.populations.map((value, index) => {
     let submitForm = document.createElement("form");
@@ -1347,52 +1350,5 @@ function submitData(data) {
     submitForm.className = "hide";
     document.body.appendChild(submitForm);
     s.click();
-
-    d3.select(".progress-msg")
-      .text(`${popIndex + 1} / ${popNumber} populations submitted`)
-      .append("div")
-      .text(`Submitting data for ${popValue}`);
   });
-
-  d3.select(".progress-msg").append("div").text("Submitted data!");
 }
-
-// Client ID and API key from the Developer Console
-/* 
-let props;
-
-function readJson(sheetId, sheetNumber) {
-  const url = `https://spreadsheets.google.com/feeds/cells/${sheetId}/${sheetNumber}/public/full?alt=json`;
-  const urlNew = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1/key=AIzaSyBwN3HnsgzHntDcqK8T96cZYGcN32EegWo`;
-
-  d3.json(url).then((data) => {
-    const json = data;
-    const entries = data.feed.entry;
-    const colCount = parseInt(Object.values(json.feed.gs$colCount)[0]) - 1;
-    const rowCount = parseInt(Object.values(json.feed.gs$rowCount)[0]) - 1;
-
-    console.log(entries);
-
-    const colMap = [...Array(colCount).keys()];
-    const rowMap = [...Array(rowCount).keys()];
-    const valueMap = [...Array(entries.length).keys()];
-    console.log(valueMap.length);
-    const arr = [];
-
-    props = {
-      colCount: colCount,
-      rowCount: rowCount,
-      headers: colMap.map((value, index) => {
-        return entries[index].content.$t;
-      }),
-      values: valueMap.map((value, index) => {
-        return entries[index].content.$t;
-      }),
-      data: valueMap.map((value, index) => {
-        return arr;
-      }),
-    };
-    console.log(arr);
-    console.log(props);
-  });
-} */
