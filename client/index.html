@@ -77,7 +77,8 @@
                             <div class="form-field upload-file">
                                 <div>
                                     <label for="fileUpload" class="question-text input-file-label">Choose your by-name list file <b class='asterisk'>*</b></label>
-                                    <input type="file" id="filePicker" name="filePicker" accept=".csv, .xls, .xlsx">
+                                    <p class="neutral" style='font-size: var(--subtitle-size)'>Only .CSV formats accepted at this time</p>
+                                    <input type="file" id="filePicker" name="filePicker" accept=".csv">
                                 </div>
                             </div>
                         </section>
@@ -190,7 +191,7 @@
 
                             <!-- STEP 4: MATCH DATA TYPE -->
                             <div class="validation-step">
-                                <div class="validation-name" id="datatype-name">4. Required columns must contain the right data type.
+                                <div class="validation-name" id="datatype-name">4. Required columns must contain the right values.
                                     <span>
                                         <div class="toggle" id="datatype-name-toggle">SHOW DETAILS ▼</div>
                                     </span>
@@ -199,11 +200,12 @@
                                 <div class="validation-info hide" id="datatype-info">
                                     <div class="info">
                                         <h3>Requirement</h3>
-                                        <p>The <b>required columns</b> in your file must have values in the <b>right format</b>. Specifically:</p>
+                                        <br>
+                                        <p><b>Required columns</b> in your file must have values in the <b>right format</b>. Specifically:</p>
                                         <ul>
-                                            <li><b>Dates</b>, like <i>Homeless Start Date</i>, must be in the format <b>"MM/DD/YYYY"</b> e.g. <b>"12/31/2020"</b>.</li>
-                                            <li><b>Numerical fields</b>, like <i>Age</i> and <i>Household Size</i>, must only contain <b>whole numbers</b> e.g. <b>"31"</b>.</li>
-                                            <li><b>Open text fields</b> like <i>Race</i> and <i>Gender</i> can accept any combination of letters, numbers, and special characters.</li>
+                                            <li><b style='color:var(--color-main);'>DATES</b> must be in the format <b>"MM/DD/YYYY"</b> e.g. <b>"12/31/2020"</b>.</li>
+                                            <li><b style='color:var(--color-main);'>NUMERICAL FIELDS</b> like <b class='neutral'>Age</b> and <b class='neutral'>Household Size</b> must only contain <b>whole numbers</b> e.g. <b>"31"</b>.</li>
+                                            <li><b style='color:var(--color-main);'>OPEN TEXT FIELDS</b> like <b class='neutral'>Race</b> and <b class='neutral'>Gender</b> can accept any combination of letters, numbers, and special characters.</li>
                                         </ul>
                                     </div>
                                     <div class="result">
@@ -243,11 +245,25 @@
                         <div class='agg-table'></div>
 
                         <div class="submitBtn-msg center">
+                            
+                            <div class='hide review-msg'>
+                                <p><b class='neutral'>Numbers don't look right? Check that you have marked each client's subpopulation status accurately and reupload, if needed.</b></p>
+                                <div class='popStatus-instructions'>
+                                    <div class='popStatus-values'><p>Chronic</p></div>
+                                    <div class='popStatus-values'><p>Enter <b>"Single Adult"</b> in the <b>Household Type</b> column AND <b>"Chronically Homeless"</b> in the <b>Chronic Status</b> column</p></div>
+                                    <div class='popStatus-values'><p>Veteran</p></div>
+                                    <div class='popStatus-values'><p>Enter <b>"Single Adult"</b> in the <b>Household Type</b> column AND <b>"Yes Validated"</b> in the <b>Chronic Status</b> column</p></div>
+                                    <div class='popStatus-values'><p>Youth</p></div>
+                                    <div class='popStatus-values'><p>Enter <b>"Youth"</b> in the <b>Household Type</b> column</p></div>
+                                    <div class='popStatus-values'><p>Family</p></div>
+                                    <div class='popStatus-values'><p>Enter <b>"Family"</b> in the <b>Household Type</b> column</p></div>
+                                </div>
+                            </div>
                             <button class='hide reupload-submit reupload-button' id='reupload-button'>
                                 REUPLOAD CORRECTED FILE &nbsp &#8630
                             </button>
-                            </div>
-                        <div class="submit-intructions center hide">If your numbers look correct, click on the button below to report data for ALL populations!</div>
+                        </div>
+                        <div class="submit-instructions center hide">Click on the button below to report data for ALL populations!</div>
                         <div class="center">
                             <button class="inactive" type='button' id="submitButton" disabled>SUBMIT DATA</button>
                         </div>

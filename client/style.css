@@ -322,8 +322,10 @@ select {
 }
 
 .button-group-title {
+  font-size: var(--h4-size);
   font-weight: 600;
   margin: 30px 0px 0px 0px;
+  text-align: center;
 }
 
 .reupload-button {
@@ -331,8 +333,9 @@ select {
   color: gray;
   border: 0px solid var(--color-main);
   font-size: var(--root-size);
-  margin: 25px 0px 0px;
+  margin: 15px 0px 25px;
   padding: 10px;
+  width: 100%;
 }
 
 .reupload-button:hover {
@@ -340,8 +343,8 @@ select {
   cursor: pointer;
 }
 
-.submit-intructions {
-  margin: 20px 20px 0px 20px;
+.submit-instructions {
+  margin: 0px 20px 0px 20px;
   font-weight: 600;
   text-align: center;
 }
@@ -350,6 +353,35 @@ select {
   font-size: var(--h3-size);
   font-weight: 600;
   margin: 20px 20px 0px 20px;
+}
+
+.submitBtn-msg {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.review-msg {
+  margin: 25px 10px 0px 10px;
+  padding: 10px;
+}
+
+.popStatus-instructions {
+  display: grid;
+  grid-template-columns: 1fr 7fr;
+  column-gap: 0px;
+  row-gap: 0px;
+  margin: 10px;
+}
+
+.popStatus-values {
+  font-size: var(--root-size);
+  margin: 0px 0px;
+  padding: 10px;
+  border-bottom: 1px solid lightgrey;
+}
+
+.popStatus-values:hover {
+  background-color: rgb(235, 235, 235);
 }
 
 /* MEDIA BREAKPOINTS */
@@ -368,6 +400,7 @@ select {
     display: grid;
     grid-template-columns: 1fr 1fr;
     column-gap: 10px;
+    margin: 10px 10px 30px 10px;
   }
 
   .button-group > button {

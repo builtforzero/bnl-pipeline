@@ -1,5 +1,6 @@
 const d3 = require("d3");
 const Papa = require("papaparse");
+const XLSX = require("xlsx");
 
 /* APPLICATION STATE */
 let state = {
@@ -22,6 +23,7 @@ let state = {
 
   // Data
   fileList: null,
+  fileFormat: null,
   data_raw: null,
   data_headers: null,
   data_length: null,
@@ -144,6 +146,8 @@ let script = {
   parse_Ymd: d3.timeParse("%Y-%m-%d"),
   parse_dmY: d3.timeParse("%m/%d/%Y"),
   parse_Ym: d3.timeParse("%Y-%m"),
+  parse_dmy: d3.timeParse("%d/%m/%y"),
+  parse_dmYT: d3.timeParse("%B %d, %Y"),
 
   // Remove a value from an array and return the updated array
   arrayRemove: function arrayRemove(arr, value) {
@@ -179,7 +183,7 @@ let script = {
     if (value === null) {
       return null;
     } else if (dataType === "date") {
-      const dateRegex = /(0?[1-9]|1[012])\/(0?[1-9]|[12][0-9]|3[01])\/\d{4}/;
+      const dateRegex = /(0?[1-9]|1[012])\/(0?[1-9]|[12][0-9]|3[01])\/\d{2,4}/;
       return dateRegex.test(value.toString());
     } else if (dataType === "num") {
       return Number.isInteger(value);
@@ -245,15 +249,47 @@ let eventListeners = {
     state.form_file_upload = this.value;
     checkFormStatus();
     state.fileList = this.files;
-    Papa.parse(state.fileList[0], {
-      dynamicTyping: true,
-      header: true,
-      complete: function (results) {
-        state.data_raw = results.data;
-        state.data_headers = results.meta.fields;
-        state.data_length = results.data.length;
-      },
-    });
+    const fileType = this.files[0].type;
+    let csvFileType = "application/vnd.ms-excel";
+    let xlsxFileType =
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    console.log(state.fileList);
+    console.log(this.files[0].type);
+
+    if (fileType === csvFileType) {
+      Papa.parse(state.fileList[0], {
+        dynamicTyping: true,
+        header: true,
+        complete: function (results) {
+          state.data_raw = results.data;
+          state.data_headers = results.meta.fields;
+          state.data_length = results.data.length;
+          state.fileFormat = "csv";
+        },
+      });
+    } else if (fileType === xlsxFileType) {
+      var reader = new FileReader();
+      const e = state.form_file_upload;
+      const f = state.fileList[0];
+      reader.onload = function (e) {
+        var data = new Uint8Array(e.target.result);
+        var workbook = XLSX.read(data, { type: "array" });
+        var sheetNameList = workbook.SheetNames;
+        var csv = XLSX.utils.sheet_to_csv(workbook.Sheets[sheetNameList[0]]);
+        Papa.parse(csv, {
+          dynamicTyping: true,
+          header: true,
+          complete: function (results) {
+            state.data_raw = results.data;
+            state.data_headers = results.meta.fields;
+            state.data_length = results.data.length;
+            state.fileFormat = "xlsx";
+          },
+        });
+        console.log(state);
+      };
+      reader.readAsArrayBuffer(f);
+    }
   }),
 
   // Validate button
@@ -271,6 +307,7 @@ let eventListeners = {
     d3.select("#submitButton").classed("inactive", true);
     d3.select("#submitButton").classed("active", false);
     d3.select("#submitButton").attr("disabled", true);
+    console.log(state);
   }),
 
   reupload: d3.select(".reupload-button").on("click", function () {
@@ -298,7 +335,8 @@ let eventListeners = {
     d3.select("#reupload-button").classed("hide", true);
     // Activate and show the submit button
     d3.select(".reupload-submit").classed("hide", false);
-    d3.select(".submit-intructions").classed("hide", false);
+    d3.select(".submit-instructions").classed("hide", false);
+    d3.select(".review-msg").classed("hide", false);
     d3.select("#submitButton").classed("inactive", false);
     d3.select("#submitButton").classed("active", true);
     d3.select("#submitButton").attr("disabled", null);
@@ -308,7 +346,8 @@ let eventListeners = {
   submitButton: d3.select("#submitButton").on("click", function () {
     submitData(agg.output);
     d3.select("#submitButton").classed("hide", true);
-    d3.select(".submit-intructions").classed("hide", true);
+    d3.select(".submit-instructions").classed("hide", true);
+    d3.select(".review-msg").classed("hide", true);
     d3.select("#reupload-button").classed("hide", true);
 
     d3.select(".progress-msg")
@@ -434,17 +473,6 @@ let section = {
     section.toggle("#pii-info", "#pii-toggle", section.pii_open);
   }),
 };
-
-/* REMOVE DATA FROM STATE */
-function resetValues() {
-  // Data
-  state.fileList = null;
-  state.data_raw = null;
-  state.data_headers = null;
-  state.data_length = null;
-
-  d3.select("#filePicker").value = "";
-}
 
 /* RUN TESTS AND CHECK VALIDATION STATUS */
 function runTests(headerArray, data) {
@@ -972,6 +1000,13 @@ const agg = {
     "All Family",
   ],
   populations: ["All", "Veteran", "Chronic", "Youth", "Family"],
+  popExplanations: [
+    "All active clients",
+    "Clients who have a 'Single Adult' Household Status AND 'Yes Validated' in Veteran Status",
+    "Clients who have a 'Single Adult' Household Status AND 'Chronically Homeless' in Veteran Status",
+    "Clients who have a 'Youth' Household Status",
+    "Clients who have a 'Family' Household Status",
+  ],
   metrics: [
     "Actively Homeless",
     "Housing Placements",
@@ -1035,11 +1070,11 @@ function filterData(data, category) {
 
 // Given a date and date format, return the month and year
 function monthYear(dateValue, format) {
-  if (format === "dmY") {
+  if (format === "csv") {
     return script.format_MY(script.parse_dmY(dateValue));
-  } else if (format === "Ymd") {
-    return script.format_MY(script.parse_Ymd(dateValue));
-  } else return null;
+  } else if (format === "xlsx") {
+    return script.format_MY(script.parse_dmy(dateValue));
+  }
 }
 
 function calculate(data, calculation) {
@@ -1058,7 +1093,10 @@ function calculate(data, calculation) {
       // Then filter for additional criteria
       const col = "Housing Move-In Date";
       const filteredData = categoryData.filter((d) => {
-        return d[col] != null && monthYear(d[col], "dmY") === reportingDate;
+        return (
+          d[col] != null &&
+          monthYear(d[col], state.fileFormat) === reportingDate
+        );
       });
       // Then get the unique number of clients
       const clients = script.getColByName(filteredData, agg.clientIDHeader);
@@ -1070,7 +1108,10 @@ function calculate(data, calculation) {
       // Then filter for additional criteria
       const col = "Inactive Date";
       const filteredData = categoryData.filter((d) => {
-        return d[col] != null && monthYear(d[col], "dmY") === reportingDate;
+        return (
+          d[col] != null &&
+          monthYear(d[col], state.fileFormat) === reportingDate
+        );
       });
       // Then get the unique number of clients
       const clients = script.getColByName(filteredData, agg.clientIDHeader);
@@ -1082,7 +1123,10 @@ function calculate(data, calculation) {
       // Then filter for additional criteria
       const col = "Date of Identification";
       const filteredData = categoryData.filter((d) => {
-        return d[col] != null && monthYear(d[col], "dmY") === reportingDate;
+        return (
+          d[col] != null &&
+          monthYear(d[col], state.fileFormat) === reportingDate
+        );
       });
       // Then get the unique number of clients
       const clients = script.getColByName(filteredData, agg.clientIDHeader);
@@ -1097,7 +1141,7 @@ function calculate(data, calculation) {
       const filteredData = categoryData.filter((d) => {
         return (
           d[col2] != null &&
-          monthYear(d[col1], "dmY") === reportingDate &&
+          monthYear(d[col1], state.fileFormat) === reportingDate &&
           script.parse_dmY(d[col1]) > script.parse_dmY(d[col2])
         );
       });
@@ -1114,7 +1158,7 @@ function calculate(data, calculation) {
       const filteredData = categoryData.filter((d) => {
         return (
           d[col2] != null &&
-          monthYear(d[col1], "dmY") === reportingDate &&
+          monthYear(d[col1], state.fileFormat) === reportingDate &&
           script.parse_dmY(d[col1]) > script.parse_dmY(d[col2])
         );
       });
@@ -1197,7 +1241,7 @@ function aggregate(data) {
 
   d3.select(".button-group-title").text("Select a subpopulation to review");
 
-  agg.populations.map((pop) => {
+  agg.populations.map((pop, index) => {
     const remainingPops = agg.populations.filter((d) => {
       return d != pop;
     });
@@ -1249,10 +1293,10 @@ function getOutput(population, aggRaw) {
     popOutput["Month"] = state.meta_reportingDate;
     popOutput["Name"] = state.form_name;
     popOutput["Email Address"] = state.form_email;
-    popOutput["Organization"] = state.form_org; // TODO: Add in organization
+    popOutput["Organization"] = state.form_org;
     popOutput["Population"] = household;
     popOutput["Subpopulation"] = population;
-    popOutput["Demographic"] = "All"; // TODO: Add demographic?
+    popOutput["Demographic"] = "All";
     popOutput[metric] = aggRaw[metric][index];
     printValue(population, metric, aggRaw[metric][index]);
   });
@@ -1279,7 +1323,7 @@ function printValue(population, calculation, result) {
     .classed("agg-value", true)
     .classed(`${population}`, true)
     .classed("hide", true)
-    .html(`<b>${result}</b>`);
+    .html(`${result}`);
 }
 
 function printHeader(population) {
