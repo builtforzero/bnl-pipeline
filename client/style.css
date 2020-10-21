@@ -358,6 +358,7 @@ select {
 .submitBtn-msg {
   display: grid;
   grid-template-columns: 1fr;
+  margin: 25px 0px 0px 0px;
 }
 
 .review-msg {

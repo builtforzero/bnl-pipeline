@@ -25,6 +25,7 @@ let state = {
   fileList: null,
   fileFormat: null,
   data_raw: null,
+  data_clean: null,
   data_headers: null,
   data_length: null,
   data_csv: null,
@@ -132,6 +133,13 @@ let state = {
     "Newly Identified Inflow",
     "Returned to Active from Housing",
     "Returned to Active from Inactive",
+  ],
+
+  categorical_fields: [
+    "BNL Status",
+    "Household Type",
+    "Veteran Status",
+    "Chronic Status"
   ],
 };
 
@@ -280,7 +288,6 @@ let eventListeners = {
             state.data_raw = results.data;
             state.data_headers = results.meta.fields;
             state.data_length = results.data.length;
-            state.fileFormat = "xlsx";
           },
         });
       };
@@ -1023,7 +1030,7 @@ function filterData(data, category) {
         d["Household Type"] != null &&
         d["Veteran Status"] != null &&
         d["Household Type"].toString().trim() === "Single Adult" &&
-        d["Veteran Status"].toString().trim() === agg.isVeteran
+        d["Veteran Status"].toString().replace(/[^A-Z 0-9]/ig, "").trim() === agg.isVeteran
       );
     }),
     "All Chronic": data.filter((d) => {
@@ -1088,12 +1095,8 @@ function filterData(data, category) {
 }
 
 // Given a date and date format, return the month and year
-function monthYear(dateValue, format) {
-  if (format === "csv") {
-    return script.format_MY(script.parse_dmY(dateValue));
-  } else if (format === "xlsx") {
-    return script.format_MY(script.parse_dmy(dateValue));
-  }
+function monthYear(dateValue) {
+  return script.format_MY(script.parse_dmY(dateValue));
 }
 
 function calculate(data, calculation) {
@@ -1106,7 +1109,7 @@ function calculate(data, calculation) {
       const clients = script.getColByName(categoryData, categoryData.length, agg.clientIDHeader);
       return new Set(clients).size;
     }),
-    "Housing Placements": agg.activeCats.map((category) => {
+    "Housing Placements": agg.allCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -1114,11 +1117,11 @@ function calculate(data, calculation) {
       const filteredData = categoryData.filter((d) => {
         return (
           d[col] != null &&
-          monthYear(d[col], state.fileFormat) === reportingDate
+          monthYear(d[col]) === reportingDate
         );
       });
       // Then get the unique number of clients
-      const clients = script.getColByName(filteredData, agg.clientIDHeader);
+      const clients = script.getColByName(filteredData, filteredData.length, agg.clientIDHeader);
       return new Set(clients).size;
     }),
     "Moved to Inactive": agg.allCats.map((category) => {
@@ -1129,7 +1132,7 @@ function calculate(data, calculation) {
       const filteredData = categoryData.filter((d) => {
         return (
           d[col] != null &&
-          monthYear(d[col], state.fileFormat) === reportingDate
+          monthYear(d[col]) === reportingDate
         );
       });
       // Then get the unique number of clients
@@ -1144,7 +1147,7 @@ function calculate(data, calculation) {
       const filteredData = categoryData.filter((d) => {
         return (
           d[col] != null &&
-          monthYear(d[col], state.fileFormat) === reportingDate
+          monthYear(d[col]) === reportingDate
         );
       });
       // Then get the unique number of clients
@@ -1160,7 +1163,7 @@ function calculate(data, calculation) {
       const filteredData = categoryData.filter((d) => {
         return (
           d[col2] != null &&
-          monthYear(d[col1], state.fileFormat) === reportingDate &&
+          monthYear(d[col1]) === reportingDate &&
           script.parse_dmY(d[col1]) > script.parse_dmY(d[col2])
         );
       });
@@ -1177,7 +1180,7 @@ function calculate(data, calculation) {
       const filteredData = categoryData.filter((d) => {
         return (
           d[col2] != null &&
-          monthYear(d[col1], state.fileFormat) === reportingDate &&
+          monthYear(d[col1]) === reportingDate &&
           script.parse_dmY(d[col1]) > script.parse_dmY(d[col2])
         );
       });
@@ -1185,7 +1188,7 @@ function calculate(data, calculation) {
       const clients = script.getColByName(filteredData, filteredData.length, agg.clientIDHeader);
       return new Set(clients).size;
     }),
-    "Length of Time from ID to Housing": agg.activeCats.map((category) => {
+    "Length of Time from ID to Housing": agg.allCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       const col1 = "Housing Move-In Date";
@@ -1260,15 +1263,37 @@ function aggregate(data) {
 
   d3.select(".button-group-title").text("Select a subpopulation to review");
 
+  // Add the population buttons
+  // Toggle the visible aggregation result by population
   agg.populations.map((pop, index) => {
+    // Set the "remaining populations" to everything but the chosen pop
     const remainingPops = agg.populations.filter((d) => {
       return d != pop;
     });
+    // Add a button for the population
     d3.select(".button-group")
       .append("button")
       .classed(`${pop}-btn filter-btn`, true);
-
-    d3.select(`.${pop}-btn`)
+    // Set "All" as the default population to be visible
+    if(pop === "All") {
+      d3.selectAll(`.${pop}`)
+          .style("opacity", "0")
+          .transition()
+          .duration(200)
+          .style("opacity", "1");
+      d3.selectAll(`.${pop}`).classed("hide", false);
+      remainingPops.map((remaining) => {
+        d3.selectAll(`.${remaining}`)
+          .style("opacity", "1")
+          .transition()
+          .duration(100)
+          .style("opacity", "0");
+        d3.selectAll(`.${remaining}`).classed("hide", true);
+      });
+      // Set the button to be focused
+      d3.select(`.${pop}-btn`).node().focus()
+      // Add an event listener and label to the button
+      d3.select(`.${pop}-btn`)
       .on("click", function () {
         d3.selectAll(`.${pop}`)
           .style("opacity", "0")
@@ -1288,7 +1313,60 @@ function aggregate(data) {
       .append("div")
       .attr("class", "label")
       .text(`${pop}`);
+    } else {
+      // Add an event listener and label to the button
+      d3.select(`.${pop}-btn`)
+      .on("click", function () {
+        d3.selectAll(`.${pop}`)
+          .style("opacity", "0")
+          .transition()
+          .duration(200)
+          .style("opacity", "1");
+        d3.selectAll(`.${pop}`).classed("hide", false);
+        remainingPops.map((remaining) => {
+          d3.selectAll(`.${remaining}`)
+            .style("opacity", "1")
+            .transition()
+            .duration(100)
+            .style("opacity", "0");
+          d3.selectAll(`.${remaining}`).classed("hide", true);
+        });
+      })
+      .append("div")
+      .attr("class", "label")
+      .text(`${pop}`);
+    }
+
+    // Add a click event listener to the button
+    // Show the chosen pop and hide the remaining
+    // Add a label to the button
+    /* d3.select(`.${pop}-btn`)
+      .on("click", function () {
+
+        d3.selectAll(`.${pop}`)
+          .style("opacity", "0")
+          .transition()
+          .duration(200)
+          .style("opacity", "1");
+
+        d3.selectAll(`.${pop}`).classed("hide", false);
+
+        remainingPops.map((remaining) => {
+          d3.selectAll(`.${remaining}`)
+            .style("opacity", "1")
+            .transition()
+            .duration(100)
+            .style("opacity", "0");
+          d3.selectAll(`.${remaining}`).classed("hide", true);
+        });
+      })
+      .append("div")
+      .attr("class", "label")
+      .text(`${pop}`); */
   });
+
+  console.log("STATE", state)
+  console.log("AGG", agg)
 }
 
 function getOutput(population, aggRaw) {
