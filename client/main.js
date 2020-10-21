@@ -168,10 +168,10 @@ let script = {
     return col;
   },
 
-  getColByName: function getColByName(arr, columnName) {
+  getColByName: function getColByName(arr, length, columnName) {
     const col = [];
 
-    for (let row = 0; row < arr.length - 1; row++) {
+    for (let row = 0; row < length; row++) {
       const value = Object.values(arr)[row][columnName];
       col.push(value);
     }
@@ -214,7 +214,6 @@ let eventListeners = {
 
   // Reporting date input
   dateInput: d3.select("#date-input").on("change", function () {
-    console.log(this.value);
     state.form_reporting_date = this.value;
     state.meta_reportingDate = script.format_MY(
       script.parse_Ym(state.form_reporting_date)
@@ -253,8 +252,6 @@ let eventListeners = {
     let csvFileType = "application/vnd.ms-excel";
     let xlsxFileType =
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-    console.log(state.fileList);
-    console.log(this.files[0].type);
 
     if (fileType === csvFileType) {
       Papa.parse(state.fileList[0], {
@@ -286,7 +283,6 @@ let eventListeners = {
             state.fileFormat = "xlsx";
           },
         });
-        console.log(state);
       };
       reader.readAsArrayBuffer(f);
     }
@@ -307,7 +303,6 @@ let eventListeners = {
     d3.select("#submitButton").classed("inactive", true);
     d3.select("#submitButton").classed("active", false);
     d3.select("#submitButton").attr("disabled", true);
-    console.log(state);
   }),
 
   reupload: d3.select(".reupload-button").on("click", function () {
@@ -694,7 +689,7 @@ function ssnValuesTest(
   const output = headerArray
     .map((header) => {
       // Get the values for the header
-      const arr = script.getColByName(data, header);
+      const arr = script.getColByName(data, data.length - 1, header);
       // Map through each value and test against the regex pattern
       // If the test passes, return the index of the value
       const fail = arr
@@ -795,7 +790,7 @@ function dataTypeTest(
         let errorMessage = state.datatype_errors[dataType];
 
         // Get the array of values for the header
-        const arr = script.getColByName(data, header);
+        const arr = script.getColByName(data, data.length - 1, header);
         const values = [];
         const indices = [];
 
@@ -1025,44 +1020,68 @@ function filterData(data, category) {
     "All Unduplicated": data,
     "All Veteran": data.filter((d) => {
       return (
-        d["Household Type"] === "Single Adult" &&
-        d["Veteran Status"] === agg.isVeteran
+        d["Household Type"] != null &&
+        d["Veteran Status"] != null &&
+        d["Household Type"].toString().trim() === "Single Adult" &&
+        d["Veteran Status"].toString().trim() === agg.isVeteran
       );
     }),
     "All Chronic": data.filter((d) => {
       return (
-        d["Household Type"] === "Single Adult" &&
-        d["Chronic Status"] === agg.isChronic
+        d["Household Type"] != null &&
+        d["Chronic Status"] != null &&
+        d["Household Type"].toString().trim() === "Single Adult" &&
+        d["Chronic Status"].toString().trim() === agg.isChronic
       );
     }),
     "All Youth": data.filter((d) => {
-      return d["Household Type"] === "Youth";
+      return (
+        d["Household Type"] != null &&
+        d["Household Type"].toString().trim() === "Youth");
     }),
     "All Family": data.filter((d) => {
-      return d["Household Type"] === "Family";
+      return (
+        d["Household Type"] != null &&
+        d["Household Type"].toString().trim() === "Family");
     }),
     "Active All": data.filter((d) => {
-      return d["BNL Status"] === "Active";
+      return (
+        d["BNL Status"] != null &&
+        d["BNL Status"].toString().trim() === "Active");
     }),
     "Active Veteran": data.filter((d) => {
       return (
-        d["BNL Status"] === "Active" &&
-        d["Household Type"] === "Single Adult" &&
-        d["Veteran Status"] === agg.isVeteran
+        d["BNL Status"] != null &&
+        d["Household Type"] != null &&
+        d["Veteran Status"] != null &&
+        d["BNL Status"].toString().trim() === "Active" &&
+        d["Household Type"].toString().trim() === "Single Adult" &&
+        d["Veteran Status"].toString().trim() === agg.isVeteran
       );
     }),
     "Active Chronic": data.filter((d) => {
       return (
-        d["BNL Status"] === "Active" &&
-        d["Household Type"] === "Single Adult" &&
-        d["Chronic Status"] === agg.isChronic
+        d["BNL Status"] != null &&
+        d["Household Type"] != null &&
+        d["Chronic Status"] != null &&
+        d["BNL Status"].toString().trim() === "Active" &&
+        d["Household Type"].toString().trim() === "Single Adult" &&
+        d["Chronic Status"].toString().trim() === agg.isChronic
       );
     }),
     "Active Youth": data.filter((d) => {
-      return d["BNL Status"] === "Active" && d["Household Type"] === "Youth";
+      return (
+        d["BNL Status"] != null &&
+        d["Household Type"] != null &&
+        d["BNL Status"].toString().trim() === "Active" && 
+        d["Household Type"].toString().trim() === "Youth");
     }),
     "Active Family": data.filter((d) => {
-      return d["BNL Status"] === "Active" && d["Household Type"] === "Family";
+      return (
+        d["BNL Status"] != null &&
+        d["Household Type"] != null &&
+        d["BNL Status"].toString().trim() === "Active" && 
+        d["Household Type"].toString().trim() === "Family");
     }),
   };
   return filterMap[category];
@@ -1084,7 +1103,7 @@ function calculate(data, calculation) {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then get the unique number of clients
-      const clients = script.getColByName(categoryData, agg.clientIDHeader);
+      const clients = script.getColByName(categoryData, categoryData.length, agg.clientIDHeader);
       return new Set(clients).size;
     }),
     "Housing Placements": agg.activeCats.map((category) => {
@@ -1114,7 +1133,7 @@ function calculate(data, calculation) {
         );
       });
       // Then get the unique number of clients
-      const clients = script.getColByName(filteredData, agg.clientIDHeader);
+      const clients = script.getColByName(filteredData, filteredData.length, agg.clientIDHeader);
       return new Set(clients).size;
     }),
     "Newly Identified Inflow": agg.activeCats.map((category) => {
@@ -1129,7 +1148,7 @@ function calculate(data, calculation) {
         );
       });
       // Then get the unique number of clients
-      const clients = script.getColByName(filteredData, agg.clientIDHeader);
+      const clients = script.getColByName(filteredData, filteredData.length, agg.clientIDHeader);
       return new Set(clients).size;
     }),
     "Returned to Active from Housing": agg.activeCats.map((category) => {
@@ -1146,7 +1165,7 @@ function calculate(data, calculation) {
         );
       });
       // Then get the unique number of clients
-      const clients = script.getColByName(filteredData, agg.clientIDHeader);
+      const clients = script.getColByName(filteredData, filteredData.length, agg.clientIDHeader);
       return new Set(clients).size;
     }),
     "Returned to Active from Inactive": agg.allCats.map((category) => {
@@ -1163,7 +1182,7 @@ function calculate(data, calculation) {
         );
       });
       // Then get the unique number of clients
-      const clients = script.getColByName(filteredData, agg.clientIDHeader);
+      const clients = script.getColByName(filteredData, filteredData.length, agg.clientIDHeader);
       return new Set(clients).size;
     }),
     "Length of Time from ID to Housing": agg.activeCats.map((category) => {
@@ -1176,8 +1195,8 @@ function calculate(data, calculation) {
         return d[col1] != null;
       });
       // Get arrays of values for housing dates and ID dates
-      const housingDates = script.getColByName(filteredData, col1);
-      const idDates = script.getColByName(filteredData, col2);
+      const housingDates = script.getColByName(filteredData, filteredData.length, col1);
+      const idDates = script.getColByName(filteredData, filteredData.length, col2);
       // Map the difference between housing and ID dates, remove null values
       const difference = housingDates
         .map((houseDate, index) => {
@@ -1304,26 +1323,84 @@ function getOutput(population, aggRaw) {
 }
 
 function printValue(population, calculation, result) {
-  d3.select(".agg-table")
+  if (result > 0 && calculation === "Length of Time from ID to Housing") {
+    d3.select(".agg-table")
     .append("div")
     .classed("agg-value", true)
     .classed(`${population}`, true)
     .classed("hide", true)
     .html(`${population}`);
-
   d3.select(".agg-table")
     .append("div")
     .classed("agg-value", true)
     .classed(`${population}`, true)
     .classed("hide", true)
     .html(`${calculation}`);
-
   d3.select(".agg-table")
     .append("div")
     .classed("agg-value", true)
     .classed(`${population}`, true)
     .classed("hide", true)
-    .html(`${result}`);
+    .html(`<b>${result} days</b>`);
+  } else if (result === null || result === 0 && calculation === "Length of Time from ID to Housing") {
+    d3.select(".agg-table")
+    .append("div")
+    .classed("agg-value", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
+    .html(`${population}`);
+  d3.select(".agg-table")
+    .append("div")
+    .classed("agg-value", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
+    .html(`${calculation}`);
+  d3.select(".agg-table")
+    .append("div")
+    .classed("agg-value", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
+    .html(`<b class='neutral' style='font-weight:400;'>${result}</b>`);
+  } else if (result > 0 && calculation != "Length of Time from ID to Housing") {
+    d3.select(".agg-table")
+    .append("div")
+    .classed("agg-value", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
+    .html(`${population}`);
+  d3.select(".agg-table")
+    .append("div")
+    .classed("agg-value", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
+    .html(`${calculation}`);
+  d3.select(".agg-table")
+    .append("div")
+    .classed("agg-value", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
+    .html(`<b>${result}</b>`);
+  } else {
+    d3.select(".agg-table")
+    .append("div")
+    .classed("agg-value", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
+    .html(`${population}`);
+  d3.select(".agg-table")
+    .append("div")
+    .classed("agg-value", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
+    .html(`${calculation}`);
+  d3.select(".agg-table")
+    .append("div")
+    .classed("agg-value", true)
+    .classed(`${population}`, true)
+    .classed("hide", true)
+    .html(`<b class='neutral' style='font-weight:400;'>${result}</b>`);
+  }
+  
 }
 
 function printHeader(population) {
@@ -1351,7 +1428,7 @@ function printHeader(population) {
 
 // URL of Google Apps script to get form data
 let scriptURL =
-  "https://script.google.com/macros/s/AKfycbxkuRKFFR192ubCwQ8TWY1NxqcR9SzjmwWnFP3lDqxyuNbq_0M/exec";
+  "https://script.google.com/macros/s/AKfycbyI0-q2D_bg_SlqHNZlcGQCKcwjN8v0btYukrM0UNUBjzsxKnRY/exec";
 
 // Parses data as a CSV and downloads the file
 function submitData(data) {
@@ -1363,7 +1440,6 @@ function submitData(data) {
     let submitForm = document.createElement("form");
     submitForm.setAttribute("method", "POST");
     const popIndex = index;
-    let popValue = value;
 
     state.dict_fields.map((field) => {
       const fieldName = field;
@@ -1381,13 +1457,17 @@ function submitData(data) {
 
     submitForm.appendChild(s);
     submitForm.addEventListener("submit", (e) => {
-      console.log("Submitting Data!");
       e.preventDefault();
       fetch(scriptURL, {
         method: "POST",
         body: new FormData(submitForm),
       })
-        .then((response) => console.log("Success!", response))
+        .then((response) => {
+          console.log("Success")
+          /* progressValue = progressValue + 1
+          d3.select(".progress-bar")
+            .html(`<progress id="file" value="${progressValue}" max="5">${progressValue}</progress>`) */
+        })
         .catch((error) => console.error("Error!", error.message));
     });
 
