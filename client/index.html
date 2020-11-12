@@ -77,8 +77,8 @@
                             <div class="form-field upload-file">
                                 <div>
                                     <label for="fileUpload" class="question-text input-file-label">Choose your by-name list file <b class='asterisk'>*</b></label>
-                                    <p class="neutral" style='font-size: var(--subtitle-size)'>Only .CSV formats accepted at this time</p>
-                                    <input type="file" id="filePicker" name="filePicker" accept=".csv">
+                                    <p class="neutral" style='font-size: var(--subtitle-size)'>.CSV and .XLSX formats accepted</p>
+                                    <input type="file" id="filePicker" name="filePicker" accept=".csv, .xlsx">
                                 </div>
                             </div>
                         </section>
@@ -86,18 +86,12 @@
                         <div class="center">
                             <button class="inactive" type='button' id="validateButton" disabled>VALIDATE FILE</button>
                         </div>
-
-                        <div class="validateBtn-msg helptext">
-                        </div>
-
+                        <div class="validateBtn-msg helptext"></div>
                 </div>
-
-
                 </form>
             </section>
 
             <section class="column2">
-
                 <section class="row1">
 
                     <div class="step-header">
@@ -220,7 +214,7 @@
                             <button class="inactive" type='button' id="aggregateButton" disabled>AGGREGATE DATA</button>
                         </div>
                         <div class="aggregateBtn-msg center">
-                            <button class='hide reupload-button' id='reupload-button'>
+                            <button class='hide reupload-aggregate'>
                                 REUPLOAD CORRECTED FILE &nbsp &#8630
                             </button>
                         </div>
@@ -246,20 +240,7 @@
 
                         <div class="submitBtn-msg center">
                             
-                            <div class='hide review-msg'>
-                                <p><b class='neutral'>Numbers don't look right? Check that you have marked each client's subpopulation status accurately and reupload, if needed.</b></p>
-                                <div class='popStatus-instructions'>
-                                    <div class='popStatus-values'><p>Chronic</p></div>
-                                    <div class='popStatus-values'><p>Enter <b>"Single Adult"</b> in the <b>Household Type</b> column AND <b>"Chronically Homeless"</b> in the <b>Chronic Status</b> column</p></div>
-                                    <div class='popStatus-values'><p>Veteran</p></div>
-                                    <div class='popStatus-values'><p>Enter <b>"Single Adult"</b> in the <b>Household Type</b> column AND <b>"Yes Validated"</b> in the <b>Chronic Status</b> column</p></div>
-                                    <div class='popStatus-values'><p>Youth</p></div>
-                                    <div class='popStatus-values'><p>Enter <b>"Youth"</b> in the <b>Household Type</b> column</p></div>
-                                    <div class='popStatus-values'><p>Family</p></div>
-                                    <div class='popStatus-values'><p>Enter <b>"Family"</b> in the <b>Household Type</b> column</p></div>
-                                </div>
-                            </div>
-                            <button class='hide reupload-submit reupload-button' id='reupload-button'>
+                            <button class='hide reupload-submit'>
                                 REUPLOAD CORRECTED FILE &nbsp &#8630
                             </button>
                         </div>

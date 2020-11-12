@@ -1,10 +1,23 @@
+// Require packages
 const d3 = require("d3");
 const Papa = require("papaparse");
 const XLSX = require("xlsx");
 
+// Import components
+import {Validator} from './js/validate.js'
+import {FormHandler} from './js/form.js'
+import {Aggregator} from './js/aggregator.js'
+import {Utils} from './js/utils.js'
+
+// Initialize components
+let test = new Validator();
+let form = new FormHandler();
+let agg = new Aggregator();
+let util = new Utils();
+
 /* APPLICATION STATE */
 let state = {
-  required: true, // Toggle for required fields; makes for easier testing
+  debug: false, // Toggle for required fields; makes for easier testing
 
   // Form Fields
   form_community_clean: null,
@@ -17,8 +30,6 @@ let state = {
   // Metadata
   meta_timestamp: null,
   meta_community: null,
-  meta_fileName_title: null,
-  meta_fileName_date: null,
   meta_reportingDate: null,
 
   // Data
@@ -143,222 +154,136 @@ let state = {
   ],
 };
 
-checkFormStatus();
-
-/* HELPER SCRIPTS */
-let script = {
-  // Date and time formatting
-  format_YmdX: d3.timeFormat("%Y-%m-%d %X"),
-  format_Ymd: d3.timeFormat("%Y%m%d"),
-  format_MY: d3.timeFormat("%B %Y"), // September 2020
-  parse_Ymd: d3.timeParse("%Y-%m-%d"),
-  parse_dmY: d3.timeParse("%m/%d/%Y"),
-  parse_Ym: d3.timeParse("%Y-%m"),
-  parse_dmy: d3.timeParse("%d/%m/%y"),
-  parse_dmYT: d3.timeParse("%B %d, %Y"),
-
-  // Remove a value from an array and return the updated array
-  arrayRemove: function arrayRemove(arr, value) {
-    return arr.filter(function (i) {
-      return i != value;
-    });
-  },
-
-  // Get a column of values from array
-  getCol: function getCol(arr, columnIndex) {
-    const columnName = state.data_headers[columnIndex];
-    const col = [];
-
-    for (let row = 0; row < arr.length - 1; row++) {
-      const value = Object.values(arr)[row][columnName];
-      col.push(value);
-    }
-    return col;
-  },
-
-  getColByName: function getColByName(arr, length, columnName) {
-    const col = [];
-
-    for (let row = 0; row < length; row++) {
-      const value = Object.values(arr)[row][columnName];
-      col.push(value);
-    }
-    return col;
-  },
-
-  // Validate a value based on its data types
-  validate: function validate(value, dataType) {
-    if (value === null) {
-      return null;
-    } else if (dataType === "date") {
-      const dateRegex = /(0?[1-9]|1[012])\/(0?[1-9]|[12][0-9]|3[01])\/\d{2,4}/;
-      return dateRegex.test(value.toString());
-    } else if (dataType === "num") {
-      return Number.isInteger(value);
-    } else if (dataType === "alphanum") {
-      const alphanumRegex = /([^A-Z0-9])/gi;
-      return !alphanumRegex.test(value.toString());
-    } else if (dataType === "any") {
-      return true;
-    } else return null;
-  },
+let aggState = {
+  isVeteran: ["yes", "yesvalidated", "yesconfirmed"],
+  isChronic: ["yes", "chronicallyhomeless"],
+  isSingleAdult: ["singleadult"],
+  isYouth: ["youth"],
+  isFamily: ["family"],
+  clientIDHeader: "Client ID",
+  activeCats: [
+    "Active All",
+    "Active Veteran",
+    "Active Chronic",
+    "Active Youth",
+    "Active Family",
+  ],
+  allCats: [
+    "All Unduplicated",
+    "All Veteran",
+    "All Chronic",
+    "All Youth",
+    "All Family",
+  ],
+  populations: ["All", "Veteran", "Chronic", "Youth", "Family"],
+  popExplanations: [
+    "All active clients",
+    "Clients who have a 'Single Adult' Household Status AND 'Yes Validated' in Veteran Status",
+    "Clients who have a 'Single Adult' Household Status AND 'Chronically Homeless' in Veteran Status",
+    "Clients who have a 'Youth' Household Status",
+    "Clients who have a 'Family' Household Status",
+  ],
+  metrics: [
+    "Actively Homeless",
+    "Housing Placements",
+    "Moved to Inactive",
+    "Newly Identified Inflow",
+    "Returned to Active from Housing",
+    "Returned to Active from Inactive",
+    "Length of Time from ID to Housing",
+  ],
+  raw: null,
+  output: [],
 };
 
+init(state, form);
+
+function init(state, form) {
+  form.checkStatus(state);
+  form.setupFields(state, form);
+  setupButtons();
+}
+
 /* EVENT LISTENERS */
-let eventListeners = {
-  // Community dropdown field
-  communityInput: d3.select("#community-dropdown").on("change", function () {
-    checkFormStatus(state);
-    state.form_community_clean = this.value;
-    state.meta_community = state.form_community_clean.replace(
-      /[^A-Z0-9]/gi,
-      ""
-    );
-    // Name of file upload
-    state.meta_timestamp = script.format_YmdX(Date.now());
-    state.meta_fileName_title =
-      state.meta_community + state.meta_fileName_date + ".csv";
-  }),
-
-  // Reporting date input
-  dateInput: d3.select("#date-input").on("change", function () {
-    state.form_reporting_date = this.value;
-    state.meta_reportingDate = script.format_MY(
-      script.parse_Ym(state.form_reporting_date)
-    );
-    state.meta_fileName_date = script.format_Ymd(
-      script.parse_Ym(state.form_reporting_date)
-    );
-    // Name of file upload
-    state.meta_timestamp = script.format_YmdX(Date.now());
-    state.meta_fileName_title =
-      state.meta_community + state.meta_fileName_date + ".csv";
-    checkFormStatus();
-  }),
-
-  contactName: d3.select("#name-input").on("change", function () {
-    state.form_name = this.value;
-    checkFormStatus();
-  }),
-
-  contactName: d3.select("#org-input").on("change", function () {
-    state.form_org = this.value;
-    checkFormStatus();
-  }),
-
-  email: d3.select("#email-input").on("change", function () {
-    state.form_email = this.value;
-    checkFormStatus();
-  }),
-
-  // File Picker: call getFile() function
-  filePicker: d3.select("#filePicker").on("change", function () {
-    state.form_file_upload = this.value;
-    checkFormStatus();
-    state.fileList = this.files;
-    const fileType = this.files[0].type;
-    let csvFileType = "application/vnd.ms-excel";
-    let xlsxFileType =
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-    if (fileType === csvFileType) {
-      Papa.parse(state.fileList[0], {
-        dynamicTyping: true,
-        header: true,
-        complete: function (results) {
-          state.data_raw = results.data;
-          state.data_headers = results.meta.fields;
-          state.data_length = results.data.length;
-          state.fileFormat = "csv";
-        },
-      });
-    } else if (fileType === xlsxFileType) {
-      var reader = new FileReader();
-      const e = state.form_file_upload;
-      const f = state.fileList[0];
-      reader.onload = function (e) {
-        var data = new Uint8Array(e.target.result);
-        var workbook = XLSX.read(data, { type: "array" });
-        var sheetNameList = workbook.SheetNames;
-        var csv = XLSX.utils.sheet_to_csv(workbook.Sheets[sheetNameList[0]]);
-        Papa.parse(csv, {
-          dynamicTyping: true,
-          header: true,
-          complete: function (results) {
-            state.data_raw = results.data;
-            state.data_headers = results.meta.fields;
-            state.data_length = results.data.length;
-          },
-        });
-      };
-      reader.readAsArrayBuffer(f);
-    }
-  }),
+function setupButtons() {
 
   // Validate button
-  validateButton: d3.select("#validateButton").on("click", function () {
-    runTests(state.data_headers, state.data_raw, state);
-    // Remove any lingering values
-    agg.raw = null;
-    agg.output = [];
+  d3.select("#validateButton").on("click", function () {
+    // Run the validation tests
+    runTests(state.data_headers, state.data_raw, aggState);
+
+    // Remove any lingering values from a previous aggregation
+    aggState.raw = null;
+    aggState.output = [];
     d3.selectAll(".agg-header").remove();
     d3.selectAll(".agg-value").remove();
     d3.selectAll(".filter-btn").remove();
-    // Inactivate and hide the submit button
-    d3.select(".reupload-submit").classed("hide", true);
-    d3.select(".reupload-submit").classed("hide", true);
-    d3.select("#submitButton").classed("inactive", true);
-    d3.select("#submitButton").classed("active", false);
-    d3.select("#submitButton").attr("disabled", true);
-  }),
 
-  reupload: d3.select(".reupload-button").on("click", function () {
-    location.reload();
-  }),
+    // Deactivate the submit button
+    // Activate the aggregate button
+    // Show the reupload button
+    util.deactivate(d3.select("#submitButton"), false)
+    util.activate(d3.select("#aggregateButton"), false)
+    d3.select(".reupload-aggregate").classed("hide", false);
 
-  reuploadSubmit: d3.select(".reupload-submit").on("click", function () {
-    location.reload();
-  }),
+    console.log(state.form_file_upload);
+  })
 
-  aggregateButton: d3.select("#aggregateButton").on("click", function () {
+  // Reupload button in Aggregator section
+  d3.select(".reupload-aggregate").on("click", function () {
+    util.resetData(state, aggState);
+    util.clearFileInput("filePicker");
+  })
+
+  // Reupload button in submit section
+  d3.select(".reupload-submit").on("click", function () {
+    util.resetData(state, aggState);
+    util.clearFileInput("filePicker");
+  })
+
+  // Aggregate Button
+  d3.select("#aggregateButton").on("click", function () {
     // Remove any lingering values
-    agg.raw = null;
-    agg.output = [];
+    aggState.raw = null;
+    aggState.output = [];
     d3.selectAll(".agg-header").remove();
     d3.selectAll(".agg-value").remove();
     d3.selectAll(".filter-btn").remove();
+
     // Aggregate the data
     aggregate(state.data_raw);
-    // Inactivate and hide the aggregate button
-    d3.select("#aggregateButton").classed("inactive", true);
-    d3.select("#aggregateButton").classed("active", false);
-    d3.select("#aggregateButton").attr("disabled", true);
-    d3.select("#aggregateButton").classed("hide", true);
-    d3.select("#reupload-button").classed("hide", true);
-    // Activate and show the submit button
+
+    // Deactivate and hide the aggregate button
+    // Activate the submit button
+    util.deactivate(d3.select("#aggregateButton"), false)
+    util.activate(d3.select("#submitButton"), true)
+    d3.select(".reupload-aggregate").classed("hide", true);
     d3.select(".reupload-submit").classed("hide", false);
     d3.select(".submit-instructions").classed("hide", false);
     d3.select(".review-msg").classed("hide", false);
-    d3.select("#submitButton").classed("inactive", false);
-    d3.select("#submitButton").classed("active", true);
-    d3.select("#submitButton").attr("disabled", null);
-    d3.select("#submitButton").classed("hide", false);
-  }),
+  })
 
-  submitButton: d3.select("#submitButton").on("click", function () {
-    submitData(agg.output);
-    d3.select("#submitButton").classed("hide", true);
+  // Submit button
+  d3.select("#submitButton").on("click", function () {
+    // Submit the data
+    submitData(aggState.output);
+
+    // Deactivate and hide the submit button
+    // Hide the reupload button
+    util.deactivate(d3.select("#submitButton"), true)
     d3.select(".submit-instructions").classed("hide", true);
     d3.select(".review-msg").classed("hide", true);
-    d3.select("#reupload-button").classed("hide", true);
+    d3.select(".reupload-aggregate").classed("hide", false);
+    d3.select(".reupload-submit").classed("hide", true);
 
+    // Show the submission progress message
     d3.select(".progress-msg")
       .html(`Data submitted for ${state.meta_reportingDate}!`)
       .style("opacity", "0")
       .transition()
       .duration(200)
       .style("opacity", "1");
-  }),
+  })
 };
 
 /* MANAGE SECTION TOGGLING OPEN / CLOSE */
@@ -477,551 +402,49 @@ let section = {
 };
 
 /* RUN TESTS AND CHECK VALIDATION STATUS */
-function runTests(headerArray, data) {
-  const headersOutput = requiredHeadersTest(
+function runTests(headerArray, data, aggState) {
+  const headersOutput = test.requiredHeaders(
     headerArray,
     d3.select("#headers-name"),
     d3.select(".headers-val-symbol"),
-    d3.select(".header-error")
+    d3.select(".header-error"),
+    state
   );
-  const piiOutput = piiHeadersTest(
+  const piiOutput = test.piiHeaders(
     headerArray,
     d3.select("#pii-name"),
     d3.select(".pii-val-symbol"),
-    d3.select(".pii-error")
+    d3.select(".pii-error"),
+    state
   );
-  const ssnOutput = ssnValuesTest(
+  const ssnOutput = test.ssnValues(
     headerArray,
     data,
     d3.select("#ssn-name"),
     d3.select(".ssn-val-symbol"),
-    d3.select(".ssn-error")
+    d3.select(".ssn-error"),
+    state
   );
-  const datatypeOutput = dataTypeTest(
+  const datatypeOutput = test.dataType(
     headerArray,
     data,
     d3.select("#datatype-name"),
     d3.select(".datatype-val-symbol"),
-    d3.select(".datatype-error")
+    d3.select(".datatype-error"),
+    state
   );
 
-  checkTestStatus(headersOutput, piiOutput, ssnOutput, datatypeOutput);
+  const results = [headersOutput.result, piiOutput.result, ssnOutput.result, datatypeOutput.result]
+
+  test.checkStatus(results, aggState);
 }
 
-function showResult(
-  testResult,
-  stepLocation,
-  resultLocation,
-  errorLocation,
-  errorMessage,
-  successMessage
-) {
-  if (testResult === false) {
-    resultLocation.text("NO PASS").classed("neutral", false);
-    resultLocation.classed("fail", true);
-    stepLocation
-      .style("background-color", "#FFB9B9")
-      .on("mouseover", function (d) {
-        d3.select(this).style("background-color", "#ffa5a5");
-      })
-      .on("mouseout", function (d) {
-        d3.select(this).style("background-color", "#FFB9B9");
-      });
-    errorLocation.html(errorMessage);
-  } else {
-    resultLocation.text("PASS").classed("neutral", false);
-    resultLocation.text("PASS").classed("fail", false);
-    resultLocation.classed("success", true);
-    stepLocation
-      .style("background-color", "lightblue")
-      .on("mouseover", function (d) {
-        d3.select(this).style("background-color", "#9ed1e1");
-      })
-      .on("mouseout", function (d) {
-        d3.select(this).style("background-color", "lightblue");
-      });
-    errorLocation.html(successMessage);
-  }
-}
-
-// Are all required headers present?
-function requiredHeadersTest(
-  headerArray,
-  stepLocation,
-  resultLocation,
-  errorLocation
-) {
-  const input = [...headerArray];
-  const required = [...state.dict_headers_required];
-  const passed = [];
-  const failed = [];
-  let result;
-
-  // Which input headers match a required header?
-  input.map((header) => {
-    if (required.includes(header)) {
-      passed.push(header);
-    } else {
-      failed.push(header);
-    }
-  });
-
-  // Which required headers are missing?
-  const missing = [...required]
-    .map((header) => {
-      if (passed.includes(header)) {
-        return null;
-      } else return header;
-    })
-    .filter((header) => header != null);
-
-  // Did the test result pass?
-  if (missing.length === 0) {
-    result = true;
-  } else if (missing.length > 0) {
-    result = false;
-  }
-
-  // Set the error message
-  const errorMessage = `<h3>Result</h3><br>
-        <b class='fail'>${missing.length} / ${
-    required.length
-  } required headers are not present (or named differently) in your file. <br></b>
-        <ul class='list'> ${missing
-          .map((i) => `<li><b>${i}</b></li>`)
-          .join("")} </ul> <br> 
-        <b class='success'>${passed.length} / ${
-    required.length
-  } required headers are present in your file.</b><br>
-        <ul class='list'> ${passed
-          .map((i) => `<li><b class='success'>${i}</b></li>`)
-          .join("")}</ul><br>
-        Please check that all ${
-          required.length
-        } required column headers are <b>present</b> in your file and <b>named correctly</b>, and try again.`;
-
-  // Set the success message
-  const successMessage = `<h3>Result</h3><br>
-    <b class='success'>Passed: All required headers are included in your file.</b>`;
-
-  // Show a message on the page based on the test result
-  showResult(
-    result,
-    stepLocation,
-    resultLocation,
-    errorLocation,
-    errorMessage,
-    successMessage
-  );
-
-  return {
-    passed,
-    failed,
-    missing,
-    result,
-  };
-}
-
-// Are there headers that are PII?
-function piiHeadersTest(
-  headerArray,
-  stepLocation,
-  resultLocation,
-  errorLocation
-) {
-  const input = [...headerArray];
-  const pii = [...state.dict_headers_remove];
-  const passed = [];
-  const failed = [];
-  let result;
-
-  // Which input headers DO NOT match PII headers?
-  input.map((header) => {
-    if (!pii.includes(header)) {
-      passed.push(header);
-    } else {
-      failed.push(header);
-    }
-  });
-
-  // Did the test result pass?
-  if (failed.length === 0) {
-    result = true;
-  } else if (failed.length > 0) {
-    result = false;
-  }
-
-  // Set the error message
-  const errorMessage = `<h3>Result</h3><br>
-    <b class='fail'>${
-      failed.length
-    } column header(s) are flagged as potentially containing PII:</b>
-    <ul> ${failed.map((i) => `<li><b>${i}`).join("")}</ul> <br>
-    Please remove the PII column(s) from your data file and try again.`;
-
-  // Set the success message
-  const successMessage = `<h3>Result</h3><br>
-    <b class='success'>Passed: No headers in your file are PII.</b>`;
-
-  // Show a message on the page based on the test result
-  showResult(
-    result,
-    stepLocation,
-    resultLocation,
-    errorLocation,
-    errorMessage,
-    successMessage
-  );
-
-  return {
-    passed,
-    failed,
-    result,
-  };
-}
-
-// Are there values that resemble social security numbers?
-function ssnValuesTest(
-  headerArray,
-  data,
-  stepLocation,
-  resultLocation,
-  errorLocation
-) {
-  let result;
-  let regex = RegExp("^\\d{9}$");
-  let failedHeaders = [];
-  let failedIndices = [];
-
-  const output = headerArray
-    .map((header) => {
-      // Get the values for the header
-      const arr = script.getColByName(data, data.length - 1, header);
-      // Map through each value and test against the regex pattern
-      // If the test passes, return the index of the value
-      const fail = arr
-        .map((value, index) => {
-          if (value === null) {
-            return null;
-          } else if (regex.test(value.toString()) === true) {
-            return index;
-          } else return null;
-        })
-        .filter((value) => value != null);
-      // If at least one value failed, return the header with the failed indices
-      if (fail.length > 0) {
-        failedHeaders.push(header);
-        failedIndices.push(fail);
-        return [header, fail];
-      } else return null;
-    })
-    .filter((header) => header != null);
-
-  // Did the test result pass?
-  if (output.length === 0) {
-    result = true;
-  } else if (output.length > 0) {
-    result = false;
-  }
-
-  const errorMessage = `<h3>Result</h3><br>
-            <b>${output.length} / ${
-    headerArray.length
-  } columns</b> in your file contain values that could be Social Security Numbers. <b style='color:grey; font-weight:400;'> &nbsp (Potential SSNs include values with 9 digits or in the format ###-##-####)</b>. <br>
-            <ul>
-            ${output
-              .map(
-                (value) =>
-                  `<li> <b class='fail'>${value[0]}</b> has <b>${
-                    value[1].length
-                  } potential SSN(s)</b> at the following location(s): &nbsp ${value[1]
-                    .map(
-                      (v) =>
-                        `<br> &nbsp &nbsp <b style='color:lightgrey;'>></b> Row <b>${
-                          v + 1
-                        }</b> &nbsp `
-                    )
-                    .join("")}</li><br>`
-              )
-              .join("")}
-            </ul>
-            Please remove the Social Security Numbers from your data file and try again.`;
-
-  // Set the success message
-  const successMessage = `<h3>Result</h3><br>
-    <b class='success'>Passed: No values in your file are Social Security Numbers.</b>`;
-
-  // Show a message on the page based on the test result
-  showResult(
-    result,
-    stepLocation,
-    resultLocation,
-    errorLocation,
-    errorMessage,
-    successMessage
-  );
-
-  return {
-    failedHeaders,
-    failedIndices,
-    output,
-    result,
-  };
-}
-
-// Do required headers contain the right data type?
-function dataTypeTest(
-  headerArray,
-  data,
-  stepLocation,
-  resultLocation,
-  errorLocation
-) {
-  let result;
-  let failedHeaders = [];
-  const requiredHeaders = [...state.dict_headers_required];
-  const dataTypes = [...state.dict_headers_datatype];
-  const dataTypeLookup = requiredHeaders.map((value, index) => {
-    const r = {};
-    r[value] = dataTypes[index];
-    return r;
-  });
-
-  const output = headerArray
-    .map((header) => {
-      // If the header is in the required header list...
-      if (requiredHeaders.includes(header)) {
-        // Find the datatype that it needs to be
-        const lookupIndex = requiredHeaders.indexOf(header);
-        let dataType = Object.values(dataTypeLookup[lookupIndex]).toString();
-        let errorMessage = state.datatype_errors[dataType];
-
-        // Get the array of values for the header
-        const arr = script.getColByName(data, data.length - 1, header);
-        const values = [];
-        const indices = [];
-
-        // Loop through each value and check the datatype
-        const fail = arr
-          .map((value, index) => {
-            if (value === null) {
-              return null;
-            } else if (script.validate(value, dataType) === false) {
-              values.push(value);
-              indices.push(index);
-              return value & index;
-            } else return null;
-          })
-          .filter((value) => value != null);
-
-        // If at least one value failed, return the header with the failed indices
-        if (fail.length > 0) {
-          failedHeaders.push(header);
-          const r = {
-            header: header,
-            failedValues: values,
-            failedIndices: indices,
-            errorMessage: errorMessage,
-          };
-          return r;
-        } else return null;
-      } else return null;
-    })
-    .filter((header) => header != null);
-
-  // Did the test result pass?
-  if (output.length === 0) {
-    result = true;
-  } else if (output.length > 0) {
-    result = false;
-  }
-
-  const messages = [];
-
-  Object.entries(output).forEach(([key, value]) => {
-    messages.push(
-      `<ul><li><b class='fail'>${value.header}</b><b class='neutral'> contains <b style='color:black;'>${value.failedIndices.length} value(s)</b> to fix. These values ${value.errorMessage}</b></li></ul>`
-    );
-    value.failedValues.map((v, index) => {
-      const str = `<b style='padding: 0px 0px 0px 50px; font-weight:400;'><b style='color:lightgrey;'>></b> &nbsp <b>Row ${
-        value.failedIndices[index] + 2
-      }</b> contains the value <b>'${v}'</b>.<br></b>`;
-      messages.push(str);
-    });
-  });
-
-  // Set the error message
-  const errorMessage = `<h3>Result</h3><br>
-    <b>Please fix the following errors:</b><br>
-    ${messages.join("")}`;
-
-  // Set the success message
-  const successMessage = `<h3>Result</h3><br><b class='success'>Passed: Your fields contain the right data types.</b>`;
-
-  // Show a message on the page based on the test result
-  showResult(
-    result,
-    stepLocation,
-    resultLocation,
-    errorLocation,
-    errorMessage,
-    successMessage
-  );
-
-  return {
-    output,
-    failedHeaders,
-    result,
-  };
-}
-
-/* STATUS CHECKING */
-
-// Status of form fields
-function checkFormStatus() {
-  if (state.required === true) {
-    if (
-      state.form_community_clean === null ||
-      state.form_community_clean === "" ||
-      state.form_reporting_date === null ||
-      state.form_reporting_date === "" ||
-      state.form_name === null ||
-      state.form_name === "" ||
-      state.form_email === null ||
-      state.form_email === "" ||
-      state.form_org === null ||
-      state.form_org === "" ||
-      state.form_file_upload === null ||
-      state.form_file_upload === ""
-    ) {
-      // Failure: any one of the form fields is not filled or empty
-      d3.select("#validateButton").classed("inactive", true);
-      d3.select("#validateButton").classed("active", false);
-      d3.select("#validateButton").attr("disabled", true);
-      d3.select(".validateBtn-msg").html(
-        "Please fill in all required fields to continue."
-      );
-    } else if (
-      state.form_community_clean != null &&
-      state.form_reporting_date != null &&
-      state.form_name != null &&
-      state.form_email != null &&
-      state.form_org != null &&
-      state.form_file_upload != null
-    ) {
-      // Success: all of the form fields are filled in
-      d3.select("#validateButton").classed("inactive", false);
-      d3.select("#validateButton").classed("active", true);
-      d3.select("#validateButton").attr("disabled", null);
-      d3.select(".validateBtn-msg").text("");
-    }
-  } else if (state.required === false) {
-    console.log(
-      "%c Required fields are currently OFF.",
-      "background: white; color: red"
-    );
-    d3.select("#validateButton").classed("inactive", false);
-    d3.select("#validateButton").classed("active", true);
-    d3.select("#validateButton").attr("disabled", null);
-    d3.select(".validateBtn-msg").text("");
-  }
-}
-
-// Status of validation tests
-function checkTestStatus(headersOutput, piiOutput, ssnOutput, datatypeOutput) {
-  if (
-    headersOutput.result === false ||
-    piiOutput.result === false ||
-    ssnOutput.result === false ||
-    datatypeOutput.result === false
-  ) {
-    // Failure: The data did not pass any one of the tests
-    // Inactivate the validate button
-    d3.select("#validateButton").classed("inactive", true);
-    d3.select("#validateButton").classed("active", false);
-    d3.select("#validateButton").attr("disabled", true);
-    // Inactivate and hide the aggregate button
-    d3.select("#aggregateButton").classed("inactive", true);
-    d3.select("#aggregateButton").classed("active", false);
-    d3.select("#aggregateButton").attr("disabled", true);
-    d3.select("#aggregateButton").classed("hide", true);
-    d3.select("#reupload-button").classed("hide", false);
-    // Reset values
-    agg.raw = null;
-    agg.output = [];
-    d3.selectAll(".agg-header").remove();
-    d3.selectAll(".agg-value").remove();
-    d3.selectAll(".filter-btn").remove();
-  } else if (
-    headersOutput.result === true &&
-    piiOutput.result === true &&
-    ssnOutput.result === true &&
-    datatypeOutput.result === true
-  ) {
-    // Success: All of the tests passed
-    // Activate the aggregate button
-    d3.select("#aggregateButton").classed("inactive", false);
-    d3.select("#aggregateButton").classed("active", true);
-    d3.select("#aggregateButton").attr("disabled", null);
-    d3.select("#aggregateButton").classed("hide", false);
-    d3.select("#reupload-button").classed("hide", true);
-    // Inactivate the validate button
-    d3.select("#validateButton").classed("inactive", true);
-    d3.select("#validateButton").classed("active", false);
-    d3.select("#validateButton").attr("disabled", true);
-    // Reset values
-    agg.raw = null;
-    agg.output = [];
-    d3.selectAll(".agg-header").remove();
-    d3.selectAll(".agg-value").remove();
-    d3.selectAll(".filter-btn").remove();
-  }
-}
 
 /*
  * AGGREGATE
  */
 
-// Hold state values for aggregation functions
-const agg = {
-  isVeteran: "Yes Validated",
-  isChronic: "Chronically Homeless",
-  clientIDHeader: "Client ID",
-  activeCats: [
-    "Active All",
-    "Active Veteran",
-    "Active Chronic",
-    "Active Youth",
-    "Active Family",
-  ],
-  allCats: [
-    "All Unduplicated",
-    "All Veteran",
-    "All Chronic",
-    "All Youth",
-    "All Family",
-  ],
-  populations: ["All", "Veteran", "Chronic", "Youth", "Family"],
-  popExplanations: [
-    "All active clients",
-    "Clients who have a 'Single Adult' Household Status AND 'Yes Validated' in Veteran Status",
-    "Clients who have a 'Single Adult' Household Status AND 'Chronically Homeless' in Veteran Status",
-    "Clients who have a 'Youth' Household Status",
-    "Clients who have a 'Family' Household Status",
-  ],
-  metrics: [
-    "Actively Homeless",
-    "Housing Placements",
-    "Moved to Inactive",
-    "Newly Identified Inflow",
-    "Returned to Active from Housing",
-    "Returned to Active from Inactive",
-    "Length of Time from ID to Housing",
-  ],
-  raw: null,
-  output: [],
-};
-
+// Filter data based on population and active status
 function filterData(data, category) {
   const filterMap = {
     "All Unduplicated": data,
@@ -1029,32 +452,35 @@ function filterData(data, category) {
       return (
         d["Household Type"] != null &&
         d["Veteran Status"] != null &&
-        d["Household Type"].toString().trim() === "Single Adult" &&
-        d["Veteran Status"].toString().replace(/[^A-Z 0-9]/ig, "").trim() === agg.isVeteran
+        aggState.isSingleAdult.includes(util.clean(d["Household Type"])) === true &&
+        aggState.isVeteran.includes(util.clean(d["Veteran Status"])) === true
       );
     }),
     "All Chronic": data.filter((d) => {
       return (
         d["Household Type"] != null &&
         d["Chronic Status"] != null &&
-        d["Household Type"].toString().trim() === "Single Adult" &&
-        d["Chronic Status"].toString().trim() === agg.isChronic
+        aggState.isSingleAdult.includes(util.clean(d["Household Type"])) === true &&
+        aggState.isChronic.includes(util.clean(d["Chronic Status"])) === true
       );
     }),
     "All Youth": data.filter((d) => {
       return (
         d["Household Type"] != null &&
-        d["Household Type"].toString().trim() === "Youth");
+        aggState.isYouth.includes(util.clean(d["Household Type"])) === true
+      );
     }),
     "All Family": data.filter((d) => {
       return (
         d["Household Type"] != null &&
-        d["Household Type"].toString().trim() === "Family");
+        aggState.isFamily.includes(util.clean(d["Household Type"])) === true
+      );
     }),
     "Active All": data.filter((d) => {
       return (
         d["BNL Status"] != null &&
-        d["BNL Status"].toString().trim() === "Active");
+        d["BNL Status"].toString().trim() === "Active"
+        );
     }),
     "Active Veteran": data.filter((d) => {
       return (
@@ -1062,8 +488,8 @@ function filterData(data, category) {
         d["Household Type"] != null &&
         d["Veteran Status"] != null &&
         d["BNL Status"].toString().trim() === "Active" &&
-        d["Household Type"].toString().trim() === "Single Adult" &&
-        d["Veteran Status"].toString().trim() === agg.isVeteran
+        aggState.isSingleAdult.includes(util.clean(d["Household Type"])) === true &&
+        aggState.isVeteran.includes(util.clean(d["Veteran Status"])) === true
       );
     }),
     "Active Chronic": data.filter((d) => {
@@ -1072,8 +498,8 @@ function filterData(data, category) {
         d["Household Type"] != null &&
         d["Chronic Status"] != null &&
         d["BNL Status"].toString().trim() === "Active" &&
-        d["Household Type"].toString().trim() === "Single Adult" &&
-        d["Chronic Status"].toString().trim() === agg.isChronic
+        aggState.isSingleAdult.includes(util.clean(d["Household Type"])) === true &&
+        aggState.isChronic.includes(util.clean(d["Chronic Status"])) === true
       );
     }),
     "Active Youth": data.filter((d) => {
@@ -1081,35 +507,32 @@ function filterData(data, category) {
         d["BNL Status"] != null &&
         d["Household Type"] != null &&
         d["BNL Status"].toString().trim() === "Active" && 
-        d["Household Type"].toString().trim() === "Youth");
+        aggState.isYouth.includes(util.clean(d["Household Type"])) === true
+      )
     }),
     "Active Family": data.filter((d) => {
       return (
         d["BNL Status"] != null &&
         d["Household Type"] != null &&
         d["BNL Status"].toString().trim() === "Active" && 
-        d["Household Type"].toString().trim() === "Family");
+        aggState.isFamily.includes(util.clean(d["Household Type"])) === true
+      )
     }),
   };
   return filterMap[category];
 }
 
-// Given a date and date format, return the month and year
-function monthYear(dateValue) {
-  return script.format_MY(script.parse_dmY(dateValue));
-}
-
-function calculate(data, calculation) {
+function calculate(state, data, calculation) {
   const reportingDate = state.meta_reportingDate;
   const calcMap = {
-    "Actively Homeless": agg.activeCats.map((category) => {
+    "Actively Homeless": aggState.activeCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then get the unique number of clients
-      const clients = script.getColByName(categoryData, categoryData.length, agg.clientIDHeader);
+      const clients = util.getColByName(categoryData, categoryData.length, aggState.clientIDHeader);
       return new Set(clients).size;
     }),
-    "Housing Placements": agg.allCats.map((category) => {
+    "Housing Placements": aggState.allCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -1117,14 +540,14 @@ function calculate(data, calculation) {
       const filteredData = categoryData.filter((d) => {
         return (
           d[col] != null &&
-          monthYear(d[col]) === reportingDate
+          util.getDate(d[col], "MY", state) === reportingDate
         );
       });
       // Then get the unique number of clients
-      const clients = script.getColByName(filteredData, filteredData.length, agg.clientIDHeader);
+      const clients = util.getColByName(filteredData, filteredData.length, aggState.clientIDHeader);
       return new Set(clients).size;
     }),
-    "Moved to Inactive": agg.allCats.map((category) => {
+    "Moved to Inactive": aggState.allCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -1132,14 +555,14 @@ function calculate(data, calculation) {
       const filteredData = categoryData.filter((d) => {
         return (
           d[col] != null &&
-          monthYear(d[col]) === reportingDate
+          util.getDate(d[col], "MY", state) === reportingDate
         );
       });
       // Then get the unique number of clients
-      const clients = script.getColByName(filteredData, filteredData.length, agg.clientIDHeader);
+      const clients = util.getColByName(filteredData, filteredData.length, aggState.clientIDHeader);
       return new Set(clients).size;
     }),
-    "Newly Identified Inflow": agg.activeCats.map((category) => {
+    "Newly Identified Inflow": aggState.activeCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -1147,14 +570,14 @@ function calculate(data, calculation) {
       const filteredData = categoryData.filter((d) => {
         return (
           d[col] != null &&
-          monthYear(d[col]) === reportingDate
+          util.getDate(d[col], "MY", state) === reportingDate
         );
       });
       // Then get the unique number of clients
-      const clients = script.getColByName(filteredData, filteredData.length, agg.clientIDHeader);
+      const clients = util.getColByName(filteredData, filteredData.length, aggState.clientIDHeader);
       return new Set(clients).size;
     }),
-    "Returned to Active from Housing": agg.activeCats.map((category) => {
+    "Returned to Active from Housing": aggState.activeCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -1163,15 +586,15 @@ function calculate(data, calculation) {
       const filteredData = categoryData.filter((d) => {
         return (
           d[col2] != null &&
-          monthYear(d[col1]) === reportingDate &&
-          script.parse_dmY(d[col1]) > script.parse_dmY(d[col2])
+          util.getDate(d[col1], "MY", state) === reportingDate &&
+          util.getDate(d[col1], "MDY", state) > util.getDate(d[col2], "MDY", state)
         );
       });
       // Then get the unique number of clients
-      const clients = script.getColByName(filteredData, filteredData.length, agg.clientIDHeader);
+      const clients = util.getColByName(filteredData, filteredData.length, aggState.clientIDHeader);
       return new Set(clients).size;
     }),
-    "Returned to Active from Inactive": agg.allCats.map((category) => {
+    "Returned to Active from Inactive": aggState.allCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -1180,15 +603,15 @@ function calculate(data, calculation) {
       const filteredData = categoryData.filter((d) => {
         return (
           d[col2] != null &&
-          monthYear(d[col1]) === reportingDate &&
-          script.parse_dmY(d[col1]) > script.parse_dmY(d[col2])
+          util.getDate(d[col1], "MY", state) === reportingDate &&
+          util.getDate(d[col1], "MDY", state) > util.getDate(d[col2], "MDY", state)
         );
       });
       // Then get the unique number of clients
-      const clients = script.getColByName(filteredData, filteredData.length, agg.clientIDHeader);
+      const clients = util.getColByName(filteredData, filteredData.length, aggState.clientIDHeader);
       return new Set(clients).size;
     }),
-    "Length of Time from ID to Housing": agg.allCats.map((category) => {
+    "Length of Time from ID to Housing": aggState.allCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       const col1 = "Housing Move-In Date";
@@ -1197,83 +620,86 @@ function calculate(data, calculation) {
       const filteredData = categoryData.filter((d) => {
         return d[col1] != null;
       });
+
       // Get arrays of values for housing dates and ID dates
-      const housingDates = script.getColByName(filteredData, filteredData.length, col1);
-      const idDates = script.getColByName(filteredData, filteredData.length, col2);
-      // Map the difference between housing and ID dates, remove null values
-      const difference = housingDates
-        .map((houseDate, index) => {
+      const housingDates = util.getColByName(filteredData, filteredData.length, col1);
+      const idDates = util.getColByName(filteredData, filteredData.length, col2);
+
+      // Map the difference between each housing and ID date, remove null values
+      const difference = housingDates.map((houseDate, index) => {
+          // Get corresponding ID date value
           const idDate = idDates[index];
+          // Get difference in ms and convert to days
           if (houseDate != null && idDate != null) {
-            const diff = script.parse_dmY(houseDate) - script.parse_dmY(idDate);
-            return Math.ceil(diff / (1000 * 60 * 60 * 24));
-          } else return null;
+            const diff = util.getDate(houseDate, "MDY", state) - util.getDate(idDate, "MDY", state);
+            const converted = Math.ceil(diff / (1000 * 60 * 60 * 24))
+            if (converted < 0) {
+              return null
+            } else {
+              return converted;
+            }
+          } else {
+            return null};
         })
         .filter((value) => value != null);
+
       // Reduce the differences map to a single average value
       if (difference.length === 0) {
         return null;
       } else {
-        const average = Math.ceil(
-          difference.reduce((acc, value) => (acc + value) / difference.length)
-        );
+        const average = Math.ceil(difference.reduce((acc, value) => (acc + value) / difference.length));
         return average;
       }
+
     }),
   };
 
   return calcMap[calculation];
 }
 
+
 function aggregate(data) {
   // Reset values
-  agg.raw = null;
-  agg.output = [];
+  aggState.raw = null;
+  aggState.output = [];
   d3.selectAll(".agg-header").remove();
   d3.selectAll(".agg-spacer").remove();
   d3.selectAll(".agg-value").remove();
 
   // Calculate by population
-  agg.raw = {
-    "Actively Homeless": calculate(data, "Actively Homeless"),
-    "Housing Placements": calculate(data, "Housing Placements"),
-    "Moved to Inactive": calculate(data, "Moved to Inactive"),
-    "Newly Identified Inflow": calculate(data, "Newly Identified Inflow"),
-    "Returned to Active from Housing": calculate(
-      data,
-      "Returned to Active from Housing"
-    ),
-    "Returned to Active from Inactive": calculate(
-      data,
-      "Returned to Active from Inactive"
-    ),
-    "Length of Time from ID to Housing": calculate(
-      data,
-      "Length of Time from ID to Housing"
-    ),
+  aggState.raw = {
+    "Actively Homeless": calculate(state, data, "Actively Homeless"),
+    "Housing Placements": calculate(state, data, "Housing Placements"),
+    "Moved to Inactive": calculate(state, data, "Moved to Inactive"),
+    "Newly Identified Inflow": calculate(state, data, "Newly Identified Inflow"),
+    "Returned to Active from Housing": calculate(state, data, "Returned to Active from Housing"),
+    "Returned to Active from Inactive": calculate(state, data, "Returned to Active from Inactive"),
+    "Length of Time from ID to Housing": calculate(state, data, "Length of Time from ID to Housing"),
   };
 
+  // Update visible reporting month and community
   d3.select(".reporting-month").text(`${state.meta_reportingDate}`);
   d3.select(".reporting-community").text(state.form_community_clean);
 
   // Remap the results by population and print to the page
-  agg.populations.map((pop) => {
-    getOutput(pop, agg.raw);
+  aggState.populations.map((pop) => {
+    getOutput(pop, aggState.raw);
   });
 
   d3.select(".button-group-title").text("Select a subpopulation to review");
 
   // Add the population buttons
   // Toggle the visible aggregation result by population
-  agg.populations.map((pop, index) => {
+  aggState.populations.map((pop, index) => {
     // Set the "remaining populations" to everything but the chosen pop
-    const remainingPops = agg.populations.filter((d) => {
+    const remainingPops = aggState.populations.filter((d) => {
       return d != pop;
     });
     // Add a button for the population
     d3.select(".button-group")
       .append("button")
       .classed(`${pop}-btn filter-btn`, true);
+
     // Set "All" as the default population to be visible
     if(pop === "All") {
       d3.selectAll(`.${pop}`)
@@ -1337,42 +763,20 @@ function aggregate(data) {
       .text(`${pop}`);
     }
 
-    // Add a click event listener to the button
-    // Show the chosen pop and hide the remaining
-    // Add a label to the button
-    /* d3.select(`.${pop}-btn`)
-      .on("click", function () {
-
-        d3.selectAll(`.${pop}`)
-          .style("opacity", "0")
-          .transition()
-          .duration(200)
-          .style("opacity", "1");
-
-        d3.selectAll(`.${pop}`).classed("hide", false);
-
-        remainingPops.map((remaining) => {
-          d3.selectAll(`.${remaining}`)
-            .style("opacity", "1")
-            .transition()
-            .duration(100)
-            .style("opacity", "0");
-          d3.selectAll(`.${remaining}`).classed("hide", true);
-        });
-      })
-      .append("div")
-      .attr("class", "label")
-      .text(`${pop}`); */
   });
 
-  console.log("STATE", state)
-  console.log("AGG", agg)
+  if (state.debug === true) {
+    console.log("STATE", state)
+    console.log("AGG", aggState)
+  }
+
 }
 
+// Map output to form values
 function getOutput(population, aggRaw) {
-  const pops = agg.populations;
+  const pops = aggState.populations;
   const index = pops.indexOf(population);
-  const metrics = agg.metrics;
+  const metrics = aggState.metrics;
   printHeader(population);
   const popOutput = {};
 
@@ -1397,7 +801,7 @@ function getOutput(population, aggRaw) {
     popOutput[metric] = aggRaw[metric][index];
     printValue(population, metric, aggRaw[metric][index]);
   });
-  agg.output.push(popOutput);
+  aggState.output.push(popOutput);
 }
 
 function printValue(population, calculation, result) {
@@ -1505,16 +909,15 @@ function printHeader(population) {
 }
 
 // URL of Google Apps script to get form data
-let scriptURL =
-  "https://script.google.com/macros/s/AKfycbyI0-q2D_bg_SlqHNZlcGQCKcwjN8v0btYukrM0UNUBjzsxKnRY/exec";
+let scriptURL = "https://script.google.com/macros/s/AKfycbyI0-q2D_bg_SlqHNZlcGQCKcwjN8v0btYukrM0UNUBjzsxKnRY/exec";
 
 // Parses data as a CSV and downloads the file
 function submitData(data) {
   state.data_csv = Papa.unparse(data);
 
-  const popNumber = agg.populations.length;
+  const popNumber = aggState.populations.length;
 
-  agg.populations.map((value, index) => {
+  aggState.populations.map((value, index) => {
     let submitForm = document.createElement("form");
     submitForm.setAttribute("method", "POST");
     const popIndex = index;

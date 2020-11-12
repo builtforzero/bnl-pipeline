@@ -39,7 +39,7 @@ typings/
 # Optional npm cache directory
 .npm
 cache/
-.cache/
+.cache
 yarn.lock
 
 # Optional eslint cache
