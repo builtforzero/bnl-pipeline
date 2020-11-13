@@ -256,7 +256,7 @@ function setupButtons() {
     // Deactivate and hide the aggregate button
     // Activate the submit button
     util.deactivate(d3.select("#aggregateButton"), false)
-    util.activate(d3.select("#submitButton"), true)
+    util.activate(d3.select("#submitButton"), false)
     d3.select(".reupload-aggregate").classed("hide", true);
     d3.select(".reupload-submit").classed("hide", false);
     d3.select(".submit-instructions").classed("hide", false);
@@ -265,24 +265,30 @@ function setupButtons() {
 
   // Submit button
   d3.select("#submitButton").on("click", function () {
+    console.log(aggState.output);
     // Submit the data
     submitData(aggState.output);
 
     // Deactivate and hide the submit button
     // Hide the reupload button
-    util.deactivate(d3.select("#submitButton"), true)
-    d3.select(".submit-instructions").classed("hide", true);
-    d3.select(".review-msg").classed("hide", true);
-    d3.select(".reupload-aggregate").classed("hide", false);
+    d3.select(".reupload-aggregate").classed("hide", true);
     d3.select(".reupload-submit").classed("hide", true);
-
-    // Show the submission progress message
-    d3.select(".progress-msg")
-      .html(`Data submitted for ${state.meta_reportingDate}!`)
+    util.deactivate(d3.select("#aggregateButton"), false)
+    util.deactivate(d3.select("#submitButton"), true)
+    d3.select(".progress-msg").html(`Submitting...`)
       .style("opacity", "0")
       .transition()
       .duration(200)
       .style("opacity", "1");
+    d3.select(".progress-bar").html(`<progress id="file" value="${0}" max="6">${0}</progress>`)
+      .style("opacity", "0")
+      .transition()
+      .duration(200)
+      .style("opacity", "1");
+    d3.select(".submit-instructions").classed("hide", true);
+    d3.select(".review-msg").classed("hide", true);
+    
+
   })
 };
 
@@ -916,8 +922,10 @@ function submitData(data) {
   state.data_csv = Papa.unparse(data);
 
   const popNumber = aggState.populations.length;
+  const completedPops = [];
 
   aggState.populations.map((value, index) => {
+    console.log("Submitting data for ", value, index);
     let submitForm = document.createElement("form");
     submitForm.setAttribute("method", "POST");
     const popIndex = index;
@@ -944,12 +952,42 @@ function submitData(data) {
         body: new FormData(submitForm),
       })
         .then((response) => {
-          console.log("Success")
-          /* progressValue = progressValue + 1
-          d3.select(".progress-bar")
-            .html(`<progress id="file" value="${progressValue}" max="5">${progressValue}</progress>`) */
+          console.log("Success", response)
+          completedPops.push(value)
+          const progressNumber = completedPops.length
+          console.log(completedPops, progressNumber);
+
+          d3.select(".progress-msg")
+            .html(`Submitting &nbsp;<b style='color:var(--color-main)'>${value}</b>&nbsp; Data for ${state.meta_reportingDate}...`)
+            .style("opacity", "0")
+            .transition()
+            .duration(200)
+            .style("opacity", "1");
+
+          d3.select(".progress-bar").html(`<progress id="file" value="${progressNumber}" max="6">${progressNumber}</progress>`)
+
+          if(completedPops.length === 5) {
+            setTimeout(() => {
+              d3.select(".progress-msg")
+                .html(`✨ All Data Submitted for ${state.meta_reportingDate}! ✨`)
+                .style("opacity", "0")
+                .transition()
+                .duration(200)
+                .style("opacity", "1");
+              d3.select(".progress-bar").html(`<progress id="file" value="${6}" max="6">${6}</progress>`)
+            }, 1100)
+          }
         })
-        .catch((error) => console.error("Error!", error.message));
+        .catch((error) => {
+          d3.select(".progress-bar").classed("hide", true);
+          d3.select(".progress-msg")
+                .html(`<div style='text-align: center; background-color: #ffa5a5; padding: 20px; margin: 10px; border: 1px solid var(--color-alert)'><b style='font-size:var(--root-size);'>ERROR SUBMITTING DATA! <br> Please contact bfzdatasupport@community.solutions. <br> <b style='color:var(--color-alert); font-size:var(--root-size)'>${error}</b></b></div>`)
+                .style("opacity", "0")
+                .transition()
+                .duration(200)
+                .style("opacity", "1");
+          console.error("Error!", error.message)
+      });
     });
 
     submitForm.className = "hide";

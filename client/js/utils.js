@@ -29,7 +29,7 @@ class Utils {
     resetData(state, aggState) {
         // Reset Validation Step
         d3.select(".reupload-aggregate").classed("hide", true);
-        this.deactivate(d3.select("#aggregateButton"), false)
+        this.deactivate(d3.select("#aggregateButton"), false);
         d3.selectAll('.validation-name')
             .style("background-color", "white")
             .on("mouseover", function () {
@@ -41,14 +41,16 @@ class Utils {
         d3.selectAll(".validation-symbol").text("N/A").classed("neutral", true);
         d3.selectAll(".header-error, .pii-error, .ssn-error, .datatype-error").html("")
 
-        // Reset Aggregation Step
+        // Reset Submission Step
         d3.select(".reupload-submit").classed("hide", true);
-        this.deactivate(d3.select("#submitButton"), false)
+        this.deactivate(d3.select("#submitButton"), false);
         d3.select(".button-group-title").text("");
         d3.select(".reporting-month").text("");
         d3.select(".reporting-community").text("");
         d3.select(".submit-instructions").classed("hide", true);
         d3.select(".review-msg").classed("hide", true);
+        d3.select(".progress-msg").text("")
+        d3.select(".progress-bar").text("")
         d3.selectAll(".agg-header").remove();
         d3.selectAll(".agg-value").remove();
         d3.selectAll(".filter-btn").remove();

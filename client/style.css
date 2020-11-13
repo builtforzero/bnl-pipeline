@@ -354,7 +354,7 @@ select {
 .progress-msg {
   font-size: var(--h3-size);
   font-weight: 600;
-  margin: 20px 20px 0px 20px;
+  margin: 10px 20px 0px 20px;
 }
 
 .submitBtn-msg {
@@ -385,6 +385,29 @@ select {
 
 .popStatus-values:hover {
   background-color: rgb(235, 235, 235);
+}
+
+/* Inner container */
+progress[value] {
+  /* Reset the default appearance */
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80%;
+  height: 20px;
+  margin: 20px;
+  border: 3px solid lightgray;
+  border-radius: 10px;
+}
+
+/* Outer Container */
+progress[value]::-webkit-progress-bar {
+  border-radius: 10px;
+}
+
+/* Progress bar */
+progress[value]::-webkit-progress-value {
+  background-color: var(--color-main);
+  border-radius: 10px;
 }
 
 /* MEDIA BREAKPOINTS */
