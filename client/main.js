@@ -15,9 +15,14 @@ let form = new FormHandler();
 let agg = new Aggregator();
 let util = new Utils();
 
+
 /* APPLICATION STATE */
 let state = {
-  debug: false, // Toggle for required fields; makes for easier testing
+  debug: false, // Toggle to remove required fields
+  testSubmit: true, // Toggle to switch to test script URL
+
+  finalScriptUrl: "https://script.google.com/macros/s/AKfycbyI0-q2D_bg_SlqHNZlcGQCKcwjN8v0btYukrM0UNUBjzsxKnRY/exec",
+  testScriptUrl: "https://script.google.com/macros/s/AKfycbxkuRKFFR192ubCwQ8TWY1NxqcR9SzjmwWnFP3lDqxyuNbq_0M/exec",
 
   // Form Fields
   form_community_clean: null,
@@ -229,14 +234,8 @@ function setupButtons() {
     console.log(state.form_file_upload);
   })
 
-  // Reupload button in Aggregator section
-  d3.select(".reupload-aggregate").on("click", function () {
-    util.resetData(state, aggState);
-    util.clearFileInput("filePicker");
-  })
-
-  // Reupload button in submit section
-  d3.select(".reupload-submit").on("click", function () {
+  // Reupload and new upload buttons
+  d3.selectAll(".reupload-aggregate,.reupload-submit,.new-upload-submit").on("click", function () {
     util.resetData(state, aggState);
     util.clearFileInput("filePicker");
   })
@@ -288,7 +287,6 @@ function setupButtons() {
     d3.select(".submit-instructions").classed("hide", true);
     d3.select(".review-msg").classed("hide", true);
     
-
   })
 };
 
@@ -914,9 +912,6 @@ function printHeader(population) {
     .text("Result");
 }
 
-// URL of Google Apps script to get form data
-let scriptURL = "https://script.google.com/macros/s/AKfycbyI0-q2D_bg_SlqHNZlcGQCKcwjN8v0btYukrM0UNUBjzsxKnRY/exec";
-
 // Parses data as a CSV and downloads the file
 function submitData(data) {
   state.data_csv = Papa.unparse(data);
@@ -927,14 +922,16 @@ function submitData(data) {
   aggState.populations.map((value, index) => {
     console.log("Submitting data for ", value, index);
     let submitForm = document.createElement("form");
+    submitForm.setAttribute("id", value + "-form")
     submitForm.setAttribute("method", "POST");
     const popIndex = index;
 
-    state.dict_fields.map((field) => {
+    state.dict_fields.map((field, fieldIndex) => {
       const fieldName = field;
       const fieldValue = data[popIndex][field];
       const i = document.createElement("input");
       i.setAttribute("type", "text");
+      i.setAttribute("id", value + "-input-" + fieldIndex);
       i.setAttribute("name", fieldName);
       i.setAttribute("value", fieldValue);
       submitForm.appendChild(i);
@@ -946,8 +943,21 @@ function submitData(data) {
 
     submitForm.appendChild(s);
     submitForm.addEventListener("submit", (e) => {
+      let scriptUrl;
+
+      if (state.testSubmit === true ) {
+        console.log(
+          "%cForm submitting to TEST URL.",
+          "background: white; color: red"
+        );
+        scriptUrl = state.testScriptUrl
+      } else {
+        scriptUrl = state.finalScriptUrl
+      }
+
       e.preventDefault();
-      fetch(scriptURL, {
+
+      fetch(scriptUrl, {
         method: "POST",
         body: new FormData(submitForm),
       })
@@ -955,7 +965,6 @@ function submitData(data) {
           console.log("Success", response)
           completedPops.push(value)
           const progressNumber = completedPops.length
-          console.log(completedPops, progressNumber);
 
           d3.select(".progress-msg")
             .html(`Submitting &nbsp;<b style='color:var(--color-main)'>${value}</b>&nbsp; Data for ${state.meta_reportingDate}...`)
@@ -966,6 +975,8 @@ function submitData(data) {
 
           d3.select(".progress-bar").html(`<progress id="file" value="${progressNumber}" max="6">${progressNumber}</progress>`)
 
+          d3.select("#" + value + "-form").remove()
+
           if(completedPops.length === 5) {
             setTimeout(() => {
               d3.select(".progress-msg")
@@ -975,6 +986,13 @@ function submitData(data) {
                 .duration(200)
                 .style("opacity", "1");
               d3.select(".progress-bar").html(`<progress id="file" value="${6}" max="6">${6}</progress>`)
+
+              d3.select(".new-upload-submit")
+                .style("opacity", "0")
+                .transition()
+                .duration(400)
+                .style("opacity", "1");
+              d3.select(".new-upload-submit").classed("hide", false);
             }, 1100)
           }
         })

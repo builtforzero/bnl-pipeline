@@ -329,7 +329,8 @@ select {
 }
 
 .reupload-submit,
-.reupload-aggregate {
+.reupload-aggregate,
+.new-upload-submit {
   background-color: white;
   color: gray;
   border: 0px solid var(--color-main);
@@ -340,7 +341,8 @@ select {
 }
 
 .reupload-submit:hover,
-.reupload-aggregate:hover {
+.reupload-aggregate:hover,
+.new-upload-submit:hover {
   color: var(--color-main);
   cursor: pointer;
 }

@@ -29,6 +29,7 @@ class Utils {
     resetData(state, aggState) {
         // Reset Validation Step
         d3.select(".reupload-aggregate").classed("hide", true);
+        d3.select(".new-upload-submit").classed("hide", true);
         this.deactivate(d3.select("#aggregateButton"), false);
         d3.selectAll('.validation-name')
             .style("background-color", "white")
@@ -43,7 +44,7 @@ class Utils {
 
         // Reset Submission Step
         d3.select(".reupload-submit").classed("hide", true);
-        this.deactivate(d3.select("#submitButton"), false);
+        this.deactivate(d3.select("#submitButton"), true);
         d3.select(".button-group-title").text("");
         d3.select(".reporting-month").text("");
         d3.select(".reporting-community").text("");
