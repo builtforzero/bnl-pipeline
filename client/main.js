@@ -162,7 +162,7 @@ let state = {
 let aggState = {
   isVeteran: ["yes", "yesvalidated", "yesconfirmed"],
   isChronic: ["yes", "chronicallyhomeless"],
-  isSingleAdult: ["singleadult"],
+  isSingleAdult: ["singleadult", "singleadults"],
   isYouth: ["youth"],
   isFamily: ["family"],
   clientIDHeader: "Client ID",
@@ -540,11 +540,10 @@ function calculate(state, data, calculation) {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
-      const col = "Housing Move-In Date";
       const filteredData = categoryData.filter((d) => {
         return (
-          d[col] != null &&
-          util.getDate(d[col], "MY", state) === reportingDate
+          d["Housing Move-In Date"] != null &&
+          util.getDate(d["Housing Move-In Date"], "MY", state) === reportingDate
         );
       });
       // Then get the unique number of clients
@@ -555,11 +554,10 @@ function calculate(state, data, calculation) {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
-      const col = "Inactive Date";
       const filteredData = categoryData.filter((d) => {
         return (
-          d[col] != null &&
-          util.getDate(d[col], "MY", state) === reportingDate
+          d["Inactive Date"] != null &&
+          util.getDate(d["Inactive Date"], "MY", state) === reportingDate
         );
       });
       // Then get the unique number of clients
@@ -570,11 +568,12 @@ function calculate(state, data, calculation) {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
-      const col = "Date of Identification";
       const filteredData = categoryData.filter((d) => {
         return (
-          d[col] != null &&
-          util.getDate(d[col], "MY", state) === reportingDate
+          d["Date of Identification"] != null &&
+          d["Inactive Date"] === null &&
+          d["Returned to Active Date"] === null &&
+          util.getDate(d["Date of Identification"], "MY", state) === reportingDate
         );
       });
       // Then get the unique number of clients
@@ -585,13 +584,11 @@ function calculate(state, data, calculation) {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
-      const col1 = "Returned to Active Date";
-      const col2 = "Housing Move-In Date";
       const filteredData = categoryData.filter((d) => {
         return (
-          d[col2] != null &&
-          util.getDate(d[col1], "MY", state) === reportingDate &&
-          util.getDate(d[col1], "MDY", state) > util.getDate(d[col2], "MDY", state)
+          d["Housing Move-In Date"] != null &&
+          util.getDate(d["Returned to Active Date"], "MY", state) === reportingDate &&
+          util.getDate(d["Returned to Active Date"], "MDY", state) > util.getDate(d["Housing Move-In Date"], "MDY", state)
         );
       });
       // Then get the unique number of clients
@@ -602,13 +599,11 @@ function calculate(state, data, calculation) {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
-      const col1 = "Returned to Active Date";
-      const col2 = "Inactive Date";
       const filteredData = categoryData.filter((d) => {
         return (
-          d[col2] != null &&
-          util.getDate(d[col1], "MY", state) === reportingDate &&
-          util.getDate(d[col1], "MDY", state) > util.getDate(d[col2], "MDY", state)
+          d["Inactive Date"] != null &&
+          util.getDate(d["Returned to Active Date"], "MY", state) === reportingDate &&
+          util.getDate(d["Returned to Active Date"], "MDY", state) > util.getDate(d["Inactive Date"], "MDY", state)
         );
       });
       // Then get the unique number of clients
@@ -618,17 +613,16 @@ function calculate(state, data, calculation) {
     "Length of Time from ID to Housing": aggState.allCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
-      const col1 = "Housing Move-In Date";
-      const col2 = "Date of Identification";
       // Then filter for additional criteria
       const filteredData = categoryData.filter((d) => {
-        return d[col1] != null;
+        return (
+          d["Housing Move-In Date"] != null &&
+          util.getDate(d["Housing Move-In Date"], "MY", state) === reportingDate
+        )
       });
-
       // Get arrays of values for housing dates and ID dates
-      const housingDates = util.getColByName(filteredData, filteredData.length, col1);
-      const idDates = util.getColByName(filteredData, filteredData.length, col2);
-
+      const housingDates = util.getColByName(filteredData, filteredData.length, "Housing Move-In Date");
+      const idDates = util.getColByName(filteredData, filteredData.length, "Date of Identification");
       // Map the difference between each housing and ID date, remove null values
       const difference = housingDates.map((houseDate, index) => {
           // Get corresponding ID date value
@@ -640,6 +634,7 @@ function calculate(state, data, calculation) {
             if (converted < 0) {
               return null
             } else {
+              //console.log(category, "LOT", util.getDate(houseDate, "MDY", state), util.getDate(idDate, "MDY", state), converted);
               return converted;
             }
           } else {
@@ -651,7 +646,8 @@ function calculate(state, data, calculation) {
       if (difference.length === 0) {
         return null;
       } else {
-        const average = Math.ceil(difference.reduce((acc, value) => (acc + value) / difference.length));
+        const round = d3.format(".1f")
+        const average = round(d3.mean(difference), 1);
         return average;
       }
 
