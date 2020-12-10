@@ -18,7 +18,7 @@ let util = new Utils();
 
 /* APPLICATION STATE */
 let state = {
-  debug: false, // Toggle to remove required fields
+  debug: true, // Toggle to remove required fields
   testSubmit: true, // Toggle to switch to test script URL
 
   finalScriptUrl: "https://script.google.com/macros/s/AKfycbyI0-q2D_bg_SlqHNZlcGQCKcwjN8v0btYukrM0UNUBjzsxKnRY/exec",
@@ -273,7 +273,7 @@ function setupButtons() {
     d3.select(".reupload-aggregate").classed("hide", true);
     d3.select(".reupload-submit").classed("hide", true);
     util.deactivate(d3.select("#aggregateButton"), false)
-    util.deactivate(d3.select("#submitButton"), true)
+    util.deactivate(d3.select("#submitButton"), false)
     d3.select(".progress-msg").html(`Submitting...`)
       .style("opacity", "0")
       .transition()
