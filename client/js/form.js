@@ -53,15 +53,14 @@ class FormHandler {
         /[^A-Z0-9]/gi,
         ""
       );
-      state.meta_timestamp = util.getDate(Date.now(), "Timestamp", state);
+      state.meta_timestamp = util.formatDate(Date.now(), "from ms", "as timestamp");
     })
   
     // Reporting date input
     d3.select("#date-input").on("change", function () {
       state.form_reporting_date = this.value;
-      const parsedDate = util.getDate(this.value, "MYFromForm", state)
-      state.meta_reportingDate = util.getDate(this.value, "MYFromForm", state)
-      state.meta_timestamp = util.getDate(Date.now(), "Timestamp", state);
+      state.meta_reportingDate = util.formatDate(this.value, "from year day month", "as MY");
+      state.meta_timestamp = util.formatDate(Date.now(), "from ms", "as timestamp");
       form.checkStatus(state);
     })
   
@@ -118,6 +117,7 @@ class FormHandler {
         var workbook = XLSX.read(data, { type: "array" });
         var sheetNameList = workbook.SheetNames;
         var csv = XLSX.utils.sheet_to_csv(workbook.Sheets[sheetNameList[0]]);
+        
         Papa.parse(csv, {
           dynamicTyping: true,
           header: true,
@@ -125,6 +125,7 @@ class FormHandler {
             state.data_raw = results.data;
             state.data_headers = results.meta.fields;
             state.data_length = results.data.length;
+            console.log("Parsing XLSX", state.data_raw, state.data_headers);
           },
         });
       };

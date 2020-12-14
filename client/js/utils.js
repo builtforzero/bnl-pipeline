@@ -77,18 +77,20 @@ class Utils {
             "as MY": d3.timeFormat("%B %Y"), // September 2020
             "as long year": d3.timeFormat("%m/%d/%Y"),
             "from long year": d3.timeParse("%m/%d/%Y"),
-            "from short year": d3.timeParse("%m/%d/%y"),
+            "from short year": d3.timeParse("%-m/%-d/%Y"), // no leading zeros
             "from year month": d3.timeParse("%Y-%m"),
+            "from year day month": d3.timeParse("%Y-%m-%d"),
+            "from ms": d3.timeParse("%Q") // Q is from UNIX epoch
         }
 
         if(method2 === undefined && method3 === undefined){
             const firstMethod = dateMap[method1]
-            const firstParse = firstMethod(dateValue);
+            const firstParse = new Date(firstMethod(dateValue));
             return firstParse;
         } else if (method2 != undefined && method3 === undefined) {
             const firstMethod = dateMap[method1]
             const secondMethod = dateMap[method2]
-            const firstParse = firstMethod(dateValue);
+            const firstParse = new Date(firstMethod(dateValue));
             const secondParse = secondMethod(firstParse);
             return secondParse;
         } else if (method2 != undefined && method3 != undefined) {
@@ -107,7 +109,7 @@ class Utils {
             return null
         } else {
             if(format === "MYFromForm") {
-                return this.formatDate(dateValue, "from year month", "as MY");;
+                return this.formatDate(dateValue, "from year month", "as MY");
             } else if (format === "MY") {
                 const formatted = this.monthYear(dateValue, state);
                 return formatted;
