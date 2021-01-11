@@ -143,53 +143,53 @@ let state = {
     "[All] Population",
     "[All] Subpopulation",
     "[All] Demographic",
-    "[All] Actively Homeless",
-    "[All] Housing Placements",
-    "[All] Length of Time from ID to Housing",
-    "[All] Moved to Inactive",
-    "[All] Newly Identified Inflow",
-    "[All] Returned to Active from Housing",
-    "[All] Returned to Active from Inactive",
+    "[All] ACTIVELY HOMELESS NUMBER",
+    "[All] HOUSING PLACEMENTS",
+    "[All] AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
+    "[All] MOVED TO INACTIVE NUMBER",
+    "[All] NEWLY IDENTIFIED NUMBER",
+    "[All] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
+    "[All] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
     "[Chronic] Population",
     "[Chronic] Subpopulation",
     "[Chronic] Demographic",
-    "[Chronic] Actively Homeless",
-    "[Chronic] Housing Placements",
-    "[Chronic] Length of Time from ID to Housing",
-    "[Chronic] Moved to Inactive",
-    "[Chronic] Newly Identified Inflow",
-    "[Chronic] Returned to Active from Housing",
-    "[Chronic] Returned to Active from Inactive",
+    "[Chronic] ACTIVELY HOMELESS NUMBER",
+    "[Chronic] HOUSING PLACEMENTS",
+    "[Chronic] AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
+    "[Chronic] MOVED TO INACTIVE NUMBER",
+    "[Chronic] NEWLY IDENTIFIED NUMBER",
+    "[Chronic] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
+    "[Chronic] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
     "[Veteran] Population",
     "[Veteran] Subpopulation",
     "[Veteran] Demographic",
-    "[Veteran] Actively Homeless",
-    "[Veteran] Housing Placements",
-    "[Veteran] Length of Time from ID to Housing",
-    "[Veteran] Moved to Inactive",
-    "[Veteran] Newly Identified Inflow",
-    "[Veteran] Returned to Active from Housing",
-    "[Veteran] Returned to Active from Inactive",
+    "[Veteran] ACTIVELY HOMELESS NUMBER",
+    "[Veteran] HOUSING PLACEMENTS",
+    "[Veteran] AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
+    "[Veteran] MOVED TO INACTIVE NUMBER",
+    "[Veteran] NEWLY IDENTIFIED NUMBER",
+    "[Veteran] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
+    "[Veteran] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
     "[Youth] Population",
     "[Youth] Subpopulation",
     "[Youth] Demographic",
-    "[Youth] Actively Homeless",
-    "[Youth] Housing Placements",
-    "[Youth] Length of Time from ID to Housing",
-    "[Youth] Moved to Inactive",
-    "[Youth] Newly Identified Inflow",
-    "[Youth] Returned to Active from Housing",
-    "[Youth] Returned to Active from Inactive",
+    "[Youth] ACTIVELY HOMELESS NUMBER",
+    "[Youth] HOUSING PLACEMENTS",
+    "[Youth] AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
+    "[Youth] MOVED TO INACTIVE NUMBER",
+    "[Youth] NEWLY IDENTIFIED NUMBER",
+    "[Youth] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
+    "[Youth] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
     "[Family] Population",
     "[Family] Subpopulation",
     "[Family] Demographic",
-    "[Family] Actively Homeless",
-    "[Family] Housing Placements",
-    "[Family] Length of Time from ID to Housing",
-    "[Family] Moved to Inactive",
-    "[Family] Newly Identified Inflow",
-    "[Family] Returned to Active from Housing",
-    "[Family] Returned to Active from Inactive",
+    "[Family] ACTIVELY HOMELESS NUMBER",
+    "[Family] HOUSING PLACEMENTS",
+    "[Family] AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
+    "[Family] MOVED TO INACTIVE NUMBER",
+    "[Family] NEWLY IDENTIFIED NUMBER",
+    "[Family] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
+    "[Family] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
   ],
 
   categorical_fields: [
@@ -230,13 +230,13 @@ let aggState = {
     "Clients who have a 'Family' Household Status",
   ],
   metrics: [
-    "Actively Homeless",
-    "Housing Placements",
-    "Moved to Inactive",
-    "Newly Identified Inflow",
-    "Returned to Active from Housing",
-    "Returned to Active from Inactive",
-    "Length of Time from ID to Housing",
+    "ACTIVELY HOMELESS NUMBER",
+    "HOUSING PLACEMENTS",
+    "MOVED TO INACTIVE NUMBER",
+    "NEWLY IDENTIFIED NUMBER",
+    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
+    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
+    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
   ],
   raw: null,
   output: [],
@@ -581,7 +581,7 @@ function filterData(data, category) {
 function calculate(state, data, calculation) {
   const reportingDate = state.meta_reportingDate;
   const calcMap = {
-    "Actively Homeless": aggState.activeCats.map((category) => {
+    "ACTIVELY HOMELESS NUMBER": aggState.activeCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then get the unique number of clients
@@ -592,7 +592,7 @@ function calculate(state, data, calculation) {
       );
       return new Set(clients).size;
     }),
-    "Housing Placements": aggState.allCats.map((category) => {
+    "HOUSING PLACEMENTS": aggState.allCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -610,7 +610,7 @@ function calculate(state, data, calculation) {
       );
       return new Set(clients).size;
     }),
-    "Moved to Inactive": aggState.allCats.map((category) => {
+    "MOVED TO INACTIVE NUMBER": aggState.allCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -628,7 +628,7 @@ function calculate(state, data, calculation) {
       );
       return new Set(clients).size;
     }),
-    "Newly Identified Inflow": aggState.activeCats.map((category) => {
+    "NEWLY IDENTIFIED NUMBER": aggState.activeCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -649,101 +649,108 @@ function calculate(state, data, calculation) {
       );
       return new Set(clients).size;
     }),
-    "Returned to Active from Housing": aggState.activeCats.map((category) => {
-      // First filter data for the selected category
-      const categoryData = filterData(data, category);
-      // Then filter for additional criteria
-      const filteredData = categoryData.filter((d) => {
-        return (
-          d["Housing Move-In Date"] != null &&
-          util.getDate(d["Returned to Active Date"], "MY", state) ===
-            reportingDate &&
-          util.getDate(d["Returned to Active Date"], "MDY", state) >
-            util.getDate(d["Housing Move-In Date"], "MDY", state)
+    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": aggState.activeCats.map(
+      (category) => {
+        // First filter data for the selected category
+        const categoryData = filterData(data, category);
+        // Then filter for additional criteria
+        const filteredData = categoryData.filter((d) => {
+          return (
+            d["Housing Move-In Date"] != null &&
+            util.getDate(d["Returned to Active Date"], "MY", state) ===
+              reportingDate &&
+            util.getDate(d["Returned to Active Date"], "MDY", state) >
+              util.getDate(d["Housing Move-In Date"], "MDY", state)
+          );
+        });
+        // Then get the unique number of clients
+        const clients = util.getColByName(
+          filteredData,
+          filteredData.length,
+          aggState.clientIDHeader
         );
-      });
-      // Then get the unique number of clients
-      const clients = util.getColByName(
-        filteredData,
-        filteredData.length,
-        aggState.clientIDHeader
-      );
-      return new Set(clients).size;
-    }),
-    "Returned to Active from Inactive": aggState.allCats.map((category) => {
-      // First filter data for the selected category
-      const categoryData = filterData(data, category);
-      // Then filter for additional criteria
-      const filteredData = categoryData.filter((d) => {
-        return (
-          d["Inactive Date"] != null &&
-          util.getDate(d["Returned to Active Date"], "MY", state) ===
-            reportingDate &&
-          util.getDate(d["Returned to Active Date"], "MDY", state) >
-            util.getDate(d["Inactive Date"], "MDY", state)
-        );
-      });
-      // Then get the unique number of clients
-      const clients = util.getColByName(
-        filteredData,
-        filteredData.length,
-        aggState.clientIDHeader
-      );
-      return new Set(clients).size;
-    }),
-    "Length of Time from ID to Housing": aggState.allCats.map((category) => {
-      // First filter data for the selected category
-      const categoryData = filterData(data, category);
-      // Then filter for additional criteria
-      const filteredData = categoryData.filter((d) => {
-        return (
-          d["Housing Move-In Date"] != null &&
-          util.getDate(d["Housing Move-In Date"], "MY", state) === reportingDate
-        );
-      });
-      // Get arrays of values for housing dates and ID dates
-      const housingDates = util.getColByName(
-        filteredData,
-        filteredData.length,
-        "Housing Move-In Date"
-      );
-      const idDates = util.getColByName(
-        filteredData,
-        filteredData.length,
-        "Date of Identification"
-      );
-      // Map the difference between each housing and ID date, remove null values
-      const difference = housingDates
-        .map((houseDate, index) => {
-          // Get corresponding ID date value
-          const idDate = idDates[index];
-          // Get difference in ms and convert to days
-          if (houseDate != null && idDate != null) {
-            const diff =
-              util.getDate(houseDate, "MDY", state) -
-              util.getDate(idDate, "MDY", state);
-            const converted = Math.ceil(diff / (1000 * 60 * 60 * 24));
-            if (converted < 0) {
-              return null;
-            } else {
-              //console.log(category, "LOT", util.getDate(houseDate, "MDY", state), util.getDate(idDate, "MDY", state), converted);
-              return converted;
-            }
-          } else {
-            return null;
-          }
-        })
-        .filter((value) => value != null);
-
-      // Reduce the differences map to a single average value
-      if (difference.length === 0) {
-        return null;
-      } else {
-        const round = d3.format(".1f");
-        const average = round(d3.mean(difference), 1);
-        return average;
+        return new Set(clients).size;
       }
-    }),
+    ),
+    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": aggState.allCats.map(
+      (category) => {
+        // First filter data for the selected category
+        const categoryData = filterData(data, category);
+        // Then filter for additional criteria
+        const filteredData = categoryData.filter((d) => {
+          return (
+            d["Inactive Date"] != null &&
+            util.getDate(d["Returned to Active Date"], "MY", state) ===
+              reportingDate &&
+            util.getDate(d["Returned to Active Date"], "MDY", state) >
+              util.getDate(d["Inactive Date"], "MDY", state)
+          );
+        });
+        // Then get the unique number of clients
+        const clients = util.getColByName(
+          filteredData,
+          filteredData.length,
+          aggState.clientIDHeader
+        );
+        return new Set(clients).size;
+      }
+    ),
+    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT": aggState.allCats.map(
+      (category) => {
+        // First filter data for the selected category
+        const categoryData = filterData(data, category);
+        // Then filter for additional criteria
+        const filteredData = categoryData.filter((d) => {
+          return (
+            d["Housing Move-In Date"] != null &&
+            util.getDate(d["Housing Move-In Date"], "MY", state) ===
+              reportingDate
+          );
+        });
+        // Get arrays of values for housing dates and ID dates
+        const housingDates = util.getColByName(
+          filteredData,
+          filteredData.length,
+          "Housing Move-In Date"
+        );
+        const idDates = util.getColByName(
+          filteredData,
+          filteredData.length,
+          "Date of Identification"
+        );
+        // Map the difference between each housing and ID date, remove null values
+        const difference = housingDates
+          .map((houseDate, index) => {
+            // Get corresponding ID date value
+            const idDate = idDates[index];
+            // Get difference in ms and convert to days
+            if (houseDate != null && idDate != null) {
+              const diff =
+                util.getDate(houseDate, "MDY", state) -
+                util.getDate(idDate, "MDY", state);
+              const converted = Math.ceil(diff / (1000 * 60 * 60 * 24));
+              if (converted < 0) {
+                return null;
+              } else {
+                //console.log(category, "LOT", util.getDate(houseDate, "MDY", state), util.getDate(idDate, "MDY", state), converted);
+                return converted;
+              }
+            } else {
+              return null;
+            }
+          })
+          .filter((value) => value != null);
+
+        // Reduce the differences map to a single average value
+        if (difference.length === 0) {
+          return null;
+        } else {
+          const round = d3.format(".1f");
+          const average = round(d3.mean(difference), 1);
+          return average;
+        }
+      }
+    ),
   };
 
   return calcMap[calculation];
@@ -759,28 +766,36 @@ function aggregate(data) {
 
   // Calculate by population
   aggState.raw = {
-    "Actively Homeless": calculate(state, data, "Actively Homeless"),
-    "Housing Placements": calculate(state, data, "Housing Placements"),
-    "Moved to Inactive": calculate(state, data, "Moved to Inactive"),
-    "Newly Identified Inflow": calculate(
+    "ACTIVELY HOMELESS NUMBER": calculate(
       state,
       data,
-      "Newly Identified Inflow"
+      "ACTIVELY HOMELESS NUMBER"
     ),
-    "Returned to Active from Housing": calculate(
+    "HOUSING PLACEMENTS": calculate(state, data, "HOUSING PLACEMENTS"),
+    "MOVED TO INACTIVE NUMBER": calculate(
       state,
       data,
-      "Returned to Active from Housing"
+      "MOVED TO INACTIVE NUMBER"
     ),
-    "Returned to Active from Inactive": calculate(
+    "NEWLY IDENTIFIED NUMBER": calculate(
       state,
       data,
-      "Returned to Active from Inactive"
+      "NEWLY IDENTIFIED NUMBER"
     ),
-    "Length of Time from ID to Housing": calculate(
+    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": calculate(
       state,
       data,
-      "Length of Time from ID to Housing"
+      "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"
+    ),
+    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": calculate(
+      state,
+      data,
+      "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"
+    ),
+    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT": calculate(
+      state,
+      data,
+      "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT"
     ),
   };
 
@@ -909,12 +924,23 @@ function getOutput(population, aggRaw) {
     aggState.output["[" + demographicId + "] Demographic"] = "All";
     aggState.output["[" + demographicId + "] " + metric] =
       aggRaw[metric][index];
-    printValue(population, metric, aggRaw[metric][index]);
+
+    // Convert uppercase to title case for printing to screen
+    const titleCaseMetric = metric
+      .split(" ")
+      .map((w) => w[0].toUpperCase() + w.substr(1).toLowerCase())
+      .join(" ");
+
+    printValue(population, titleCaseMetric, aggRaw[metric][index]);
   });
 }
 
 function printValue(population, calculation, result) {
-  if (result > 0 && calculation === "Length of Time from ID to Housing") {
+  if (
+    result > 0 &&
+    calculation ===
+      "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT"
+  ) {
     d3.select(".agg-table")
       .append("div")
       .classed("agg-value", true)
@@ -935,7 +961,9 @@ function printValue(population, calculation, result) {
       .html(`<b>${result} days</b>`);
   } else if (
     result === null ||
-    (result === 0 && calculation === "Length of Time from ID to Housing")
+    (result === 0 &&
+      calculation ===
+        "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT")
   ) {
     d3.select(".agg-table")
       .append("div")
@@ -955,7 +983,11 @@ function printValue(population, calculation, result) {
       .classed(`${population}`, true)
       .classed("hide", true)
       .html(`<b class='neutral' style='font-weight:400;'>${result}</b>`);
-  } else if (result > 0 && calculation != "Length of Time from ID to Housing") {
+  } else if (
+    result > 0 &&
+    calculation !=
+      "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT"
+  ) {
     d3.select(".agg-table")
       .append("div")
       .classed("agg-value", true)
