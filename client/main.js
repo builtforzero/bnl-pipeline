@@ -4,6 +4,7 @@ const Papa = require("papaparse");
 const XLSX = require("xlsx");
 
 // Import components
+import { headers, pops, values } from "./dict.js";
 import { Validator } from "./js/validate.js";
 import { FormHandler } from "./js/form.js";
 import { Aggregator } from "./js/aggregator.js";
@@ -20,10 +21,8 @@ let state = {
   debug: false, // Toggle to remove required fields
   testSubmit: false, // Toggle to switch to test script URL
 
-  finalScriptUrl:
-    "https://script.google.com/macros/s/AKfycbxkuRKFFR192ubCwQ8TWY1NxqcR9SzjmwWnFP3lDqxyuNbq_0M/exec",
-  testScriptUrl:
-    "https://script.google.com/macros/s/AKfycbxkuRKFFR192ubCwQ8TWY1NxqcR9SzjmwWnFP3lDqxyuNbq_0M/exec",
+  finalScriptUrl: "https://script.google.com/macros/s/AKfycbxkuRKFFR192ubCwQ8TWY1NxqcR9SzjmwWnFP3lDqxyuNbq_0M/exec",
+  testScriptUrl: "https://script.google.com/macros/s/AKfycbxkuRKFFR192ubCwQ8TWY1NxqcR9SzjmwWnFP3lDqxyuNbq_0M/exec",
 
   // Form Fields
   form_community_clean: null,
@@ -48,198 +47,9 @@ let state = {
   data_csv: null,
   data_form: null,
 
-  // All headers
-  dict_headers_all: [
-    "Date of Identification",
-    "Homeless Start Date",
-    "Housing Move-In Date",
-    "Inactive Date",
-    "Returned to Active Date",
-    "Age",
-    "Client ID",
-    "Household ID",
-    "BNL Status",
-    "Literal Homeless Status",
-    "Household Type",
-    "Chronic Status",
-    "Veteran Status",
-    "Ethnicity",
-    "Race",
-    "Gender",
-    "Current Living Situation",
-    "Disabling Condition - General",
-    "Disabling Condition - HIV/AIDS Diagnosis",
-    "Disabling Condition - Mental Health Condition",
-    "Disabling Condition - Physical Disability",
-    "Disabling Condition - DA Abuse",
-  ],
-
-  // Required headers
-  dict_headers_required: [
-    "Date of Identification",
-    "Homeless Start Date",
-    "Housing Move-In Date",
-    "Inactive Date",
-    "Returned to Active Date",
-    "Age",
-    "Client ID",
-    "BNL Status",
-    "Household Type",
-    "Household Size",
-    "Chronic Status",
-    "Veteran Status",
-    "Ethnicity",
-    "Race",
-    "Gender",
-  ],
-
-  // Datatype options: date, num, alphanum, any
-  dict_headers_datatype: [
-    "date",
-    "date",
-    "date",
-    "date",
-    "date",
-    "num",
-    "num",
-    "any",
-    "any",
-    "num",
-    "any",
-    "any",
-    "any",
-    "any",
-    "any",
-  ],
-
-  datatype_errors: {
-    date: `must be in the format <b style='color:black'>MM/DD/YYYY</b>, e.g. "12/31/2020".`,
-    num: `must only contain <b style='color:black'>whole numbers</b>. e.g. "3"`,
-    alphanum: `must only be <b style='color:black'>letters or numbers; no special characters</b>. e.g. "Yes (Confirmed)"`,
-    any: `can accept any data type.`,
-  },
-
-  // Banned headers
-  dict_headers_remove: [
-    "Social Security Number",
-    "SSN",
-    "Last 4",
-    "First Name",
-    "Last Name",
-    "Name",
-    "Birthday",
-    "Date of Birth",
-    "DOB",
-  ],
-
-  // Fields in the final file
-  dict_fields: [
-    "Timestamp",
-    "Community",
-    "Month",
-    "Name",
-    "Email Address",
-    "Organization",
-    "[All] Population",
-    "[All] Subpopulation",
-    "[All] Demographic",
-    "[All] ACTIVELY HOMELESS NUMBER",
-    "[All] HOUSING PLACEMENTS",
-    "[All] AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
-    "[All] MOVED TO INACTIVE NUMBER",
-    "[All] NEWLY IDENTIFIED NUMBER",
-    "[All] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
-    "[All] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
-    "[Chronic] Population",
-    "[Chronic] Subpopulation",
-    "[Chronic] Demographic",
-    "[Chronic] ACTIVELY HOMELESS NUMBER",
-    "[Chronic] HOUSING PLACEMENTS",
-    "[Chronic] AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
-    "[Chronic] MOVED TO INACTIVE NUMBER",
-    "[Chronic] NEWLY IDENTIFIED NUMBER",
-    "[Chronic] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
-    "[Chronic] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
-    "[Veteran] Population",
-    "[Veteran] Subpopulation",
-    "[Veteran] Demographic",
-    "[Veteran] ACTIVELY HOMELESS NUMBER",
-    "[Veteran] HOUSING PLACEMENTS",
-    "[Veteran] AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
-    "[Veteran] MOVED TO INACTIVE NUMBER",
-    "[Veteran] NEWLY IDENTIFIED NUMBER",
-    "[Veteran] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
-    "[Veteran] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
-    "[Youth] Population",
-    "[Youth] Subpopulation",
-    "[Youth] Demographic",
-    "[Youth] ACTIVELY HOMELESS NUMBER",
-    "[Youth] HOUSING PLACEMENTS",
-    "[Youth] AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
-    "[Youth] MOVED TO INACTIVE NUMBER",
-    "[Youth] NEWLY IDENTIFIED NUMBER",
-    "[Youth] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
-    "[Youth] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
-    "[Family] Population",
-    "[Family] Subpopulation",
-    "[Family] Demographic",
-    "[Family] ACTIVELY HOMELESS NUMBER",
-    "[Family] HOUSING PLACEMENTS",
-    "[Family] AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
-    "[Family] MOVED TO INACTIVE NUMBER",
-    "[Family] NEWLY IDENTIFIED NUMBER",
-    "[Family] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
-    "[Family] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
-  ],
-
-  categorical_fields: [
-    "BNL Status",
-    "Household Type",
-    "Veteran Status",
-    "Chronic Status",
-  ],
-};
-
-let aggState = {
-  isVeteran: ["yes", "yesvalidated", "yesconfirmed"],
-  isChronic: ["yes", "chronicallyhomeless"],
-  isSingleAdult: ["singleadult", "singleadults"],
-  isYouth: ["youth"],
-  isFamily: ["family"],
-  clientIDHeader: "Client ID",
-  activeCats: [
-    "Active All",
-    "Active Veteran",
-    "Active Chronic",
-    "Active Youth",
-    "Active Family",
-  ],
-  allCats: [
-    "All Unduplicated",
-    "All Veteran",
-    "All Chronic",
-    "All Youth",
-    "All Family",
-  ],
-  populations: ["All", "Veteran", "Chronic", "Youth", "Family"],
-  popExplanations: [
-    "All active clients",
-    "Clients who have a 'Single Adult' Household Status AND 'Yes Validated' in Veteran Status",
-    "Clients who have a 'Single Adult' Household Status AND 'Chronically Homeless' in Veteran Status",
-    "Clients who have a 'Youth' Household Status",
-    "Clients who have a 'Family' Household Status",
-  ],
-  metrics: [
-    "ACTIVELY HOMELESS NUMBER",
-    "HOUSING PLACEMENTS",
-    "MOVED TO INACTIVE NUMBER",
-    "NEWLY IDENTIFIED NUMBER",
-    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
-    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
-    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
-  ],
-  raw: null,
-  output: [],
+  // Backend
+  backend_raw: null,
+  backend_output: [],
 };
 
 init(state, form);
@@ -255,11 +65,11 @@ function setupButtons() {
   // Validate button
   d3.select("#validateButton").on("click", function () {
     // Run the validation tests
-    runTests(state.data_headers, state.data_raw, aggState);
+    runTests(state.data_headers, state.data_raw, state);
 
     // Remove any lingering values from a previous aggregation
-    aggState.raw = null;
-    aggState.output = [];
+    state.backend_raw = null;
+    state.backend_output = [];
     d3.selectAll(".agg-header").remove();
     d3.selectAll(".agg-value").remove();
     d3.selectAll(".filter-btn").remove();
@@ -270,24 +80,19 @@ function setupButtons() {
     util.deactivate(d3.select("#submitButton"), false);
     util.activate(d3.select("#aggregateButton"), false);
     d3.select(".reupload-aggregate").classed("hide", false);
-
-    console.log(state.form_file_upload);
   });
 
   // Reupload and new upload buttons
-  d3.selectAll(".reupload-aggregate,.reupload-submit,.new-upload-submit").on(
-    "click",
-    function () {
-      util.resetData(state, aggState);
-      util.clearFileInput("filePicker");
-    }
-  );
+  d3.selectAll(".reupload-aggregate,.reupload-submit,.new-upload-submit").on("click", function () {
+    util.resetData(state);
+    util.clearFileInput("filePicker");
+  });
 
   // Aggregate Button
   d3.select("#aggregateButton").on("click", function () {
     // Remove any lingering values
-    aggState.raw = null;
-    aggState.output = [];
+    state.backend_raw = null;
+    state.backend_output = [];
     d3.selectAll(".agg-header").remove();
     d3.selectAll(".agg-value").remove();
     d3.selectAll(".filter-btn").remove();
@@ -307,9 +112,8 @@ function setupButtons() {
 
   // Submit button
   d3.select("#submitButton").on("click", function () {
-    console.log(aggState.output);
     // Submit the data
-    submitData(aggState.output);
+    submitData(state.backend_output);
 
     // Deactivate and hide the submit button
     // Hide the reupload button
@@ -317,18 +121,8 @@ function setupButtons() {
     d3.select(".reupload-submit").classed("hide", true);
     util.deactivate(d3.select("#aggregateButton"), false);
     util.deactivate(d3.select("#submitButton"), false);
-    d3.select(".progress-msg")
-      .html(`Submitting...`)
-      .style("opacity", "0")
-      .transition()
-      .duration(200)
-      .style("opacity", "1");
-    d3.select(".progress-bar")
-      .html(`<progress id="file" value="${0}" max="6">${0}</progress>`)
-      .style("opacity", "0")
-      .transition()
-      .duration(200)
-      .style("opacity", "1");
+    d3.select(".progress-msg").html(`Submitting...`).style("opacity", "0").transition().duration(200).style("opacity", "1");
+    d3.select(".progress-bar").html(`<progress id="file" value="${0}" max="6">${0}</progress>`).style("opacity", "0").transition().duration(200).style("opacity", "1");
     d3.select(".submit-instructions").classed("hide", true);
     d3.select(".review-msg").classed("hide", true);
   });
@@ -345,19 +139,11 @@ let section = {
   // Toggle function
   toggle: function (infoLocation, toggleLocation, stateField) {
     if (stateField === true) {
-      d3.select(infoLocation)
-        .style("opacity", "0")
-        .transition()
-        .duration(200)
-        .style("opacity", "1");
+      d3.select(infoLocation).style("opacity", "0").transition().duration(200).style("opacity", "1");
       d3.select(infoLocation).classed("hide", false);
       d3.select(toggleLocation).text("HIDE DETAILS ▲");
     } else {
-      d3.select(infoLocation)
-        .style("opacity", "1")
-        .transition()
-        .duration(200)
-        .style("opacity", "0");
+      d3.select(infoLocation).style("opacity", "1").transition().duration(200).style("opacity", "0");
       d3.select(infoLocation).classed("hide", true);
       d3.select(toggleLocation).text("SHOW DETAILS ▼");
     }
@@ -371,18 +157,10 @@ let section = {
     section.ssn_open = false;
     section.datatype_open = false;
     // Open/close selected section, close all others
-    section.toggle(
-      "#headers-info",
-      "#headers-name-toggle",
-      section.headers_open
-    );
+    section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
     section.toggle("#pii-info", "#pii-toggle", section.pii_open);
     section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
-    section.toggle(
-      "#datatype-info",
-      "#datatype-name-toggle",
-      section.datatype_open
-    );
+    section.toggle("#datatype-info", "#datatype-name-toggle", section.datatype_open);
   }),
 
   togglePiiInfo: d3.select("#pii-name").on("click", function () {
@@ -393,17 +171,9 @@ let section = {
     section.datatype_open = false;
     // Open/close selected section, close all others
     section.toggle("#pii-info", "#pii-toggle", section.pii_open);
-    section.toggle(
-      "#headers-info",
-      "#headers-name-toggle",
-      section.headers_open
-    );
+    section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
     section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
-    section.toggle(
-      "#datatype-info",
-      "#datatype-name-toggle",
-      section.datatype_open
-    );
+    section.toggle("#datatype-info", "#datatype-name-toggle", section.datatype_open);
   }),
 
   toggleSsnInfo: d3.select("#ssn-name").on("click", function () {
@@ -414,17 +184,9 @@ let section = {
     section.datatype_open = false;
     // Open/close selected section, close all others
     section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
-    section.toggle(
-      "#headers-info",
-      "#headers-name-toggle",
-      section.headers_open
-    );
+    section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
     section.toggle("#pii-info", "#pii-toggle", section.pii_open);
-    section.toggle(
-      "#datatype-info",
-      "#datatype-name-toggle",
-      section.datatype_open
-    );
+    section.toggle("#datatype-info", "#datatype-name-toggle", section.datatype_open);
   }),
 
   toggleDatatypeInfo: d3.select("#datatype-name").on("click", function () {
@@ -434,62 +196,23 @@ let section = {
     section.headers_open = false;
     section.pii_open = false;
     // Open/close selected section, close all others
-    section.toggle(
-      "#datatype-info",
-      "#datatype-name-toggle",
-      section.datatype_open
-    );
+    section.toggle("#datatype-info", "#datatype-name-toggle", section.datatype_open);
     section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
-    section.toggle(
-      "#headers-info",
-      "#headers-name-toggle",
-      section.headers_open
-    );
+    section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
     section.toggle("#pii-info", "#pii-toggle", section.pii_open);
   }),
 };
 
 /* RUN TESTS AND CHECK VALIDATION STATUS */
-function runTests(headerArray, data, aggState) {
-  const headersOutput = test.requiredHeaders(
-    headerArray,
-    d3.select("#headers-name"),
-    d3.select(".headers-val-symbol"),
-    d3.select(".header-error"),
-    state
-  );
-  const piiOutput = test.piiHeaders(
-    headerArray,
-    d3.select("#pii-name"),
-    d3.select(".pii-val-symbol"),
-    d3.select(".pii-error"),
-    state
-  );
-  const ssnOutput = test.ssnValues(
-    headerArray,
-    data,
-    d3.select("#ssn-name"),
-    d3.select(".ssn-val-symbol"),
-    d3.select(".ssn-error"),
-    state
-  );
-  const datatypeOutput = test.dataType(
-    headerArray,
-    data,
-    d3.select("#datatype-name"),
-    d3.select(".datatype-val-symbol"),
-    d3.select(".datatype-error"),
-    state
-  );
+function runTests(headerArray, data, state) {
+  const headersOutput = test.requiredHeaders(headerArray, d3.select("#headers-name"), d3.select(".headers-val-symbol"), d3.select(".header-error"), state);
+  const piiOutput = test.piiHeaders(headerArray, d3.select("#pii-name"), d3.select(".pii-val-symbol"), d3.select(".pii-error"), state);
+  const ssnOutput = test.ssnValues(headerArray, data, d3.select("#ssn-name"), d3.select(".ssn-val-symbol"), d3.select(".ssn-error"), state);
+  const datatypeOutput = test.dataType(headerArray, data, d3.select("#datatype-name"), d3.select(".datatype-val-symbol"), d3.select(".datatype-error"), state);
 
-  const results = [
-    headersOutput.result,
-    piiOutput.result,
-    ssnOutput.result,
-    datatypeOutput.result,
-  ];
+  const results = [headersOutput.result, piiOutput.result, ssnOutput.result, datatypeOutput.result];
 
-  test.checkStatus(results, aggState);
+  test.checkStatus(results, state);
 }
 
 /*
@@ -499,80 +222,33 @@ function runTests(headerArray, data, aggState) {
 // Filter data based on population and active status
 function filterData(data, category) {
   const filterMap = {
-    "All Unduplicated": data,
+    "All All": data,
     "All Veteran": data.filter((d) => {
-      return (
-        d["Household Type"] != null &&
-        d["Veteran Status"] != null &&
-        aggState.isSingleAdult.includes(util.clean(d["Household Type"])) ===
-          true &&
-        aggState.isVeteran.includes(util.clean(d["Veteran Status"])) === true
-      );
+      return d["Household Type"] != null && d["Veteran Status"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true && values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
     "All Chronic": data.filter((d) => {
-      return (
-        d["Household Type"] != null &&
-        d["Chronic Status"] != null &&
-        aggState.isSingleAdult.includes(util.clean(d["Household Type"])) ===
-          true &&
-        aggState.isChronic.includes(util.clean(d["Chronic Status"])) === true
-      );
+      return d["Household Type"] != null && d["Chronic Status"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true && values.chronic.includes(util.clean(d["Chronic Status"])) === true;
     }),
     "All Youth": data.filter((d) => {
-      return (
-        d["Household Type"] != null &&
-        aggState.isYouth.includes(util.clean(d["Household Type"])) === true
-      );
+      return d["Household Type"] != null && values.youth.includes(util.clean(d["Household Type"])) === true;
     }),
     "All Family": data.filter((d) => {
-      return (
-        d["Household Type"] != null &&
-        aggState.isFamily.includes(util.clean(d["Household Type"])) === true
-      );
+      return d["Household Type"] != null && values.family.includes(util.clean(d["Household Type"])) === true;
     }),
     "Active All": data.filter((d) => {
-      return (
-        d["BNL Status"] != null &&
-        d["BNL Status"].toString().trim() === "Active"
-      );
+      return d["BNL Status"] != null && d["BNL Status"].toString().trim() === "Active";
     }),
     "Active Veteran": data.filter((d) => {
-      return (
-        d["BNL Status"] != null &&
-        d["Household Type"] != null &&
-        d["Veteran Status"] != null &&
-        d["BNL Status"].toString().trim() === "Active" &&
-        aggState.isSingleAdult.includes(util.clean(d["Household Type"])) ===
-          true &&
-        aggState.isVeteran.includes(util.clean(d["Veteran Status"])) === true
-      );
+      return d["BNL Status"] != null && d["Household Type"] != null && d["Veteran Status"] != null && d["BNL Status"].toString().trim() === "Active" && values.singleAdult.includes(util.clean(d["Household Type"])) === true && values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
     "Active Chronic": data.filter((d) => {
-      return (
-        d["BNL Status"] != null &&
-        d["Household Type"] != null &&
-        d["Chronic Status"] != null &&
-        d["BNL Status"].toString().trim() === "Active" &&
-        aggState.isSingleAdult.includes(util.clean(d["Household Type"])) ===
-          true &&
-        aggState.isChronic.includes(util.clean(d["Chronic Status"])) === true
-      );
+      return d["BNL Status"] != null && d["Household Type"] != null && d["Chronic Status"] != null && d["BNL Status"].toString().trim() === "Active" && values.singleAdult.includes(util.clean(d["Household Type"])) === true && values.chronic.includes(util.clean(d["Chronic Status"])) === true;
     }),
     "Active Youth": data.filter((d) => {
-      return (
-        d["BNL Status"] != null &&
-        d["Household Type"] != null &&
-        d["BNL Status"].toString().trim() === "Active" &&
-        aggState.isYouth.includes(util.clean(d["Household Type"])) === true
-      );
+      return d["BNL Status"] != null && d["Household Type"] != null && d["BNL Status"].toString().trim() === "Active" && values.youth.includes(util.clean(d["Household Type"])) === true;
     }),
     "Active Family": data.filter((d) => {
-      return (
-        d["BNL Status"] != null &&
-        d["Household Type"] != null &&
-        d["BNL Status"].toString().trim() === "Active" &&
-        aggState.isFamily.includes(util.clean(d["Household Type"])) === true
-      );
+      return d["BNL Status"] != null && d["Household Type"] != null && d["BNL Status"].toString().trim() === "Active" && values.family.includes(util.clean(d["Household Type"])) === true;
     }),
   };
   return filterMap[category];
@@ -580,177 +256,115 @@ function filterData(data, category) {
 
 function calculate(state, data, calculation) {
   const reportingDate = state.meta_reportingDate;
-  const calcMap = {
-    "ACTIVELY HOMELESS NUMBER": aggState.activeCats.map((category) => {
-      // First filter data for the selected category
-      const categoryData = filterData(data, category);
-      // Then get the unique number of clients
-      const clients = util.getColByName(
-        categoryData,
-        categoryData.length,
-        aggState.clientIDHeader
-      );
-      return new Set(clients).size;
-    }),
-    "HOUSING PLACEMENTS": aggState.allCats.map((category) => {
-      // First filter data for the selected category
-      const categoryData = filterData(data, category);
-      // Then filter for additional criteria
-      const filteredData = categoryData.filter((d) => {
-        return (
-          d["Housing Move-In Date"] != null &&
-          util.getDate(d["Housing Move-In Date"], "MY", state) === reportingDate
-        );
-      });
-      // Then get the unique number of clients
-      const clients = util.getColByName(
-        filteredData,
-        filteredData.length,
-        aggState.clientIDHeader
-      );
-      return new Set(clients).size;
-    }),
-    "MOVED TO INACTIVE NUMBER": aggState.allCats.map((category) => {
-      // First filter data for the selected category
-      const categoryData = filterData(data, category);
-      // Then filter for additional criteria
-      const filteredData = categoryData.filter((d) => {
-        return (
-          d["Inactive Date"] != null &&
-          util.getDate(d["Inactive Date"], "MY", state) === reportingDate
-        );
-      });
-      // Then get the unique number of clients
-      const clients = util.getColByName(
-        filteredData,
-        filteredData.length,
-        aggState.clientIDHeader
-      );
-      return new Set(clients).size;
-    }),
-    "NEWLY IDENTIFIED NUMBER": aggState.activeCats.map((category) => {
-      // First filter data for the selected category
-      const categoryData = filterData(data, category);
-      // Then filter for additional criteria
-      const filteredData = categoryData.filter((d) => {
-        return (
-          d["Date of Identification"] != null &&
-          d["Inactive Date"] === null &&
-          d["Returned to Active Date"] === null &&
-          util.getDate(d["Date of Identification"], "MY", state) ===
-            reportingDate
-        );
-      });
-      // Then get the unique number of clients
-      const clients = util.getColByName(
-        filteredData,
-        filteredData.length,
-        aggState.clientIDHeader
-      );
-      return new Set(clients).size;
-    }),
-    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": aggState.activeCats.map(
-      (category) => {
-        // First filter data for the selected category
-        const categoryData = filterData(data, category);
-        // Then filter for additional criteria
-        const filteredData = categoryData.filter((d) => {
-          return (
-            d["Housing Move-In Date"] != null &&
-            util.getDate(d["Returned to Active Date"], "MY", state) ===
-              reportingDate &&
-            util.getDate(d["Returned to Active Date"], "MDY", state) >
-              util.getDate(d["Housing Move-In Date"], "MDY", state)
-          );
-        });
-        // Then get the unique number of clients
-        const clients = util.getColByName(
-          filteredData,
-          filteredData.length,
-          aggState.clientIDHeader
-        );
-        return new Set(clients).size;
-      }
-    ),
-    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": aggState.allCats.map(
-      (category) => {
-        // First filter data for the selected category
-        const categoryData = filterData(data, category);
-        // Then filter for additional criteria
-        const filteredData = categoryData.filter((d) => {
-          return (
-            d["Inactive Date"] != null &&
-            util.getDate(d["Returned to Active Date"], "MY", state) ===
-              reportingDate &&
-            util.getDate(d["Returned to Active Date"], "MDY", state) >
-              util.getDate(d["Inactive Date"], "MDY", state)
-          );
-        });
-        // Then get the unique number of clients
-        const clients = util.getColByName(
-          filteredData,
-          filteredData.length,
-          aggState.clientIDHeader
-        );
-        return new Set(clients).size;
-      }
-    ),
-    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT": aggState.allCats.map(
-      (category) => {
-        // First filter data for the selected category
-        const categoryData = filterData(data, category);
-        // Then filter for additional criteria
-        const filteredData = categoryData.filter((d) => {
-          return (
-            d["Housing Move-In Date"] != null &&
-            util.getDate(d["Housing Move-In Date"], "MY", state) ===
-              reportingDate
-          );
-        });
-        // Get arrays of values for housing dates and ID dates
-        const housingDates = util.getColByName(
-          filteredData,
-          filteredData.length,
-          "Housing Move-In Date"
-        );
-        const idDates = util.getColByName(
-          filteredData,
-          filteredData.length,
-          "Date of Identification"
-        );
-        // Map the difference between each housing and ID date, remove null values
-        const difference = housingDates
-          .map((houseDate, index) => {
-            // Get corresponding ID date value
-            const idDate = idDates[index];
-            // Get difference in ms and convert to days
-            if (houseDate != null && idDate != null) {
-              const diff =
-                util.getDate(houseDate, "MDY", state) -
-                util.getDate(idDate, "MDY", state);
-              const converted = Math.ceil(diff / (1000 * 60 * 60 * 24));
-              if (converted < 0) {
-                return null;
-              } else {
-                //console.log(category, "LOT", util.getDate(houseDate, "MDY", state), util.getDate(idDate, "MDY", state), converted);
-                return converted;
-              }
-            } else {
-              return null;
-            }
-          })
-          .filter((value) => value != null);
+  const activeCats = pops.all.map((pop) => {
+    return "Active " + pop;
+  });
+  const allCats = pops.all.map((pop) => {
+    return "All " + pop;
+  });
 
-        // Reduce the differences map to a single average value
-        if (difference.length === 0) {
-          return null;
-        } else {
-          const round = d3.format(".1f");
-          const average = round(d3.mean(difference), 1);
-          return average;
-        }
+  const calcMap = {
+    "ACTIVELY HOMELESS NUMBER": activeCats.map((category) => {
+      // First filter data for the selected category
+      const categoryData = filterData(data, category);
+      // Then get the unique number of clients
+      const clients = util.getColByName(categoryData, categoryData.length, headers.clientId);
+      return new Set(clients).size;
+    }),
+    "HOUSING PLACEMENTS": allCats.map((category) => {
+      // First filter data for the selected category
+      const categoryData = filterData(data, category);
+      // Then filter for additional criteria
+      const filteredData = categoryData.filter((d) => {
+        return d["Housing Move-In Date"] != null && util.getDate(d["Housing Move-In Date"], "MY", state) === reportingDate;
+      });
+      // Then get the unique number of clients
+      const clients = util.getColByName(filteredData, filteredData.length, headers.clientId);
+      return new Set(clients).size;
+    }),
+    "MOVED TO INACTIVE NUMBER": allCats.map((category) => {
+      // First filter data for the selected category
+      const categoryData = filterData(data, category);
+      // Then filter for additional criteria
+      const filteredData = categoryData.filter((d) => {
+        return d["Inactive Date"] != null && util.getDate(d["Inactive Date"], "MY", state) === reportingDate;
+      });
+      // Then get the unique number of clients
+      const clients = util.getColByName(filteredData, filteredData.length, headers.clientId);
+      return new Set(clients).size;
+    }),
+    "NEWLY IDENTIFIED NUMBER": activeCats.map((category) => {
+      // First filter data for the selected category
+      const categoryData = filterData(data, category);
+      // Then filter for additional criteria
+      const filteredData = categoryData.filter((d) => {
+        return d["Date of Identification"] != null && d["Inactive Date"] === null && d["Returned to Active Date"] === null && util.getDate(d["Date of Identification"], "MY", state) === reportingDate;
+      });
+      // Then get the unique number of clients
+      const clients = util.getColByName(filteredData, filteredData.length, headers.clientId);
+      return new Set(clients).size;
+    }),
+    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": activeCats.map((category) => {
+      // First filter data for the selected category
+      const categoryData = filterData(data, category);
+      // Then filter for additional criteria
+      const filteredData = categoryData.filter((d) => {
+        return d["Housing Move-In Date"] != null && util.getDate(d["Returned to Active Date"], "MY", state) === reportingDate && util.getDate(d["Returned to Active Date"], "MDY", state) > util.getDate(d["Housing Move-In Date"], "MDY", state);
+      });
+      // Then get the unique number of clients
+      const clients = util.getColByName(filteredData, filteredData.length, headers.clientId);
+      return new Set(clients).size;
+    }),
+    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": allCats.map((category) => {
+      // First filter data for the selected category
+      const categoryData = filterData(data, category);
+      // Then filter for additional criteria
+      const filteredData = categoryData.filter((d) => {
+        return d["Inactive Date"] != null && util.getDate(d["Returned to Active Date"], "MY", state) === reportingDate && util.getDate(d["Returned to Active Date"], "MDY", state) > util.getDate(d["Inactive Date"], "MDY", state);
+      });
+      // Then get the unique number of clients
+      const clients = util.getColByName(filteredData, filteredData.length, headers.clientId);
+      return new Set(clients).size;
+    }),
+    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT": allCats.map((category) => {
+      // First filter data for the selected category
+      const categoryData = filterData(data, category);
+      // Then filter for additional criteria
+      const filteredData = categoryData.filter((d) => {
+        return d["Housing Move-In Date"] != null && util.getDate(d["Housing Move-In Date"], "MY", state) === reportingDate;
+      });
+      // Get arrays of values for housing dates and ID dates
+      const housingDates = util.getColByName(filteredData, filteredData.length, "Housing Move-In Date");
+      const idDates = util.getColByName(filteredData, filteredData.length, "Date of Identification");
+      // Map the difference between each housing and ID date, remove null values
+      const difference = housingDates
+        .map((houseDate, index) => {
+          // Get corresponding ID date value
+          const idDate = idDates[index];
+          // Get difference in ms and convert to days
+          if (houseDate != null && idDate != null) {
+            const diff = util.getDate(houseDate, "MDY", state) - util.getDate(idDate, "MDY", state);
+            const converted = Math.ceil(diff / (1000 * 60 * 60 * 24));
+            if (converted < 0) {
+              return null;
+            } else {
+              return converted;
+            }
+          } else {
+            return null;
+          }
+        })
+        .filter((value) => value != null);
+
+      // Reduce the differences map to a single average value
+      if (difference.length === 0) {
+        return null;
+      } else {
+        const round = d3.format(".1f");
+        const average = round(d3.mean(difference), 1);
+        return average;
       }
-    ),
+    }),
   };
 
   return calcMap[calculation];
@@ -758,45 +372,21 @@ function calculate(state, data, calculation) {
 
 function aggregate(data) {
   // Reset values
-  aggState.raw = null;
-  aggState.output = [];
+  state.backend_raw = null;
+  state.backend_output = [];
   d3.selectAll(".agg-header").remove();
   d3.selectAll(".agg-spacer").remove();
   d3.selectAll(".agg-value").remove();
 
   // Calculate by population
-  aggState.raw = {
-    "ACTIVELY HOMELESS NUMBER": calculate(
-      state,
-      data,
-      "ACTIVELY HOMELESS NUMBER"
-    ),
+  state.backend_raw = {
+    "ACTIVELY HOMELESS NUMBER": calculate(state, data, "ACTIVELY HOMELESS NUMBER"),
     "HOUSING PLACEMENTS": calculate(state, data, "HOUSING PLACEMENTS"),
-    "MOVED TO INACTIVE NUMBER": calculate(
-      state,
-      data,
-      "MOVED TO INACTIVE NUMBER"
-    ),
-    "NEWLY IDENTIFIED NUMBER": calculate(
-      state,
-      data,
-      "NEWLY IDENTIFIED NUMBER"
-    ),
-    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": calculate(
-      state,
-      data,
-      "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"
-    ),
-    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": calculate(
-      state,
-      data,
-      "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"
-    ),
-    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT": calculate(
-      state,
-      data,
-      "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT"
-    ),
+    "MOVED TO INACTIVE NUMBER": calculate(state, data, "MOVED TO INACTIVE NUMBER"),
+    "NEWLY IDENTIFIED NUMBER": calculate(state, data, "NEWLY IDENTIFIED NUMBER"),
+    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": calculate(state, data, "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"),
+    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": calculate(state, data, "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"),
+    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT": calculate(state, data, "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT"),
   };
 
   // Update visible reporting month and community
@@ -804,46 +394,37 @@ function aggregate(data) {
   d3.select(".reporting-community").text(state.form_community_clean);
 
   // Add in metadata for submission
-  aggState.output["Timestamp"] = state.meta_timestamp;
-  aggState.output["Community"] = state.form_community_clean;
-  aggState.output["Month"] = state.meta_reportingDate;
-  aggState.output["Name"] = state.form_name;
-  aggState.output["Email Address"] = state.form_email;
-  aggState.output["Organization"] = state.form_org;
+  state.backend_output["Timestamp"] = state.meta_timestamp;
+  state.backend_output["Community"] = state.form_community_clean;
+  state.backend_output["Month"] = state.meta_reportingDate;
+  state.backend_output["Name"] = state.form_name;
+  state.backend_output["Email Address"] = state.form_email;
+  state.backend_output["Organization"] = state.form_org;
 
   // Remap the results by population and print to the page
-  aggState.populations.map((pop) => {
-    getOutput(pop, aggState.raw);
+  pops.all.map((popValue) => {
+    console.log(popValue);
+    getOutput(popValue, pops, state.backend_raw);
   });
 
   d3.select(".button-group-title").text("Select a subpopulation to review");
 
   // Add the population buttons
   // Toggle the visible aggregation result by population
-  aggState.populations.map((pop, index) => {
+  pops.all.map((pop, index) => {
     // Set the "remaining populations" to everything but the chosen pop
-    const remainingPops = aggState.populations.filter((d) => {
+    const remainingPops = pops.all.filter((d) => {
       return d != pop;
     });
     // Add a button for the population
-    d3.select(".button-group")
-      .append("button")
-      .classed(`${pop}-btn filter-btn`, true);
+    d3.select(".button-group").append("button").classed(`${pop}-btn filter-btn`, true);
 
     // Set "All" as the default population to be visible
     if (pop === "All") {
-      d3.selectAll(`.${pop}`)
-        .style("opacity", "0")
-        .transition()
-        .duration(200)
-        .style("opacity", "1");
+      d3.selectAll(`.${pop}`).style("opacity", "0").transition().duration(200).style("opacity", "1");
       d3.selectAll(`.${pop}`).classed("hide", false);
       remainingPops.map((remaining) => {
-        d3.selectAll(`.${remaining}`)
-          .style("opacity", "1")
-          .transition()
-          .duration(100)
-          .style("opacity", "0");
+        d3.selectAll(`.${remaining}`).style("opacity", "1").transition().duration(100).style("opacity", "0");
         d3.selectAll(`.${remaining}`).classed("hide", true);
       });
       // Set the button to be focused
@@ -851,18 +432,10 @@ function aggregate(data) {
       // Add an event listener and label to the button
       d3.select(`.${pop}-btn`)
         .on("click", function () {
-          d3.selectAll(`.${pop}`)
-            .style("opacity", "0")
-            .transition()
-            .duration(200)
-            .style("opacity", "1");
+          d3.selectAll(`.${pop}`).style("opacity", "0").transition().duration(200).style("opacity", "1");
           d3.selectAll(`.${pop}`).classed("hide", false);
           remainingPops.map((remaining) => {
-            d3.selectAll(`.${remaining}`)
-              .style("opacity", "1")
-              .transition()
-              .duration(100)
-              .style("opacity", "0");
+            d3.selectAll(`.${remaining}`).style("opacity", "1").transition().duration(100).style("opacity", "0");
             d3.selectAll(`.${remaining}`).classed("hide", true);
           });
         })
@@ -873,18 +446,10 @@ function aggregate(data) {
       // Add an event listener and label to the button
       d3.select(`.${pop}-btn`)
         .on("click", function () {
-          d3.selectAll(`.${pop}`)
-            .style("opacity", "0")
-            .transition()
-            .duration(200)
-            .style("opacity", "1");
+          d3.selectAll(`.${pop}`).style("opacity", "0").transition().duration(200).style("opacity", "1");
           d3.selectAll(`.${pop}`).classed("hide", false);
           remainingPops.map((remaining) => {
-            d3.selectAll(`.${remaining}`)
-              .style("opacity", "1")
-              .transition()
-              .duration(100)
-              .style("opacity", "0");
+            d3.selectAll(`.${remaining}`).style("opacity", "1").transition().duration(100).style("opacity", "0");
             d3.selectAll(`.${remaining}`).classed("hide", true);
           });
         })
@@ -896,17 +461,15 @@ function aggregate(data) {
 
   if (state.debug === true) {
     console.log("STATE", state);
-    console.log("AGG", aggState);
   }
 }
 
 // Map output to form values
-function getOutput(population, aggRaw) {
-  const pops = aggState.populations;
-  const index = pops.indexOf(population);
-  const metrics = aggState.metrics;
+function getOutput(population, pops, aggRaw) {
+  const allPops = pops.all;
+  const index = allPops.indexOf(population);
+  const metrics = headers.metrics;
   printHeader(population);
-  //const popOutput = {};
 
   // Set the household based on the chosen population
   let household;
@@ -919,13 +482,12 @@ function getOutput(population, aggRaw) {
   const demographicId = population;
 
   metrics.map((metric) => {
-    aggState.output["[" + demographicId + "] Population"] = household;
-    aggState.output["[" + demographicId + "] Subpopulation"] = population;
-    aggState.output["[" + demographicId + "] Demographic"] = "All";
-    aggState.output["[" + demographicId + "] " + metric] =
-      aggRaw[metric][index];
+    state.backend_output["[" + demographicId + "] Population"] = household;
+    state.backend_output["[" + demographicId + "] Subpopulation"] = population;
+    state.backend_output["[" + demographicId + "] Demographic"] = "All";
+    state.backend_output["[" + demographicId + "] " + metric] = aggRaw[metric][index];
 
-    // Convert uppercase to title case for printing to screen
+    // Convert uppercase metric to title case for printing to screen
     const titleCaseMetric = metric
       .split(" ")
       .map((w) => w[0].toUpperCase() + w.substr(1).toLowerCase())
@@ -936,119 +498,29 @@ function getOutput(population, aggRaw) {
 }
 
 function printValue(population, calculation, result) {
-  if (
-    result > 0 &&
-    calculation ===
-      "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT"
-  ) {
-    d3.select(".agg-table")
-      .append("div")
-      .classed("agg-value", true)
-      .classed(`${population}`, true)
-      .classed("hide", true)
-      .html(`${population}`);
-    d3.select(".agg-table")
-      .append("div")
-      .classed("agg-value", true)
-      .classed(`${population}`, true)
-      .classed("hide", true)
-      .html(`${calculation}`);
-    d3.select(".agg-table")
-      .append("div")
-      .classed("agg-value", true)
-      .classed(`${population}`, true)
-      .classed("hide", true)
-      .html(`<b>${result} days</b>`);
-  } else if (
-    result === null ||
-    (result === 0 &&
-      calculation ===
-        "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT")
-  ) {
-    d3.select(".agg-table")
-      .append("div")
-      .classed("agg-value", true)
-      .classed(`${population}`, true)
-      .classed("hide", true)
-      .html(`${population}`);
-    d3.select(".agg-table")
-      .append("div")
-      .classed("agg-value", true)
-      .classed(`${population}`, true)
-      .classed("hide", true)
-      .html(`${calculation}`);
-    d3.select(".agg-table")
-      .append("div")
-      .classed("agg-value", true)
-      .classed(`${population}`, true)
-      .classed("hide", true)
-      .html(`<b class='neutral' style='font-weight:400;'>${result}</b>`);
-  } else if (
-    result > 0 &&
-    calculation !=
-      "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT"
-  ) {
-    d3.select(".agg-table")
-      .append("div")
-      .classed("agg-value", true)
-      .classed(`${population}`, true)
-      .classed("hide", true)
-      .html(`${population}`);
-    d3.select(".agg-table")
-      .append("div")
-      .classed("agg-value", true)
-      .classed(`${population}`, true)
-      .classed("hide", true)
-      .html(`${calculation}`);
-    d3.select(".agg-table")
-      .append("div")
-      .classed("agg-value", true)
-      .classed(`${population}`, true)
-      .classed("hide", true)
-      .html(`<b>${result}</b>`);
+  if (result > 0 && calculation === "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT") {
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${population}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${calculation}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`<b>${result} days</b>`);
+  } else if (result === null || (result === 0 && calculation === "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT")) {
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${population}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${calculation}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`<b class='neutral' style='font-weight:400;'>${result}</b>`);
+  } else if (result > 0 && calculation != "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT") {
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${population}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${calculation}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`<b>${result}</b>`);
   } else {
-    d3.select(".agg-table")
-      .append("div")
-      .classed("agg-value", true)
-      .classed(`${population}`, true)
-      .classed("hide", true)
-      .html(`${population}`);
-    d3.select(".agg-table")
-      .append("div")
-      .classed("agg-value", true)
-      .classed(`${population}`, true)
-      .classed("hide", true)
-      .html(`${calculation}`);
-    d3.select(".agg-table")
-      .append("div")
-      .classed("agg-value", true)
-      .classed(`${population}`, true)
-      .classed("hide", true)
-      .html(`<b class='neutral' style='font-weight:400;'>${result}</b>`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${population}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${calculation}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`<b class='neutral' style='font-weight:400;'>${result}</b>`);
   }
 }
 
 function printHeader(population) {
-  d3.select(".agg-table")
-    .append("div")
-    .classed("agg-header", true)
-    .classed(`${population}`, true)
-    .classed("hide", true)
-    .html(`Subpopulation`);
-
-  d3.select(".agg-table")
-    .append("div")
-    .classed("agg-header", true)
-    .classed(`${population}`, true)
-    .classed("hide", true)
-    .text("Calculation");
-
-  d3.select(".agg-table")
-    .append("div")
-    .classed("agg-header", true)
-    .classed(`${population}`, true)
-    .classed("hide", true)
-    .text("Result");
+  d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${population}`, true).classed("hide", true).html(`Subpopulation`);
+  d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${population}`, true).classed("hide", true).text("Calculation");
+  d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${population}`, true).classed("hide", true).text("Result");
 }
 
 // Parses data as a CSV and downloads the file
@@ -1058,7 +530,7 @@ function submitData(data) {
   let submitForm = document.createElement("form");
   submitForm.setAttribute("id", "submit-form");
   submitForm.setAttribute("method", "POST");
-  state.dict_fields.map((field, fieldIndex) => {
+  headers.backend.map((field, fieldIndex) => {
     const fieldName = field;
     const fieldValue = data[field];
     const i = document.createElement("input");
@@ -1078,10 +550,7 @@ function submitData(data) {
     let scriptUrl;
 
     if (state.testSubmit === true) {
-      console.log(
-        "%cForm submitting to TEST URL.",
-        "background: white; color: red"
-      );
+      console.log("%cForm submitting to TEST URL.", "background: white; color: red");
       scriptUrl = state.testScriptUrl;
     } else {
       scriptUrl = state.finalScriptUrl;
@@ -1096,35 +565,15 @@ function submitData(data) {
       body: new FormData(submitForm),
     })
       .then((response) => {
-        console.log("Success", response);
+        d3.select(".progress-msg").html(`Submitting Data for ${state.meta_reportingDate}...`).style("opacity", "0").transition().duration(200).style("opacity", "1");
 
-        d3.select(".progress-msg")
-          .html(`Submitting Data for ${state.meta_reportingDate}...`)
-          .style("opacity", "0")
-          .transition()
-          .duration(200)
-          .style("opacity", "1");
-
-        d3.select(".progress-bar").html(
-          `<progress id="file" value="1" max="2">1</progress>`
-        );
+        d3.select(".progress-bar").html(`<progress id="file" value="1" max="2">1</progress>`);
 
         setTimeout(() => {
-          d3.select(".progress-msg")
-            .html(`✨ All Data Submitted for ${state.meta_reportingDate}! ✨`)
-            .style("opacity", "0")
-            .transition()
-            .duration(200)
-            .style("opacity", "1");
-          d3.select(".progress-bar").html(
-            `<progress id="file" value="${2}" max="2">${6}</progress>`
-          );
+          d3.select(".progress-msg").html(`✨ All Data Submitted for ${state.meta_reportingDate}! ✨`).style("opacity", "0").transition().duration(200).style("opacity", "1");
+          d3.select(".progress-bar").html(`<progress id="file" value="${2}" max="2">${6}</progress>`);
 
-          d3.select(".new-upload-submit")
-            .style("opacity", "0")
-            .transition()
-            .duration(400)
-            .style("opacity", "1");
+          d3.select(".new-upload-submit").style("opacity", "0").transition().duration(400).style("opacity", "1");
           d3.select(".new-upload-submit").classed("hide", false);
           submitForm.remove();
         }, 1100);
@@ -1132,9 +581,7 @@ function submitData(data) {
       .catch((error) => {
         d3.select(".progress-bar").classed("hide", true);
         d3.select(".progress-msg")
-          .html(
-            `<div style='text-align: center; background-color: #ffa5a5; padding: 20px; margin: 10px; border: 1px solid var(--color-alert)'><b style='font-size:var(--root-size);'>ERROR SUBMITTING DATA! <br> Please contact bfzdatasupport@community.solutions. <br> <b style='color:var(--color-alert); font-size:var(--root-size)'>${error}</b></b></div>`
-          )
+          .html(`<div style='text-align: center; background-color: #ffa5a5; padding: 20px; margin: 10px; border: 1px solid var(--color-alert)'><b style='font-size:var(--root-size);'>ERROR SUBMITTING DATA! <br> Please contact bfzdatasupport@community.solutions. <br> <b style='color:var(--color-alert); font-size:var(--root-size)'>${error}</b></b></div>`)
           .style("opacity", "0")
           .transition()
           .duration(200)
