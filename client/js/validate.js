@@ -174,21 +174,13 @@ class Validator {
     let result;
     let failedHeaders = [];
     const requiredHeaders = headers.required;
-    const dataTypes = headers.datatype;
-    const dataTypeLookup = requiredHeaders.map((value, index) => {
-      const r = {};
-      r[value] = dataTypes[index];
-      return r;
-    });
 
     const output = headerArray
       .map((header) => {
         // If the header is in the required header list...
         if (requiredHeaders.includes(header)) {
-          // Find the datatype that it needs to be
-          const lookupIndex = requiredHeaders.indexOf(header);
-          let dataType = Object.values(dataTypeLookup[lookupIndex]).toString();
-          let errorMessage = headers.errors[dataType];
+          let dataType = headers.meta[header].datatype;
+          let errorMessage = headers.meta[header].error;
 
           // Get the array of values for the header
           const arr = util.getColByName(data, data.length - 1, header);

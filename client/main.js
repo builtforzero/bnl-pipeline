@@ -223,6 +223,9 @@ function runTests(headerArray, data, state) {
 function filterData(data, category) {
   const filterMap = {
     "All All": data,
+    "All All Singles": data.filter((d) => {
+      return d["Household Type"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true;
+    }),
     "All Veteran": data.filter((d) => {
       return d["Household Type"] != null && d["Veteran Status"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true && values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
@@ -232,11 +235,14 @@ function filterData(data, category) {
     "All Youth": data.filter((d) => {
       return d["Household Type"] != null && values.youth.includes(util.clean(d["Household Type"])) === true;
     }),
-    "All Family": data.filter((d) => {
+    "All Families": data.filter((d) => {
       return d["Household Type"] != null && values.family.includes(util.clean(d["Household Type"])) === true;
     }),
     "Active All": data.filter((d) => {
       return d["BNL Status"] != null && d["BNL Status"].toString().trim() === "Active";
+    }),
+    "Active All Singles": data.filter((d) => {
+      return d["BNL Status"] != null && d["Household Type"] != null && d["BNL Status"].toString().trim() === "Active" && values.singleAdult.includes(util.clean(d["Household Type"])) === true;
     }),
     "Active Veteran": data.filter((d) => {
       return d["BNL Status"] != null && d["Household Type"] != null && d["Veteran Status"] != null && d["BNL Status"].toString().trim() === "Active" && values.singleAdult.includes(util.clean(d["Household Type"])) === true && values.veteran.includes(util.clean(d["Veteran Status"])) === true;
@@ -247,7 +253,7 @@ function filterData(data, category) {
     "Active Youth": data.filter((d) => {
       return d["BNL Status"] != null && d["Household Type"] != null && d["BNL Status"].toString().trim() === "Active" && values.youth.includes(util.clean(d["Household Type"])) === true;
     }),
-    "Active Family": data.filter((d) => {
+    "Active Families": data.filter((d) => {
       return d["BNL Status"] != null && d["Household Type"] != null && d["BNL Status"].toString().trim() === "Active" && values.family.includes(util.clean(d["Household Type"])) === true;
     }),
   };
@@ -403,7 +409,6 @@ function aggregate(data) {
 
   // Remap the results by population and print to the page
   pops.all.map((popValue) => {
-    console.log(popValue);
     getOutput(popValue, pops, state.backend_raw);
   });
 
@@ -411,29 +416,35 @@ function aggregate(data) {
 
   // Add the population buttons
   // Toggle the visible aggregation result by population
-  pops.all.map((pop, index) => {
+  pops.all.map((pop) => {
+    const popLookup = pop.replace(' ', '')
     // Set the "remaining populations" to everything but the chosen pop
-    const remainingPops = pops.all.filter((d) => {
+    const getPops = pops.all.filter((d) => {
       return d != pop;
     });
+
+    const remainingPops = getPops.map((value) => {
+      return value.replace(' ', '')
+    })
+    
     // Add a button for the population
-    d3.select(".button-group").append("button").classed(`${pop}-btn filter-btn`, true);
+    d3.select(".button-group").append("button").classed(`${popLookup}-btn filter-btn`, true);
 
     // Set "All" as the default population to be visible
     if (pop === "All") {
-      d3.selectAll(`.${pop}`).style("opacity", "0").transition().duration(200).style("opacity", "1");
-      d3.selectAll(`.${pop}`).classed("hide", false);
+      d3.selectAll(`.${popLookup}`).style("opacity", "0").transition().duration(200).style("opacity", "1");
+      d3.selectAll(`.${popLookup}`).classed("hide", false);
       remainingPops.map((remaining) => {
         d3.selectAll(`.${remaining}`).style("opacity", "1").transition().duration(100).style("opacity", "0");
         d3.selectAll(`.${remaining}`).classed("hide", true);
       });
       // Set the button to be focused
-      d3.select(`.${pop}-btn`).node().focus();
+      d3.select(`.${popLookup}-btn`).node().focus();
       // Add an event listener and label to the button
-      d3.select(`.${pop}-btn`)
+      d3.select(`.${popLookup}-btn`)
         .on("click", function () {
-          d3.selectAll(`.${pop}`).style("opacity", "0").transition().duration(200).style("opacity", "1");
-          d3.selectAll(`.${pop}`).classed("hide", false);
+          d3.selectAll(`.${popLookup}`).style("opacity", "0").transition().duration(200).style("opacity", "1");
+          d3.selectAll(`.${popLookup}`).classed("hide", false);
           remainingPops.map((remaining) => {
             d3.selectAll(`.${remaining}`).style("opacity", "1").transition().duration(100).style("opacity", "0");
             d3.selectAll(`.${remaining}`).classed("hide", true);
@@ -441,13 +452,13 @@ function aggregate(data) {
         })
         .append("div")
         .attr("class", "label")
-        .text(`${pop}`);
+        .text(`${popLookup}`);
     } else {
       // Add an event listener and label to the button
-      d3.select(`.${pop}-btn`)
+      d3.select(`.${popLookup}-btn`)
         .on("click", function () {
-          d3.selectAll(`.${pop}`).style("opacity", "0").transition().duration(200).style("opacity", "1");
-          d3.selectAll(`.${pop}`).classed("hide", false);
+          d3.selectAll(`.${popLookup}`).style("opacity", "0").transition().duration(200).style("opacity", "1");
+          d3.selectAll(`.${popLookup}`).classed("hide", false);
           remainingPops.map((remaining) => {
             d3.selectAll(`.${remaining}`).style("opacity", "1").transition().duration(100).style("opacity", "0");
             d3.selectAll(`.${remaining}`).classed("hide", true);
@@ -471,21 +482,15 @@ function getOutput(population, pops, aggRaw) {
   const metrics = headers.metrics;
   printHeader(population);
 
-  // Set the household based on the chosen population
-  let household;
-  if (population === "Youth") {
-    household = "Youth";
-  } else if (population === "Family") {
-    household = "Family";
-  } else household = "Single Adult";
-
-  const demographicId = population;
+  const outputPop = pops.output[population].outputPop
+  const outputSubpop = pops.output[population].outputSubpop
+  const outputDemo = pops.output[population].outputDemo
 
   metrics.map((metric) => {
-    state.backend_output["[" + demographicId + "] Population"] = household;
-    state.backend_output["[" + demographicId + "] Subpopulation"] = population;
-    state.backend_output["[" + demographicId + "] Demographic"] = "All";
-    state.backend_output["[" + demographicId + "] " + metric] = aggRaw[metric][index];
+    state.backend_output["[" + population + "] Population"] = outputPop;
+    state.backend_output["[" + population + "] Subpopulation"] = outputSubpop;
+    state.backend_output["[" + population + "] Demographic"] = outputDemo;
+    state.backend_output["[" + population + "] " + metric] = aggRaw[metric][index];
 
     // Convert uppercase metric to title case for printing to screen
     const titleCaseMetric = metric
@@ -498,29 +503,31 @@ function getOutput(population, pops, aggRaw) {
 }
 
 function printValue(population, calculation, result) {
+  const popLookup = population.replace(' ', '')
   if (result > 0 && calculation === "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT") {
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${population}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${calculation}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`<b>${result} days</b>`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${population}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${calculation}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`<b>${result} days</b>`);
   } else if (result === null || (result === 0 && calculation === "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT")) {
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${population}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${calculation}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`<b class='neutral' style='font-weight:400;'>${result}</b>`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${population}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${calculation}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`<b class='neutral' style='font-weight:400;'>${result}</b>`);
   } else if (result > 0 && calculation != "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT") {
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${population}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${calculation}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`<b>${result}</b>`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${population}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${calculation}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`<b>${result}</b>`);
   } else {
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${population}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`${calculation}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${population}`, true).classed("hide", true).html(`<b class='neutral' style='font-weight:400;'>${result}</b>`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${population}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${calculation}`);
+    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`<b class='neutral' style='font-weight:400;'>${result}</b>`);
   }
 }
 
 function printHeader(population) {
-  d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${population}`, true).classed("hide", true).html(`Subpopulation`);
-  d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${population}`, true).classed("hide", true).text("Calculation");
-  d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${population}`, true).classed("hide", true).text("Result");
+  const popLookup = population.replace(' ', '')
+  d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${popLookup}`, true).classed("hide", true).html(`Subpopulation`);
+  d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${popLookup}`, true).classed("hide", true).text("Calculation");
+  d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${popLookup}`, true).classed("hide", true).text("Result");
 }
 
 // Parses data as a CSV and downloads the file
