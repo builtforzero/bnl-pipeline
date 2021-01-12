@@ -225,7 +225,7 @@ const pops = {
       outputDemo: "All"
     },
     "Youth": {
-      outputPop: "All",
+      outputPop: "Youth",
       outputSubpop: "All",
       outputDemo: "All"
     },
