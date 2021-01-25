@@ -18,11 +18,15 @@ let util = new Utils();
 
 /* APPLICATION STATE */
 let state = {
-  debug: false, // Toggle to remove required fields
+  debug: true, // Toggle to remove required fields
   testSubmit: false, // Toggle to switch to test script URL
 
   finalScriptUrl: "https://script.google.com/macros/s/AKfycbxkuRKFFR192ubCwQ8TWY1NxqcR9SzjmwWnFP3lDqxyuNbq_0M/exec",
   testScriptUrl: "https://script.google.com/macros/s/AKfycbxkuRKFFR192ubCwQ8TWY1NxqcR9SzjmwWnFP3lDqxyuNbq_0M/exec",
+
+  // Community Name Import
+  comm_import: null,
+  comm_list: null,
 
   // Form Fields
   form_community_clean: null,
@@ -56,7 +60,7 @@ init(state, form);
 
 function init(state, form) {
   form.checkStatus(state);
-  form.setupFields(state, form);
+  form.getCommunityData(state, form);
   setupButtons();
 }
 
@@ -221,40 +225,66 @@ function runTests(headerArray, data, state) {
 
 // Filter data based on population and active status
 function filterData(data, category) {
+  const reportingDate = state.meta_reportingDate;
+
+  // "Active" Status = clients with a household type
+  // identified BEFORE the reporting MY 
+  // that DO NOT have an exit date,
+  // or whose exit date is AFTER the reporting MY
+  const status = {
+    "Active": data.filter((d) => {
+      return d["Household Type"] != null && 
+      util.getDate(d["Date of Identification"], "MY", state) <= reportingDate &&
+      ( d["Housing Move-In Date"] === null || d["Inactive Date"] === null ) ||
+      ( util.getDate(d["Housing Move-In Date"], "MY", state) > reportingDate || util.getDate(d["Inactive Date"], "MY", state) > reportingDate )
+    }),
+    "All": data.filter((d) => {
+      return d["Household Type"] != null
+    })
+  }
+
   const filterMap = {
+
+    // ALL CLIENTS
     "All All": data,
-    "All All Singles": data.filter((d) => {
-      return d["Household Type"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true;
+    "All All Singles": status["All"].filter((d) => {
+      return values.singleAdult.includes(util.clean(d["Household Type"])) === true;
     }),
-    "All Veteran": data.filter((d) => {
-      return d["Household Type"] != null && d["Veteran Status"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true && values.veteran.includes(util.clean(d["Veteran Status"])) === true;
+    "All Veteran": status["All"].filter((d) => {
+      return d["Veteran Status"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
+      values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
-    "All Chronic": data.filter((d) => {
-      return d["Household Type"] != null && d["Chronic Status"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true && values.chronic.includes(util.clean(d["Chronic Status"])) === true;
+    "All Chronic": status["All"].filter((d) => {
+      return d["Chronic Status"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
+      values.chronic.includes(util.clean(d["Chronic Status"])) === true;
     }),
-    "All Youth": data.filter((d) => {
-      return d["Household Type"] != null && values.youth.includes(util.clean(d["Household Type"])) === true;
+    "All Youth": status["All"].filter((d) => {
+      return values.youth.includes(util.clean(d["Household Type"])) === true;
     }),
-    "All Families": data.filter((d) => {
-      return d["Household Type"] != null && values.family.includes(util.clean(d["Household Type"])) === true;
+    "All Families": status["All"].filter((d) => {
+      return values.family.includes(util.clean(d["Household Type"])) === true;
     }),
-    "Active All": data.filter((d) => {
-      return d["BNL Status"] != null && d["BNL Status"].toString().trim() === "Active";
+
+    // ACTIVE CLIENTS ONLY
+    "Active All": status["Active"],
+    "Active All Singles": status["Active"].filter((d) => {
+      return values.singleAdult.includes(util.clean(d["Household Type"])) === true;
     }),
-    "Active All Singles": data.filter((d) => {
-      return d["BNL Status"] != null && d["Household Type"] != null && d["BNL Status"].toString().trim() === "Active" && values.singleAdult.includes(util.clean(d["Household Type"])) === true;
+    "Active Veteran": status["Active"].filter((d) => {
+      return d["Veteran Status"] != null && 
+      values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
+      values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
-    "Active Veteran": data.filter((d) => {
-      return d["BNL Status"] != null && d["Household Type"] != null && d["Veteran Status"] != null && d["BNL Status"].toString().trim() === "Active" && values.singleAdult.includes(util.clean(d["Household Type"])) === true && values.veteran.includes(util.clean(d["Veteran Status"])) === true;
+    "Active Chronic": status["Active"].filter((d) => {
+      return  d["Chronic Status"] != null && 
+      values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
+      values.chronic.includes(util.clean(d["Chronic Status"])) === true;
     }),
-    "Active Chronic": data.filter((d) => {
-      return d["BNL Status"] != null && d["Household Type"] != null && d["Chronic Status"] != null && d["BNL Status"].toString().trim() === "Active" && values.singleAdult.includes(util.clean(d["Household Type"])) === true && values.chronic.includes(util.clean(d["Chronic Status"])) === true;
+    "Active Youth": status["Active"].filter((d) => {
+      return values.youth.includes(util.clean(d["Household Type"])) === true;
     }),
-    "Active Youth": data.filter((d) => {
-      return d["BNL Status"] != null && d["Household Type"] != null && d["BNL Status"].toString().trim() === "Active" && values.youth.includes(util.clean(d["Household Type"])) === true;
-    }),
-    "Active Families": data.filter((d) => {
-      return d["BNL Status"] != null && d["Household Type"] != null && d["BNL Status"].toString().trim() === "Active" && values.family.includes(util.clean(d["Household Type"])) === true;
+    "Active Families": status["Active"].filter((d) => {
+      return values.family.includes(util.clean(d["Household Type"])) === true;
     }),
   };
   return filterMap[category];
@@ -274,7 +304,7 @@ function calculate(state, data, calculation) {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then get the unique number of clients
-      const clients = util.getColByName(categoryData, categoryData.length, headers.clientId);
+      const clients = util.getColByName(categoryData, categoryData.length, pops.clientId);
       return new Set(clients).size;
     }),
     "HOUSING PLACEMENTS": allCats.map((category) => {
@@ -285,7 +315,7 @@ function calculate(state, data, calculation) {
         return d["Housing Move-In Date"] != null && util.getDate(d["Housing Move-In Date"], "MY", state) === reportingDate;
       });
       // Then get the unique number of clients
-      const clients = util.getColByName(filteredData, filteredData.length, headers.clientId);
+      const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
       return new Set(clients).size;
     }),
     "MOVED TO INACTIVE NUMBER": allCats.map((category) => {
@@ -296,7 +326,7 @@ function calculate(state, data, calculation) {
         return d["Inactive Date"] != null && util.getDate(d["Inactive Date"], "MY", state) === reportingDate;
       });
       // Then get the unique number of clients
-      const clients = util.getColByName(filteredData, filteredData.length, headers.clientId);
+      const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
       return new Set(clients).size;
     }),
     "NEWLY IDENTIFIED NUMBER": activeCats.map((category) => {
@@ -307,7 +337,7 @@ function calculate(state, data, calculation) {
         return d["Date of Identification"] != null && d["Inactive Date"] === null && d["Returned to Active Date"] === null && util.getDate(d["Date of Identification"], "MY", state) === reportingDate;
       });
       // Then get the unique number of clients
-      const clients = util.getColByName(filteredData, filteredData.length, headers.clientId);
+      const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
       return new Set(clients).size;
     }),
     "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": activeCats.map((category) => {
@@ -318,7 +348,7 @@ function calculate(state, data, calculation) {
         return d["Housing Move-In Date"] != null && util.getDate(d["Returned to Active Date"], "MY", state) === reportingDate && util.getDate(d["Returned to Active Date"], "MDY", state) > util.getDate(d["Housing Move-In Date"], "MDY", state);
       });
       // Then get the unique number of clients
-      const clients = util.getColByName(filteredData, filteredData.length, headers.clientId);
+      const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
       return new Set(clients).size;
     }),
     "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": allCats.map((category) => {
@@ -329,7 +359,7 @@ function calculate(state, data, calculation) {
         return d["Inactive Date"] != null && util.getDate(d["Returned to Active Date"], "MY", state) === reportingDate && util.getDate(d["Returned to Active Date"], "MDY", state) > util.getDate(d["Inactive Date"], "MDY", state);
       });
       // Then get the unique number of clients
-      const clients = util.getColByName(filteredData, filteredData.length, headers.clientId);
+      const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
       return new Set(clients).size;
     }),
     "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT": allCats.map((category) => {

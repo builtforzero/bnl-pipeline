@@ -1,13 +1,48 @@
 const d3 = require("d3");
 const Papa = require("papaparse");
 const XLSX = require("xlsx");
-import {Utils} from './utils.js'
+import {Utils} from './utils.js';
+import { headers } from "../dict.js";
 let util = new Utils();
 
 class FormHandler {
 
   showMe(){
       console.log("I'm working!", "FormHandler")
+  }
+
+  getCommunityData(state, form) {
+    const spreadsheetId = process.env.SPREADSHEET_ID
+    const range = process.env.RANGE
+    const apiKey = process.env.API_KEY
+    const url = 'https://sheets.googleapis.com/v4/spreadsheets/' + spreadsheetId + '/values/' + range + '?key=' + apiKey;
+
+    fetch(url)
+      .then(function(response) {
+        return response.json();
+      })
+      .then((data) => {
+        const labels = data.values[0]
+        const output = data.values.slice(1).map(item => item.reduce((obj, val, index) => {
+          obj[labels[index]] = val
+          return obj
+        }, {}))
+        state.comm_import = output;
+        
+        const nameList = util.getColByName(output, output.length, "Name").sort();
+        nameList.unshift("Select a Community");
+
+        if (output.length <= 0) {
+          state.comm_list = headers.communities;
+        } else {
+          state.comm_list = nameList;
+        }
+        this.setupFields(state, state.comm_list, form)
+      })
+      .catch(error => {
+        this.setupFields(state, headers.communities, form)
+        console.error('Error!', error.message)
+    });
   }
 
   checkStatus(state) {
@@ -45,7 +80,16 @@ class FormHandler {
       }
   }
 
-  setupFields(state, form) {
+  setupFields(state, communityList, form) {
+
+    d3.select("#community-dropdown")
+      .selectAll("option")
+      .data(communityList)
+      .enter()
+      .append("option")
+      .attr("value", (d) => d)
+      .text((d) => d);
+
     d3.select("#community-dropdown").on("change", function () {
       form.checkStatus(state);
       state.form_community_clean = this.value;

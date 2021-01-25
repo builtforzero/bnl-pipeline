@@ -1,4 +1,13 @@
 const headers = {
+  communities: [
+    "Norman/Cleveland County CoC",
+    "Arlington County CoC",
+    "Bakersfield/Kern County CoC",
+    "Watsonville/Santa Cruz City & County CoC",
+    "Richmond/Henrico, Chesterfield, Hanover Counties CoC",
+    "Jacksonville-Duval, Clay Counties CoC",
+    "Rockford/Winnebago, Boone Counties CoC"
+  ],
   required: [
     "Date of Identification", 
     "Homeless Start Date", 
@@ -188,18 +197,6 @@ const headers = {
     "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT"
   ],
 };
-
-const metrics = {
-  all: [
-    "ACTIVELY HOMELESS NUMBER", 
-    "HOUSING PLACEMENTS", 
-    "MOVED TO INACTIVE NUMBER", 
-    "NEWLY IDENTIFIED NUMBER", 
-    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER", 
-    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER", 
-    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT"
-  ],
-}
 
 const pops = {
   all: ["All", "All Singles", "Veteran", "Chronic", "Youth", "Families"],
