@@ -1,4 +1,5 @@
 const headers = {
+  // Backup in case community name import fails
   communities: [
     "Norman/Cleveland County CoC",
     "Arlington County CoC",
