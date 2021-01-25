@@ -17,7 +17,6 @@ const headers = {
     "Returned to Active Date", 
     "Age", 
     "Client ID", 
-    "BNL Status", 
     "Household Type", 
     "Household Size", 
     "Chronic Status", 
@@ -61,11 +60,6 @@ const headers = {
       altNames: [],
       datatype: "num",
       error: `must only contain <b style='color:black'>whole numbers</b>. e.g. "3"`,
-    }, 
-    "BNL Status": {
-      altNames: [],
-      datatype: "any",
-      error: `can accept any data type.`,
     },  
     "Household Type": {
       altNames: [],

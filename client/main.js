@@ -235,7 +235,7 @@ function filterData(data, category) {
     "Active": data.filter((d) => {
       return d["Household Type"] != null && 
       util.getDate(d["Date of Identification"], "MY", state) <= reportingDate &&
-      ( d["Housing Move-In Date"] === null || d["Inactive Date"] === null ) ||
+      ( d["Housing Move-In Date"] === null && d["Inactive Date"] === null ) ||
       ( util.getDate(d["Housing Move-In Date"], "MY", state) > reportingDate || util.getDate(d["Inactive Date"], "MY", state) > reportingDate )
     }),
     "All": data.filter((d) => {
