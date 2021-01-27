@@ -18,7 +18,7 @@ let util = new Utils();
 
 /* APPLICATION STATE */
 let state = {
-  debug: true, // Toggle to remove required fields
+  debug: false, // Toggle to remove required fields
   testSubmit: false, // Toggle to switch to test script URL
 
   finalScriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
