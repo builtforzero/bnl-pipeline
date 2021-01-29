@@ -30,7 +30,9 @@ let state = {
 
   // Form Fields
   form_community_clean: null,
-  form_reporting_date: null,
+  form_month: null,
+  form_current_months: null,
+  form_year: null,
   form_name: null,
   form_email: null,
   form_org: null,

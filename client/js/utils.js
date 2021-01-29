@@ -73,6 +73,14 @@ class Utils {
     state.backend_output = [];
   }
 
+  getRangeArr(start, stop, step) {
+    return Array.from({ length: (stop - start) / step + 1 }, (value, index) => start + (index * step));
+  }
+
+  getKeyByValue(object, value) {
+    return Object.keys(object).find(key => object[key] === value);
+  }
+
   // Choices: "as timestamp", "as month year", "from full year", "from year month", "from short year"
   formatDate(dateValue, method1, method2, method3) {
     const dateMap = {

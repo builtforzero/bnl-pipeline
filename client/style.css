@@ -124,6 +124,13 @@ select {
   font-weight: 600;
 }
 
+.month-year-input {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  column-gap: 10px;
+}
+
+
 /* STATUS */
 
 .success {

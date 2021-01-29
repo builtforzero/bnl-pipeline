@@ -48,7 +48,8 @@ class FormHandler {
   checkStatus(state) {
       let formValues = [
           state.form_community_clean,
-          state.form_reporting_date,
+          state.form_month,
+          state.form_year,
           state.form_name,
           state.form_email,
           state.form_org,
@@ -82,6 +83,30 @@ class FormHandler {
 
   setupFields(state, communityList, form) {
 
+    const monthMap = {
+      0: "January",
+      1: "February",
+      2: "March",
+      3: "April",
+      4: "May",
+      5: "June",
+      6: "July",
+      7: "August",
+      8: "September",
+      9: "October",
+      10: "November",
+      11: "December"
+    }
+
+    const today = new Date();
+    const thisMonth = monthMap[today.getMonth()];
+    const thisYear = parseInt(today.getFullYear());
+    const allYears = util.getRangeArr(2017, thisYear, 1).reverse();
+    
+    state.form_month = thisMonth;
+    state.form_year = thisYear;
+    state.meta_reportingDate = util.formatDate(`${thisYear}-${today.getMonth() + 1}`, "from year month", "as MY");
+    
     d3.select("#community-dropdown")
       .selectAll("option")
       .data(communityList)
@@ -99,11 +124,71 @@ class FormHandler {
       );
       state.meta_timestamp = util.formatDate(Date.now(), "from ms", "as timestamp");
     })
+
+    
+    // Set the visible months in the dropdown based on the year
+    const currentMonthNums = Object.keys(monthMap).filter(monthNumber => {
+      if (state.form_year === thisYear) {
+        return monthNumber <= today.getMonth();
+      } else {
+        return monthNumber
+      }
+    })
+    state.form_current_months = currentMonthNums.map(num => monthMap[num]);
   
     // Reporting date input
-    d3.select("#date-input").on("change", function () {
-      state.form_reporting_date = this.value;
-      state.meta_reportingDate = util.formatDate(this.value, "from year day month", "as MY");
+    d3.select("#month-dropdown")
+      .selectAll("option")
+      .data(state.form_current_months)
+      .enter()
+      .append("option")
+      .attr("value", (d) => d)
+      .text((d) => d)
+
+    d3.select("#year-dropdown")
+      .selectAll("option")
+      .data(allYears)
+      .enter()
+      .append("option")
+      .attr("value", (d) => d)
+      .text((d) => d);
+    
+    d3.select("#month-dropdown").on("change", function () {
+      state.form_month = this.value;
+      const monthNum = parseInt(util.getKeyByValue(monthMap, this.value));
+      state.meta_reportingDate = util.formatDate(`${state.form_year}-${monthNum + 1}`, "from year month", "as MY");
+      state.meta_timestamp = util.formatDate(Date.now(), "from ms", "as timestamp");
+      form.checkStatus(state);
+    })
+
+    d3.select("#year-dropdown").on("change", function () {
+      state.form_year = this.value;
+      const monthNum = parseInt(util.getKeyByValue(monthMap, state.form_month));
+      state.meta_reportingDate = util.formatDate(`${parseInt(this.value)}-${parseInt(monthNum) + 1}`, "from year month", "as MY");
+
+      // Set the visible months in the dropdown based on the year
+      state.form_current_months = null;
+      const currentMonthNumsNew = Object.keys(monthMap).filter(monthNumber => {
+        if (parseInt(state.form_year) === thisYear) {
+          return monthNumber <= today.getMonth();
+        } else {
+          return monthNumber
+        }
+      })
+      state.form_current_months = currentMonthNumsNew.map(num => monthMap[num]);
+
+      d3.select("#month-dropdown")
+        .selectAll("option")
+        .remove()
+      
+      d3.select("#month-dropdown")
+        .selectAll("option")
+        .data(state.form_current_months)
+        .enter()
+        .append("option")
+        .attr("value", (d) => d)
+        .text((d) => d)
+
       state.meta_timestamp = util.formatDate(Date.now(), "from ms", "as timestamp");
       form.checkStatus(state);
     })
