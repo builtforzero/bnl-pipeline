@@ -96,6 +96,7 @@ class Utils {
       "from year month": d3.timeParse("%Y-%m"),
       "from year day month": d3.timeParse("%Y-%m-%d"),
       "from ms": d3.timeParse("%Q"), // Q is from UNIX epoch
+      "from MY": d3.timeParse("%B %Y"),
     };
 
     if (method2 === undefined && method3 === undefined) {

@@ -18,7 +18,7 @@ let util = new Utils();
 
 /* APPLICATION STATE */
 let state = {
-  debug: true, // Toggle to remove required fields
+  debug: false, // Toggle to remove required fields
   testSubmit: false, // Toggle to switch to test script URL
 
   finalScriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
@@ -235,10 +235,13 @@ function filterData(data, category) {
   // or whose exit date is AFTER the reporting MY
   const status = {
     "Active": data.filter((d) => {
-      return d["Household Type"] != null && 
-      util.getDate(d["Date of Identification"], "MY", state) <= reportingDate &&
+
+      return d["Household Type"] != null &&
+      d["Date of Identification"] != null &&
+      d["Housing Move-In Date"] != null &&
+      util.formatDate(d["Date of Identification"], "from long year") <= util.formatDate(reportingDate, "from MY") &&
       ( d["Housing Move-In Date"] === null && d["Inactive Date"] === null ) ||
-      ( util.getDate(d["Housing Move-In Date"], "MY", state) > reportingDate || util.getDate(d["Inactive Date"], "MY", state) > reportingDate )
+      ( util.formatDate(d["Housing Move-In Date"], "from long year") > util.formatDate(reportingDate, "from MY") || util.formatDate(d["Inactive Date"], "from long year") > util.formatDate(reportingDate, "from MY") )
     }),
     "All": data.filter((d) => {
       return d["Household Type"] != null
@@ -250,55 +253,69 @@ function filterData(data, category) {
     // ALL CLIENTS
     "All All": data,
     "All All Singles": status["All"].filter((d) => {
-      return values.singleAdult.includes(util.clean(d["Household Type"])) === true;
+      return d["Household Type"] != null &&
+      values.singleAdult.includes(util.clean(d["Household Type"])) === true;
     }),
     "All Veteran": status["All"].filter((d) => {
-      return d["Veteran Status"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
+      return d["Household Type"] != null &&
+      d["Veteran Status"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
     "All Chronic": status["All"].filter((d) => {
-      return d["Chronic Status"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
+      return d["Household Type"] != null &&
+      d["Chronic Status"] != null && 
+      values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.chronic.includes(util.clean(d["Chronic Status"])) === true;
     }),
     "All Chronic Veteran": status["All"].filter((d) => {
-      return d["Chronic Status"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
+      return d["Household Type"] != null &&
+      d["Chronic Status"] != null && 
+      values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.chronic.includes(util.clean(d["Chronic Status"])) === true &&
       values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
     "All Youth": status["All"].filter((d) => {
-      return values.youth.includes(util.clean(d["Household Type"])) === true;
+      return d["Household Type"] != null &&
+      values.youth.includes(util.clean(d["Household Type"])) === true;
     }),
     "All Families": status["All"].filter((d) => {
-      return values.family.includes(util.clean(d["Household Type"])) === true;
+      return d["Household Type"] != null &&
+      values.family.includes(util.clean(d["Household Type"])) === true;
     }),
 
     // ACTIVE CLIENTS ONLY
     "Active All": status["Active"],
     "Active All Singles": status["Active"].filter((d) => {
-      return values.singleAdult.includes(util.clean(d["Household Type"])) === true;
+      return d["Household Type"] != null &&
+      values.singleAdult.includes(util.clean(d["Household Type"])) === true;
     }),
     "Active Veteran": status["Active"].filter((d) => {
       return d["Veteran Status"] != null && 
+      d["Household Type"] != null &&
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
     "Active Chronic": status["Active"].filter((d) => {
       return  d["Chronic Status"] != null && 
+      d["Household Type"] != null &&
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.chronic.includes(util.clean(d["Chronic Status"])) === true;
     }),
     "Active Chronic Veteran": status["Active"].filter((d) => {
       return  d["Chronic Status"] != null && 
       d["Veteran Status"] != null && 
+      d["Household Type"] != null &&
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.chronic.includes(util.clean(d["Chronic Status"])) === true &&
       values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
     "Active Youth": status["Active"].filter((d) => {
-      return values.youth.includes(util.clean(d["Household Type"])) === true;
+      return d["Household Type"] != null &&
+      values.youth.includes(util.clean(d["Household Type"])) === true;
     }),
     "Active Families": status["Active"].filter((d) => {
-      return values.family.includes(util.clean(d["Household Type"])) === true;
+      return d["Household Type"] != null &&
+      values.family.includes(util.clean(d["Household Type"])) === true;
     }),
   };
   return filterMap[category];
