@@ -18,7 +18,7 @@ let util = new Utils();
 
 /* APPLICATION STATE */
 let state = {
-  debug: false, // Toggle to remove required fields
+  debug: true, // Toggle to remove required fields
   testSubmit: false, // Toggle to switch to test script URL
 
   finalScriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
@@ -260,6 +260,11 @@ function filterData(data, category) {
       return d["Chronic Status"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.chronic.includes(util.clean(d["Chronic Status"])) === true;
     }),
+    "All Chronic Veteran": status["All"].filter((d) => {
+      return d["Chronic Status"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
+      values.chronic.includes(util.clean(d["Chronic Status"])) === true &&
+      values.veteran.includes(util.clean(d["Veteran Status"])) === true;
+    }),
     "All Youth": status["All"].filter((d) => {
       return values.youth.includes(util.clean(d["Household Type"])) === true;
     }),
@@ -281,6 +286,13 @@ function filterData(data, category) {
       return  d["Chronic Status"] != null && 
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.chronic.includes(util.clean(d["Chronic Status"])) === true;
+    }),
+    "Active Chronic Veteran": status["Active"].filter((d) => {
+      return  d["Chronic Status"] != null && 
+      d["Veteran Status"] != null && 
+      values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
+      values.chronic.includes(util.clean(d["Chronic Status"])) === true &&
+      values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
     "Active Youth": status["Active"].filter((d) => {
       return values.youth.includes(util.clean(d["Household Type"])) === true;
@@ -384,19 +396,19 @@ function calculate(state, data, calculation) {
             const diff = util.getDate(houseDate, "MDY", state) - util.getDate(idDate, "MDY", state);
             const converted = Math.ceil(diff / (1000 * 60 * 60 * 24));
             if (converted < 0) {
-              return null;
+              return "N/A";
             } else {
               return converted;
             }
           } else {
-            return null;
+            return "N/A";
           }
         })
-        .filter((value) => value != null);
+        .filter((value) => value != "N/A");
 
       // Reduce the differences map to a single average value
       if (difference.length === 0) {
-        return null;
+        return "N/A";
       } else {
         const round = d3.format(".1f");
         const average = round(d3.mean(difference), 1);
@@ -534,32 +546,61 @@ function getOutput(population, pops, aggRaw) {
   });
 }
 
+function addAggValue(popLookup, value, type) {
+  if (type === 'result' && (value === null || value === 0 || value === "N/A")) {
+    d3.select(".agg-table")
+      .append("div")
+      .classed("agg-value", true)
+      .classed(`${popLookup}`, true)
+      .classed("hide", true)
+      .html(`<b class='neutral' style='font-weight:400;'>${value}</b>`);
+  } else if (type === 'result' && value != null && value != 0 && value != "N/A") {
+    d3.select(".agg-table")
+      .append("div")
+      .classed("agg-value", true)
+      .classed(`${popLookup}`, true)
+      .classed("hide", true)
+      .html(`<b>${value}</b>`);
+  } else if (type === 'calculation') {
+    d3.select(".agg-table")
+      .append("div")
+      .classed("agg-value", true)
+      .classed(`${popLookup}`, true)
+      .classed("hide", true)
+      .html(`${value}`);
+  } else {
+    d3.select(".agg-table")
+      .append("div")
+      .classed("agg-value", true)
+      .classed(`${popLookup}`, true)
+      .classed("hide", true)
+      .html(`<b class='neutral' style='font-weight:400;'>${value}</b>`);
+  }
+  
+}
+
+
 function printValue(population, calculation, result) {
   const popLookup = population.replace(' ', '')
-  if (result > 0 && calculation === "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT") {
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${population}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${calculation}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`<b>${result} days</b>`);
-  } else if (result === null || (result === 0 && calculation === "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT")) {
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${population}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${calculation}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`<b class='neutral' style='font-weight:400;'>${result}</b>`);
-  } else if (result > 0 && calculation != "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT") {
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${population}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${calculation}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`<b>${result}</b>`);
+  if (calculation === "Average Length Of Time From Identification To Housing Placement" && result != 1 && result != "N/A") {
+    addAggValue(popLookup, calculation, 'calculation');
+    addAggValue(popLookup, `${result} days`, 'result');
+  } else if (calculation === "Average Length Of Time From Identification To Housing Placement" && result === 1) { 
+    addAggValue(popLookup, calculation, 'calculation');
+    addAggValue(popLookup, `${result} day`, 'result');
   } else {
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${population}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`${calculation}`);
-    d3.select(".agg-table").append("div").classed("agg-value", true).classed(`${popLookup}`, true).classed("hide", true).html(`<b class='neutral' style='font-weight:400;'>${result}</b>`);
+    addAggValue(popLookup, calculation, 'calculation');
+    addAggValue(popLookup, result, 'result');
   }
 }
 
 function printHeader(population) {
+
   const popLookup = population.replace(' ', '')
-  d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${popLookup}`, true).classed("hide", true).html(`Subpopulation`);
-  d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${popLookup}`, true).classed("hide", true).text("Calculation");
-  d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${popLookup}`, true).classed("hide", true).text("Result");
+
+  d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${popLookup}`, true).classed("hide", true).html(`${state.meta_reportingDate} <b style='color: gray;'>results for </b> ${population}`);
+
+  d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${popLookup}`, true).classed("hide", true).html(``);
 }
 
 // Parses data as a CSV and downloads the file

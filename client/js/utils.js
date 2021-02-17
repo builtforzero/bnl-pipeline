@@ -21,12 +21,16 @@ class Utils {
   }
 
   clean(value) {
-    const cleanedValue = value
-      .toString()
-      .replace(/[^A-Z0-9]/gi, "")
-      .toLowerCase()
-      .trim();
-    return cleanedValue;
+    if (value === null) {
+      return null
+    } else {
+      const cleanedValue = value
+        .toString()
+        .replace(/[^A-Z0-9]/gi, "")
+        .toLowerCase()
+        .trim();
+      return cleanedValue;
+    }
   }
 
   resetData(state) {

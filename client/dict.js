@@ -159,6 +159,17 @@ const headers = {
     "[Veteran] NEWLY IDENTIFIED NUMBER",
     "[Veteran] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
     "[Veteran] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
+    // Chronic Veteran
+    "[Chronic Veteran] Population",
+    "[Chronic Veteran] Subpopulation",
+    "[Chronic Veteran] Demographic",
+    "[Chronic Veteran] ACTIVELY HOMELESS NUMBER",
+    "[Chronic Veteran] HOUSING PLACEMENTS",
+    "[Chronic Veteran] AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
+    "[Chronic Veteran] MOVED TO INACTIVE NUMBER",
+    "[Chronic Veteran] NEWLY IDENTIFIED NUMBER",
+    "[Chronic Veteran] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
+    "[Chronic Veteran] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
     // Youth
     "[Youth] Population",
     "[Youth] Subpopulation",
@@ -194,7 +205,7 @@ const headers = {
 };
 
 const pops = {
-  all: ["All", "All Singles", "Veteran", "Chronic", "Youth", "Families"],
+  all: ["All", "All Singles", "Veteran", "Chronic", "Chronic Veteran", "Youth", "Families"],
   output: {
     "All": {
       outputPop: "All",
@@ -214,6 +225,11 @@ const pops = {
     "Chronic": {
       outputPop: "Single Adults",
       outputSubpop: "Chronic",
+      outputDemo: "All"
+    },
+    "Chronic Veteran": {
+      outputPop: "Single Adults",
+      outputSubpop: "Chronic Veteran",
       outputDemo: "All"
     },
     "Youth": {

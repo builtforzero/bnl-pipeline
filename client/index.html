@@ -15,82 +15,81 @@
 <body>
     <div id="root">
 
-
         <section class="columns">
 
             <section class="column1">
 
-                <div class="step-header">
-                    <h2>STEP 1: UPLOAD</h2>
-                    <p>Upload your by-name list file.</p>
-                </div>
+                <section>
+                    <div class="step-header">
+                        <h2>1. UPLOAD</h2>
+                        <p>Upload your by-name list file.</p>
+                    </div>
+                    <div class="step-content">
+                        <form class='submission-form'>
+                            <section class="form-columns">
 
-                <div class="step-content">
-
-                    <form class='submission-form'>
-
-                        <section class="form-columns">
-
-                            <!-- Community Name -->
-                            <div class="form-field">
-                                <div class="question-text">What is your community name? <b class='asterisk'>*</b>
+                                <!-- Community Name -->
+                                <div class="form-field">
+                                    <div class="question-text">What is your community name? <b class='asterisk'>*</b>
+                                    </div>
+                                    <select class="input" name="Community" id="community-dropdown" placeholder="Select a Community">
+                                    </select>
                                 </div>
-                                <select class="input" name="Community" id="community-dropdown" placeholder="Select a Community">
-                                </select>
-                            </div>
 
-                            <!-- Reporting Date -->
-                            <div class="form-field">
-                                <div class="form-label">
-                                    <div class="question-text">What month are you reporting for? <b class='asterisk'>*</b></span></div>
-                                    <div class='month-year-input'>
-                                        <select class="input" name="Month" id="month-dropdown"></select>
-                                        <select class="input" name="Year" id="year-dropdown"></select>
+                                <!-- Reporting Date -->
+                                <div class="form-field">
+                                    <div class="form-label">
+                                        <div class="question-text">What month are you reporting for? <b class='asterisk'>*</b></span></div>
+                                        <div class='month-year-input'>
+                                            <select class="input" name="Month" id="month-dropdown"></select>
+                                            <select class="input" name="Year" id="year-dropdown"></select>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Your Name -->
-                            <div class="form-field">
-                                <div class="question-text">What is your name? <b class='asterisk'>*</b></div>
-                                <input class="input" name="Name" id="name-input" placeholder="Name of Contact Person">
-                            </div>
-
-                            <!-- Email -->
-                            <div class="form-field">
-                                <div class="question-text">What is your email address? <b class='asterisk'>*</b></div>
-                                <input class="input" type="email" name="Email" id="email-input" placeholder="example@email.com">
-                            </div>
-
-                            <!-- Organization -->
-                            <div class="form-field">
-                                <div class="question-text">What is your organization? <b class='asterisk'>*</b></div>
-                                <input class="input" name="Organization" id="org-input" placeholder="Name of Organization">
-                            </div>
-
-                            <!-- File picker -->
-                            <div class="form-field upload-file">
-                                <div>
-                                    <label for="fileUpload" class="question-text input-file-label">Choose your by-name list file <b class='asterisk'>*</b></label>
-                                    <p class="neutral" style='font-size: var(--subtitle-size)'>.CSV and .XLSX formats accepted</p>
-                                    <input type="file" id="filePicker" name="filePicker" accept=".csv, .xlsx">
+                                <!-- Your Name -->
+                                <div class="form-field">
+                                    <div class="question-text">What is your name? <b class='asterisk'>*</b></div>
+                                    <input class="input" name="Name" id="name-input" placeholder="Name of Contact Person">
                                 </div>
+
+                                <!-- Email -->
+                                <div class="form-field">
+                                    <div class="question-text">What is your email address? <b class='asterisk'>*</b></div>
+                                    <input class="input" type="email" name="Email" id="email-input" placeholder="example@email.com">
+                                </div>
+
+                                <!-- Organization -->
+                                <div class="form-field">
+                                    <div class="question-text">What is your organization? <b class='asterisk'>*</b></div>
+                                    <input class="input" name="Organization" id="org-input" placeholder="Name of Organization">
+                                </div>
+
+                                <!-- File picker -->
+                                <div class="form-field upload-file">
+                                    <div>
+                                        <label for="fileUpload" class="question-text input-file-label">Choose your by-name list file <b class='asterisk'>*</b></label>
+                                        <p class="neutral" style='font-size: var(--subtitle-size)'>.CSV and .XLSX formats accepted</p>
+                                        <input type="file" id="filePicker" name="filePicker" accept=".csv, .xlsx">
+                                    </div>
+                                </div>
+                            </section>
+                            <!-- Validate button -->
+                            <div class="center">
+                                <button class="inactive" type='button' id="validateButton" disabled>VALIDATE FILE</button>
                             </div>
-                        </section>
-                        <!-- Validate button -->
-                        <div class="center">
-                            <button class="inactive" type='button' id="validateButton" disabled>VALIDATE FILE</button>
-                        </div>
-                        <div class="validateBtn-msg helptext"></div>
-                </div>
-                </form>
+                            <div class="validateBtn-msg helptext"></div>
+                        </form>
+                    </div>
+                </section>
+
             </section>
 
             <section class="column2">
                 <section class="row1">
 
                     <div class="step-header">
-                        <h2>STEP 2: VALIDATE</h2>
+                        <h2>2. VALIDATE</h2>
                         <p>Make sure your file contains the right data.</p>
                     </div>
 
@@ -128,7 +127,7 @@
                                         </list>
                                     </div>
                                     <div class="result">
-                                        <div class="header-error"></div>
+                                        <div class="header-error error-detail"></div>
                                     </div>
                                 </div>
                             </div>
@@ -136,7 +135,7 @@
                             <!-- STEP 2: NO PII HEADERS -->
                             <div class="validation-step">
                                 <div class="validation-name" id="pii-name">
-                                    2. No headers for personally-identifiable information (PII).
+                                    2. No personally-identifiable information (PII).
                                     <span>
                                         <div class="toggle" id="pii-toggle">SHOW DETAILS ▼</div>
                                     </span>
@@ -153,14 +152,14 @@
                                         </ul>
                                     </div>
                                     <div class="result">
-                                        <div class="pii-error"></div>
+                                        <div class="pii-error error-detail"></div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- STEP 3: NO SSN VALUES -->
                             <div class="validation-step">
-                                <div class="validation-name" id="ssn-name">3. Data cannot contain Social Security Numbers.
+                                <div class="validation-name" id="ssn-name">3. No Social Security Numbers.
                                     <span>
                                         <div class="toggle" id="ssn-name-toggle">SHOW DETAILS ▼</div>
                                     </span>
@@ -172,7 +171,7 @@
                                         <p>Your data file cannot contain any Social Security Numbers (SSNs).</p>
                                     </div>
                                     <div class="result">
-                                        <div class="ssn-error"></div>
+                                        <div class="ssn-error error-detail"></div>
                                     </div>
                                 </div>
                             </div>
@@ -197,7 +196,7 @@
                                         </ul>
                                     </div>
                                     <div class="result">
-                                        <div class="datatype-error"></div>
+                                        <div class="datatype-error error-detail"></div>
                                     </div>
                                 </div>
                             </div>
@@ -218,7 +217,7 @@
 
                 <section class="row2">
                     <div class="step-header">
-                        <h2>STEP 3: AGGREGATE & SUBMIT</h2>
+                        <h2>3. AGGREGATE & SUBMIT</h2>
                         <p>Review your aggregated data and submit to BFZ.</p>
                     </div>
 
@@ -252,12 +251,12 @@
                         </button>
 
                     </div>
-    </div>
 
-    </section>
-    </section>
 
-    </section>
+                </section>
+            </section>
+
+        </section>
 
     </div>
 

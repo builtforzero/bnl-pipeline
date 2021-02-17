@@ -12,7 +12,7 @@
   /* Font Sizes */
   --root-size: 16px;
   --h1-size: 3.2em;
-  --h2-size: 2.2em;
+  --h2-size: 1.8em;
   --h3-size: 21px;
   --h4-size: 1.1em;
   --subtitle-size: 0.8em;
@@ -45,8 +45,9 @@ h1 {
 }
 
 h2 {
-  font-family: var(--font-title);
+  font-family: var(--font-body);
   font-size: var(--h2-size);
+  font-weight: 900;
 }
 
 .list {
@@ -69,38 +70,25 @@ button {
   font-weight: 900;
 }
 
-/* COLUMNS */
 
+/* GRID */
 .columns {
   display: grid;
   grid-template-columns: 1fr 2.2fr;
   column-gap: 15px;
-  margin: 0px;
 }
 
-.status {
-  border: 1px solid grey;
-  margin: 1%;
-  padding: 5%;
-}
-
-.row1 {
+.column1,.row1,.row2 {
   margin: 0px 0px 15px 0px;
 }
 
-.step-header {
-  padding: 20px;
-  margin: 0%;
-  line-height: 200%;
-  background-color: var(--color-main);
-  color: white;
+.form-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  column-gap: 60px;
 }
 
-.step-content {
-  padding: 20px;
-  margin: 0;
-  background-color: white;
-}
+
 
 /* FORM FIELDS */
 
@@ -114,12 +102,23 @@ select {
   font-weight: 500;
 }
 
+#filePicker {
+  background-color: lightgray;
+  font-weight: 600;
+  font-family: var(--font-title);
+}
+
 select {
   width: 100%;
 }
 
+.question-text {
+  font-family: var(--font-title);
+  font-size: 20px;
+}
+
 .form-field {
-  padding: 15px 10px;
+  padding: 15px 0px;
   background-color: white;
   font-weight: 600;
 }
@@ -185,13 +184,35 @@ select {
   left: -9999px !important;
 }
 
+
 /* VALIDATION STEPS */
+
+.status {
+  border: 1px solid grey;
+  margin: 1%;
+  padding: 5%;
+}
+
+.step-header {
+  padding: 20px;
+  margin: 0%;
+  line-height: 200%;
+  background-color: var(--color-main);
+  color: white;
+}
+
+.step-content {
+  padding: 20px;
+  margin: 0;
+  background-color: white;
+}
 
 .validation-step {
   display: grid;
   grid-template-columns: 5fr 1fr;
   column-gap: 10px;
   border-bottom: 1px solid lightgrey;
+  font-family: var(--font-title);
 }
 
 .validation-name {
@@ -209,6 +230,8 @@ select {
 .validation-info {
   margin: 0%;
   padding: 2% 2% 0% 2%;
+  max-height: 350px;
+  overflow: auto;
 }
 
 .validation-symbol {
@@ -221,6 +244,7 @@ select {
   padding: 10px 0px 0px 20px;
   color: rgb(90, 89, 89);
   font-weight: 600;
+  font-family: var(--font-body);
 }
 
 .info {
@@ -251,6 +275,7 @@ select {
   font-weight: 900;
 }
 
+
 /* AGGREGATION */
 
 .reporting-month {
@@ -267,16 +292,18 @@ select {
 
 .agg-table {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns: 3.5fr 1fr;
   column-gap: 0px;
+  font-family: var(--font-title);
 }
 
 .agg-header {
   font-size: var(--h4-size);
-  font-weight: 600;
+  font-weight: 800;
   margin: 0px 0px;
   padding: 6px;
   background-color: lightgrey;
+  font-family: var(--font-body);
 }
 
 .agg-value {
@@ -298,33 +325,33 @@ select {
 
 .button-group {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: repeat(7, 1fr);
   column-gap: 0px;
 }
 
 .button-group > button {
   padding: 10px;
-  margin: 20px 0px;
-  width: 80%;
-  font-family: var(--font-body);
+  margin: 20px 5px;
+  width: 90%;
   font-size: var(--root-size);
   font-weight: 600;
   background-color: lightblue;
   color: var(--color-main);
-  border: 3px solid lightblue;
+  border: 5px solid white;
+  font-family: var(--font-title);
 }
 
 .button-group > button:hover {
   background-color: var(--color-main);
   color: white;
-  border: 3px solid var(--color-main);
+  border: 5px solid var(--color-main);
   cursor: pointer;
 }
 
 .button-group > button:focus {
   background-color: var(--color-main);
   color: white;
-  border: 3px solid var(--color-main);
+  border: 5px solid var(--color-main);
   cursor: pointer;
 }
 
@@ -396,6 +423,7 @@ select {
   background-color: rgb(235, 235, 235);
 }
 
+
 /* Inner container */
 progress[value] {
   /* Reset the default appearance */
@@ -418,6 +446,8 @@ progress[value]::-webkit-progress-value {
   background-color: var(--color-main);
   border-radius: 10px;
 }
+
+
 
 /* MEDIA BREAKPOINTS */
 
