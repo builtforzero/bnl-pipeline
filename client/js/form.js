@@ -11,9 +11,9 @@ class FormHandler {
       console.log("I'm working!", "FormHandler")
   }
 
-  getCommunityData(state, form) {
+  getCommunityList(state, form) {
     const spreadsheetId = process.env.SPREADSHEET_ID
-    const range = process.env.RANGE
+    const range = 'Community List'
     const apiKey = process.env.API_KEY
     const url = 'https://sheets.googleapis.com/v4/spreadsheets/' + spreadsheetId + '/values/' + range + '?key=' + apiKey;
 
@@ -28,21 +28,47 @@ class FormHandler {
           return obj
         }, {}))
         state.comm_import = output;
-        
         const nameList = util.getColByName(output, output.length, "Name").sort();
         nameList.unshift("Select a Community");
-
         if (output.length <= 0) {
           state.comm_list = headers.communities;
         } else {
           state.comm_list = nameList;
         }
-        this.setupFields(state, state.comm_list, form)
+        this.getCommunityData(state, form)
       })
       .catch(error => {
-        this.setupFields(state, headers.communities, form)
+        this.getDataReliability(state, form)
         console.error('Error!', error.message)
     });
+  }
+
+  getCommunityData(state, form) {
+    const spreadsheetId = process.env.SPREADSHEET_ID
+    const range = 'DataFiltered'
+    const apiKey = process.env.API_KEY
+    const url = 'https://sheets.googleapis.com/v4/spreadsheets/' + spreadsheetId + '/values/' + range + '?key=' + apiKey;
+
+    fetch(url)
+      .then(function(response) {
+        return response.json();
+      })
+      .then((data) => {
+        const labels = data.values[0]
+        const output = data.values.slice(1).map(item => item.reduce((obj, val, index) => {
+          obj[labels[index]] = val
+          return obj
+        }, {}))
+        state.dr_import = output;
+        this.setupFields(state, state.comm_list, form)
+
+        this.getDataReliability(output, "September 2020");
+      })
+      .catch(error => {
+        this.setupFields(state, state.comm_list, form)
+        console.error('Error!', error.message)
+    });
+
   }
 
   checkStatus(state) {
@@ -79,6 +105,14 @@ class FormHandler {
         util.activate(valButton, false);
         valMessage.text("");
       }
+  }
+
+  getDataReliability(data, reportingMonth) {
+    const currentMonth = new Date(reportingMonth)
+    const fourMonthsAgo = d3.timeMonth.offset(currentMonth, -3)
+    const range = d3.timeMonth.range(fourMonthsAgo, currentMonth)
+    range.push(currentMonth);
+    console.log(currentMonth, fourMonthsAgo, range);
   }
 
   setupFields(state, communityList, form) {
@@ -157,6 +191,7 @@ class FormHandler {
       state.form_month = this.value;
       const monthNum = parseInt(util.getKeyByValue(monthMap, this.value));
       state.meta_reportingDate = util.formatDate(`${state.form_year}-${monthNum + 1}`, "from year month", "as MY");
+      console.log(state.meta_reportingDate);
       state.meta_timestamp = util.formatDate(Date.now(), "from ms", "as timestamp");
       form.checkStatus(state);
     })

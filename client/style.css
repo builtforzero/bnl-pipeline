@@ -91,6 +91,20 @@ button {
 
 
 /* FORM FIELDS */
+.version-spacer {
+  display: absolute;
+  margin: 0;
+  padding: 0;
+}
+
+.version-number {
+  margin: 2px 0px;
+  font-size: var(--subtitle-size);
+  padding: 0;
+  color: gray;
+  text-align: right;
+  font-family: var(--font-title);
+}
 
 input,
 select {

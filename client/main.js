@@ -16,8 +16,41 @@ let form = new FormHandler();
 let agg = new Aggregator();
 let util = new Utils();
 
+/* 
+
+dr = {
+  netChange: (month0.inflow + month1.inflow + month2.inflow) - (month0.outflow + month1.outflow + month2.outflow),
+  newDR: (month0.activelyHomeless - month3.activelyHomeless - netChange) / month0.activelyHomeless,
+  oldDR: null,
+  month0: {
+    month: null,
+    activelyHomeless: null,
+    inflow: null,
+    outflow: null,
+  },
+  month1: {
+    month: null,
+    activelyHomeless: null,
+    inflow: null,
+    outflow: null,
+  },
+  month2: {
+    month: null,
+    activelyHomeless: null,
+    inflow: null,
+    outflow: null,
+  },
+  month3: {
+    month: null,
+    activelyHomeless: null,
+  }
+}
+
+*/
+
 /* APPLICATION STATE */
 let state = {
+  version: "v3.1 | 02/2021",
   debug: false, // Toggle to remove required fields
   testSubmit: false, // Toggle to switch to test script URL
 
@@ -27,6 +60,33 @@ let state = {
   // Community Name Import
   comm_import: null,
   comm_list: null,
+
+  // Data Reliability Import
+  dr_import: null,
+  dr_netChange: null,
+  dr: null,
+  dr_month0: {
+    month: null,
+    ah: null,
+    inflow: null,
+    outflow: null,
+  },
+  dr_month1: {
+    month: null,
+    ah: null,
+    inflow: null,
+    outflow: null,
+  },
+  dr_month2: {
+    month: null,
+    ah: null,
+    inflow: null,
+    outflow: null,
+  },
+  dr_month3: {
+    month: null,
+    ah: null,
+  },
 
   // Form Fields
   form_community_clean: null,
@@ -61,9 +121,11 @@ let state = {
 init(state, form);
 
 function init(state, form) {
+  d3.select(".version-number").text(state.version);
   form.checkStatus(state);
-  form.getCommunityData(state, form);
+  form.getCommunityList(state, form);
   setupButtons();
+  console.log(state)
 }
 
 /* EVENT LISTENERS */
@@ -227,99 +289,130 @@ function runTests(headerArray, data, state) {
 
 // Filter data based on population and active status
 function filterData(data, category) {
-  const reportingDate = state.meta_reportingDate;
+  const reportingDate = new Date(util.formatDate(state.meta_reportingDate, "from MY"));
 
-  // "Active" Status = clients with a household type
-  // identified BEFORE the reporting MY 
+  // "Active" Status = clients identified 
+  // BEFORE the reporting Month Year 
   // that DO NOT have an exit date,
   // or whose exit date is AFTER the reporting MY
   const status = {
     "Active": data.filter((d) => {
+      const idDate = new Date(util.formatDate(d["Date of Identification"], "from long year", "as MY"))
+      const housingDate = new Date(util.formatDate(d["Housing Move-In Date"], "from long year", "as MY"))
+      const inactiveDate = new Date(util.formatDate(d["Inactive Date"], "from long year", "as MY"))
 
       return d["Household Type"] != null &&
       d["Date of Identification"] != null &&
-      d["Housing Move-In Date"] != null &&
-      util.formatDate(d["Date of Identification"], "from long year") <= util.formatDate(reportingDate, "from MY") &&
-      ( d["Housing Move-In Date"] === null && d["Inactive Date"] === null ) ||
-      ( util.formatDate(d["Housing Move-In Date"], "from long year") > util.formatDate(reportingDate, "from MY") || util.formatDate(d["Inactive Date"], "from long year") > util.formatDate(reportingDate, "from MY") )
+      idDate <= reportingDate &&
+      ( // one of these two conditions:
+        (d["Housing Move-In Date"] === null && d["Inactive Date"] === null) ||
+        (housingDate > reportingDate || inactiveDate > reportingDate)
+      )
     }),
+
     "All": data.filter((d) => {
       return d["Household Type"] != null
     })
   }
 
   const filterMap = {
-
     // ALL CLIENTS
     "All All": data,
     "All All Singles": status["All"].filter((d) => {
-      return d["Household Type"] != null &&
-      values.singleAdult.includes(util.clean(d["Household Type"])) === true;
+      return values.singleAdult.includes(util.clean(d["Household Type"])) === true;
     }),
     "All Veteran": status["All"].filter((d) => {
-      return d["Household Type"] != null &&
-      d["Veteran Status"] != null && values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
+      return d["Veteran Status"] != null && 
+      values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
     "All Chronic": status["All"].filter((d) => {
-      return d["Household Type"] != null &&
-      d["Chronic Status"] != null && 
+      return d["Chronic Status"] != null && 
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.chronic.includes(util.clean(d["Chronic Status"])) === true;
     }),
     "All Chronic Veteran": status["All"].filter((d) => {
-      return d["Household Type"] != null &&
-      d["Chronic Status"] != null && 
+      return d["Chronic Status"] != null && 
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.chronic.includes(util.clean(d["Chronic Status"])) === true &&
       values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
     "All Youth": status["All"].filter((d) => {
-      return d["Household Type"] != null &&
-      values.youth.includes(util.clean(d["Household Type"])) === true;
+      return values.youth.includes(util.clean(d["Household Type"])) === true;
     }),
     "All Families": status["All"].filter((d) => {
-      return d["Household Type"] != null &&
-      values.family.includes(util.clean(d["Household Type"])) === true;
+      return values.family.includes(util.clean(d["Household Type"])) === true;
     }),
 
     // ACTIVE CLIENTS ONLY
     "Active All": status["Active"],
     "Active All Singles": status["Active"].filter((d) => {
-      return d["Household Type"] != null &&
-      values.singleAdult.includes(util.clean(d["Household Type"])) === true;
+      return values.singleAdult.includes(util.clean(d["Household Type"])) === true;
     }),
     "Active Veteran": status["Active"].filter((d) => {
-      return d["Veteran Status"] != null && 
-      d["Household Type"] != null &&
+      return d["Veteran Status"] != null &&
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
     "Active Chronic": status["Active"].filter((d) => {
-      return  d["Chronic Status"] != null && 
-      d["Household Type"] != null &&
+      return  d["Chronic Status"] != null &&
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.chronic.includes(util.clean(d["Chronic Status"])) === true;
     }),
     "Active Chronic Veteran": status["Active"].filter((d) => {
       return  d["Chronic Status"] != null && 
-      d["Veteran Status"] != null && 
-      d["Household Type"] != null &&
+      d["Veteran Status"] != null &&
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.chronic.includes(util.clean(d["Chronic Status"])) === true &&
       values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
     "Active Youth": status["Active"].filter((d) => {
-      return d["Household Type"] != null &&
-      values.youth.includes(util.clean(d["Household Type"])) === true;
+      return values.youth.includes(util.clean(d["Household Type"])) === true;
     }),
     "Active Families": status["Active"].filter((d) => {
-      return d["Household Type"] != null &&
-      values.family.includes(util.clean(d["Household Type"])) === true;
+      return values.family.includes(util.clean(d["Household Type"])) === true;
     }),
   };
   return filterMap[category];
 }
+
+
+// Calculate data reliability
+// Reporting month = September 2020
+// Arr of four months prior = 
+// Get AH, Sum of Inflow, and Sum of Outflow for each of the four months
+/* 
+
+dr = {
+  netChange: (month0.inflow + month1.inflow + month2.inflow) - (month0.outflow + month1.outflow + month2.outflow),
+  newDR: (month0.activelyHomeless - month3.activelyHomeless - netChange) / month0.activelyHomeless,
+  oldDR: #,
+  month0: {
+    month: September 2020,
+    activelyHomeless: #,
+    inflow: #,
+    outflow: #,
+  },
+  month1: {
+    month: August 2020,
+    activelyHomeless: #,
+    inflow: #,
+    outflow: #,
+  },
+  month2: {
+    month: July 2020,
+    activelyHomeless: #,
+    inflow: #,
+    outflow: #,
+  },
+  month3: {
+    month: June 2020,
+    activelyHomeless: #,
+  }
+}
+
+*/
+
 
 function calculate(state, data, calculation) {
   const reportingDate = state.meta_reportingDate;
