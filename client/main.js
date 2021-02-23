@@ -51,7 +51,7 @@ dr = {
 
 /* APPLICATION STATE */
 let state = {
-  version: "v3.1 | 02/2021",
+  version: "v3.1.1 | 02/2021",
   debug: true, // Toggle to remove required fields
   testSubmit: false, // Toggle to switch to test script URL
 
