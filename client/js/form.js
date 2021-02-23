@@ -112,7 +112,6 @@ class FormHandler {
     const fourMonthsAgo = d3.timeMonth.offset(currentMonth, -3)
     const range = d3.timeMonth.range(fourMonthsAgo, currentMonth)
     range.push(currentMonth);
-    console.log(currentMonth, fourMonthsAgo, range);
   }
 
   setupFields(state, communityList, form) {

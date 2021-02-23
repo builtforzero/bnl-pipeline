@@ -9,6 +9,7 @@ import { Validator } from "./js/validate.js";
 import { FormHandler } from "./js/form.js";
 import { Aggregator } from "./js/aggregator.js";
 import { Utils } from "./js/utils.js";
+import { difference } from "d3";
 
 // Initialize components
 let test = new Validator();
@@ -51,7 +52,7 @@ dr = {
 /* APPLICATION STATE */
 let state = {
   version: "v3.1 | 02/2021",
-  debug: false, // Toggle to remove required fields
+  debug: true, // Toggle to remove required fields
   testSubmit: false, // Toggle to switch to test script URL
 
   finalScriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
@@ -423,12 +424,20 @@ function calculate(state, data, calculation) {
     return "All " + pop;
   });
 
+  // Console log: category, categoryData, filteredData, clients
   const calcMap = {
     "ACTIVELY HOMELESS NUMBER": activeCats.map((category) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then get the unique number of clients
       const clients = util.getColByName(categoryData, categoryData.length, pops.clientId);
+      if (state.debug === true) { console.log({
+        calc: "ACTIVELY HOMELESS NUMBER",
+        category: category,
+        categoryData: categoryData,
+        clients: clients,
+        uniqueClients: new Set(clients).size
+      }); }
       return new Set(clients).size;
     }),
     "HOUSING PLACEMENTS": allCats.map((category) => {
@@ -440,6 +449,14 @@ function calculate(state, data, calculation) {
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
+      if (state.debug === true) { console.log({
+        calc: "HOUSING PLACEMENTS",
+        category: category,
+        categoryData: categoryData,
+        filteredData: filteredData,
+        clients: clients,
+        uniqueClients: new Set(clients).size
+      }); }
       return new Set(clients).size;
     }),
     "MOVED TO INACTIVE NUMBER": allCats.map((category) => {
@@ -451,6 +468,14 @@ function calculate(state, data, calculation) {
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
+      if (state.debug === true) { console.log({
+        calc: "MOVED TO INACTIVE NUMBER",
+        category: category,
+        categoryData: categoryData,
+        filteredData: filteredData,
+        clients: clients,
+        uniqueClients: new Set(clients).size
+      }); }
       return new Set(clients).size;
     }),
     "NEWLY IDENTIFIED NUMBER": activeCats.map((category) => {
@@ -462,6 +487,14 @@ function calculate(state, data, calculation) {
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
+      if (state.debug === true) { console.log({
+        calc: "NEWLY IDENTIFIED NUMBER",
+        category: category,
+        categoryData: categoryData,
+        filteredData: filteredData,
+        clients: clients,
+        uniqueClients: new Set(clients).size
+      }); }
       return new Set(clients).size;
     }),
     "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": activeCats.map((category) => {
@@ -473,6 +506,14 @@ function calculate(state, data, calculation) {
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
+      if (state.debug === true) { console.log({
+        calc: "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
+        category: category,
+        categoryData: categoryData,
+        filteredData: filteredData,
+        clients: clients,
+        uniqueClients: new Set(clients).size
+      }); }
       return new Set(clients).size;
     }),
     "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": allCats.map((category) => {
@@ -484,6 +525,14 @@ function calculate(state, data, calculation) {
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
+      if (state.debug === true) { console.log({
+        calc: "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
+        category: category,
+        categoryData: categoryData,
+        filteredData: filteredData,
+        clients: clients,
+        uniqueClients: new Set(clients).size
+      }); }
       return new Set(clients).size;
     }),
     "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT": allCats.map((category) => {
@@ -522,10 +571,21 @@ function calculate(state, data, calculation) {
       } else {
         const round = d3.format(".1f");
         const average = round(d3.mean(difference), 1);
+
+        if (state.debug === true) { console.log({
+          calc: "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
+          category: category,
+          categoryData: categoryData,
+          filteredData: filteredData, 
+          difference: difference
+        }); }
+
         return average;
       }
     }),
   };
+
+  
 
   return calcMap[calculation];
 }
