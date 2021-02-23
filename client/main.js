@@ -565,21 +565,23 @@ function calculate(state, data, calculation) {
         })
         .filter((value) => value != "N/A");
 
+        const round = d3.format(".1f");
+        const average = round(d3.mean(difference), 1);
+      
+      if (state.debug === true) { console.log({
+          calc: "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
+          category: category,
+          categoryData: categoryData,
+          filteredData: filteredData, 
+          difference: average
+      }); }
+
       // Reduce the differences map to a single average value
       if (difference.length === 0) {
         return "N/A";
       } else {
         const round = d3.format(".1f");
         const average = round(d3.mean(difference), 1);
-
-        if (state.debug === true) { console.log({
-          calc: "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
-          category: category,
-          categoryData: categoryData,
-          filteredData: filteredData, 
-          difference: difference
-        }); }
-
         return average;
       }
     }),
