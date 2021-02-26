@@ -51,7 +51,7 @@ dr = {
 
 /* APPLICATION STATE */
 let state = {
-  version: "v3.1.1 | 02/2021",
+  version: "v3.2 | 02/2021",
   debug: true, // Toggle to remove required fields
   testSubmit: false, // Toggle to switch to test script URL
 
@@ -114,6 +114,17 @@ let state = {
   data_csv: null,
   data_form: null,
 
+  // Output
+  output: {
+    ah: null,
+    hp: null,
+    inactive: null,
+    newlyId: null,
+    retHousing: null,
+    retInactive: null,
+    lot: null
+  },
+
   // Backend
   backend_raw: null,
   backend_output: [],
@@ -126,7 +137,6 @@ function init(state, form) {
   form.checkStatus(state);
   form.getCommunityList(state, form);
   setupButtons();
-  console.log(state)
 }
 
 /* EVENT LISTENERS */
@@ -431,14 +441,13 @@ function calculate(state, data, calculation) {
       const categoryData = filterData(data, category);
       // Then get the unique number of clients
       const clients = util.getColByName(categoryData, categoryData.length, pops.clientId);
-      if (state.debug === true) { console.log({
+      return {
         calc: "ACTIVELY HOMELESS NUMBER",
         category: category,
         categoryData: categoryData,
         clients: clients,
-        uniqueClients: new Set(clients).size
-      }); }
-      return new Set(clients).size;
+        outputValue: new Set(clients).size
+      };
     }),
     "HOUSING PLACEMENTS": allCats.map((category) => {
       // First filter data for the selected category
@@ -449,15 +458,14 @@ function calculate(state, data, calculation) {
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
-      if (state.debug === true) { console.log({
+      return {
         calc: "HOUSING PLACEMENTS",
         category: category,
         categoryData: categoryData,
         filteredData: filteredData,
         clients: clients,
-        uniqueClients: new Set(clients).size
-      }); }
-      return new Set(clients).size;
+        outputValue: new Set(clients).size
+      };
     }),
     "MOVED TO INACTIVE NUMBER": allCats.map((category) => {
       // First filter data for the selected category
@@ -468,15 +476,14 @@ function calculate(state, data, calculation) {
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
-      if (state.debug === true) { console.log({
+      return {
         calc: "MOVED TO INACTIVE NUMBER",
         category: category,
         categoryData: categoryData,
         filteredData: filteredData,
         clients: clients,
-        uniqueClients: new Set(clients).size
-      }); }
-      return new Set(clients).size;
+        outputValue: new Set(clients).size
+      };
     }),
     "NEWLY IDENTIFIED NUMBER": activeCats.map((category) => {
       // First filter data for the selected category
@@ -487,15 +494,14 @@ function calculate(state, data, calculation) {
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
-      if (state.debug === true) { console.log({
+      return {
         calc: "NEWLY IDENTIFIED NUMBER",
         category: category,
         categoryData: categoryData,
         filteredData: filteredData,
         clients: clients,
-        uniqueClients: new Set(clients).size
-      }); }
-      return new Set(clients).size;
+        outputValue: new Set(clients).size
+      };
     }),
     "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": activeCats.map((category) => {
       // First filter data for the selected category
@@ -506,15 +512,14 @@ function calculate(state, data, calculation) {
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
-      if (state.debug === true) { console.log({
+      return {
         calc: "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
         category: category,
         categoryData: categoryData,
         filteredData: filteredData,
         clients: clients,
-        uniqueClients: new Set(clients).size
-      }); }
-      return new Set(clients).size;
+        outputValue: new Set(clients).size
+      };
     }),
     "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": allCats.map((category) => {
       // First filter data for the selected category
@@ -525,15 +530,14 @@ function calculate(state, data, calculation) {
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
-      if (state.debug === true) { console.log({
+      return {
         calc: "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
         category: category,
         categoryData: categoryData,
         filteredData: filteredData,
         clients: clients,
-        uniqueClients: new Set(clients).size
-      }); }
-      return new Set(clients).size;
+        outputValue: new Set(clients).size
+      };
     }),
     "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT": allCats.map((category) => {
       // First filter data for the selected category
@@ -567,22 +571,26 @@ function calculate(state, data, calculation) {
 
         const round = d3.format(".1f");
         const average = round(d3.mean(difference), 1);
-      
-      if (state.debug === true) { console.log({
+
+      // Reduce the differences map to a single average value
+      if (difference.length === 0) {
+        return {
           calc: "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
           category: category,
           categoryData: categoryData,
           filteredData: filteredData, 
-          difference: average
-      }); }
-
-      // Reduce the differences map to a single average value
-      if (difference.length === 0) {
-        return "N/A";
+          outputValue: "N/A"
+        };
       } else {
         const round = d3.format(".1f");
         const average = round(d3.mean(difference), 1);
-        return average;
+        return {
+          calc: "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
+          category: category,
+          categoryData: categoryData,
+          filteredData: filteredData, 
+          outputValue: average
+      };
       }
     }),
   };
@@ -594,21 +602,41 @@ function calculate(state, data, calculation) {
 
 function aggregate(data) {
   // Reset values
+  state.output.ah = null;
+  state.output.hp = null;
+  state.output.inactive = null;
+  state.output.newlyId = null;
+  state.output.retHousing = null;
+  state.output.retInactive = null;
+  state.output.lot = null;
+
   state.backend_raw = null;
   state.backend_output = [];
   d3.selectAll(".agg-header").remove();
   d3.selectAll(".agg-spacer").remove();
   d3.selectAll(".agg-value").remove();
 
+  state.output.ah = calculate(state, data, "ACTIVELY HOMELESS NUMBER");
+  state.output.hp = calculate(state, data, "HOUSING PLACEMENTS");
+  state.output.inactive = calculate(state, data, "MOVED TO INACTIVE NUMBER");
+  state.output.newlyId = calculate(state, data, "NEWLY IDENTIFIED NUMBER");
+  state.output.retHousing = calculate(state, data, "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER");
+  state.output.retInactive = calculate(state, data, "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER");
+  state.output.lot = calculate(state, data, "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT");
+
+  if (state.debug === true) {
+    console.log(state.output);
+  }
+  
   // Calculate by population
   state.backend_raw = {
-    "ACTIVELY HOMELESS NUMBER": calculate(state, data, "ACTIVELY HOMELESS NUMBER"),
-    "HOUSING PLACEMENTS": calculate(state, data, "HOUSING PLACEMENTS"),
-    "MOVED TO INACTIVE NUMBER": calculate(state, data, "MOVED TO INACTIVE NUMBER"),
-    "NEWLY IDENTIFIED NUMBER": calculate(state, data, "NEWLY IDENTIFIED NUMBER"),
-    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": calculate(state, data, "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"),
-    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": calculate(state, data, "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"),
-    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT": calculate(state, data, "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT"),
+    "ACTIVELY HOMELESS NUMBER": state.output.ah.map((value, index) => { return value.outputValue }),
+    "HOUSING PLACEMENTS":  state.output.hp.map((value, index) => { return value.outputValue }),
+    "MOVED TO INACTIVE NUMBER":  state.output.inactive.map((value, index) => { return value.outputValue }),
+    "NEWLY IDENTIFIED NUMBER":  state.output.newlyId.map((value, index) => { return value.outputValue }),
+    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER":  state.output.retHousing.map((value, index) => { return value.outputValue }),
+    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER":  state.output.retInactive.map((value, index) => { return value.outputValue }),
+    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT":  state.output.lot.map((value, index) => { return value.outputValue }),
   };
 
   // Update visible reporting month and community

@@ -75,6 +75,13 @@ class Utils {
     state.form_file_upload = "";
     state.backend_raw = null;
     state.backend_output = [];
+    state.output.ah = null;
+    state.output.hp = null;
+    state.output.inactive = null;
+    state.output.newlyId = null;
+    state.output.retHousing = null;
+    state.output.retInactive = null;
+    state.output.lot = null;
   }
 
   getRangeArr(start, stop, step) {

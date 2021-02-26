@@ -50,6 +50,10 @@ h2 {
   font-weight: 900;
 }
 
+a {
+  color: var(--color-main);
+}
+
 .list {
   column-count: 2;
   margin: 15px 0px;
