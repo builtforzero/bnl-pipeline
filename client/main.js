@@ -395,8 +395,8 @@ function filterData(data, category) {
 /* 
 
 dr = {
-  netChange: (month0.inflow + month1.inflow + month2.inflow) - (month0.outflow + month1.outflow + month2.outflow),
-  newDR: (month0.activelyHomeless - month3.activelyHomeless - netChange) / month0.activelyHomeless,
+  netChange: (values.month0.inflow + values.month1.inflow + values.month2.inflow) - (values.month0.outflow + values.month1.outflow + values.month2.outflow),
+  newDR: (values.month0.activelyHomeless - values.month3.activelyHomeless - netChange) / values.month0.activelyHomeless,
   oldDR: #,
   month0: {
     month: September 2020,

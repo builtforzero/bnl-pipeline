@@ -2,7 +2,7 @@ const d3 = require("d3");
 const Papa = require("papaparse");
 const XLSX = require("xlsx");
 import {Utils} from './utils.js';
-import { headers } from "../dict.js";
+import { headers, pops } from "../dict.js";
 let util = new Utils();
 
 class FormHandler {
@@ -61,8 +61,7 @@ class FormHandler {
         }, {}))
         state.dr_import = output;
         this.setupFields(state, state.comm_list, form)
-
-        this.getDataReliability(output, "September 2020");
+        //this.getDataReliability(output, "June 2019", "Jacksonville-Duval, Clay Counties CoC");
       })
       .catch(error => {
         this.setupFields(state, state.comm_list, form)
@@ -70,6 +69,88 @@ class FormHandler {
     });
 
   }
+
+  getDataReliability(data, reportingMonth, community) {
+    console.log(data, reportingMonth, community);
+
+    // Get range of months based on reporting month
+    const currentMonth = new Date(reportingMonth)
+    const fourMonthsAgo = d3.timeMonth.offset(currentMonth, -3)
+    const range = d3.timeMonth.range(fourMonthsAgo, currentMonth)
+    range.push(currentMonth);
+    const asMY = d3.timeFormat("%B %Y")
+    const rangeClean = range.map(fullDate => { return asMY(fullDate) })
+
+    const pop = "Single Adults"
+    const subpop = "Chronic"
+    const demo = "All"
+    const subpopLookup = "Active " + subpop;
+
+    // Filter old data for months 0 to 2
+    const filteredOldData = data.filter((d) => {
+      return d["Community"] === community &&
+      d["Population"] === pop &&
+      d["Subpopulation"] === subpop &&
+      d["Demographic"] === demo &&
+      rangeClean.includes(d["Month"], "from MY")
+    });
+
+    const dataByMonth = {
+      month0: filteredOldData.filter((d) => { return d["Month"] === rangeClean[0] })[0],
+      month1: filteredOldData.filter((d) => { return d["Month"] === rangeClean[1] })[0],
+      month2: filteredOldData.filter((d) => { return d["Month"] === rangeClean[2] })[0],
+      month3: filteredOldData.filter((d) => { return d["Month"] === rangeClean[3] })[0]
+    }
+
+    const values = {
+      month0: {
+        month: rangeClean[0],
+        ah: util.cleanNum(dataByMonth.month0["ACTIVELY HOMELESS NUMBER"]),
+        inflow: util.cleanNum(dataByMonth.month0["NEWLY IDENTIFIED NUMBER"]) + 
+                util.cleanNum(dataByMonth.month0["RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"]) + 
+                util.cleanNum(dataByMonth.month0["RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"]),
+        outflow: util.cleanNum(dataByMonth.month0["HOUSING PLACEMENTS"]) + 
+                util.cleanNum(dataByMonth.month0["MOVED TO INACTIVE NUMBER"]),
+      },
+      month1: {
+        month: rangeClean[1],
+        ah: util.cleanNum(dataByMonth.month1["ACTIVELY HOMELESS NUMBER"]),
+        inflow: util.cleanNum(dataByMonth.month1["NEWLY IDENTIFIED NUMBER"]) + 
+                util.cleanNum(dataByMonth.month1["RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"]) + 
+                util.cleanNum(dataByMonth.month1["RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"]),
+        outflow: util.cleanNum(dataByMonth.month1["HOUSING PLACEMENTS"]) + 
+                util.cleanNum(dataByMonth.month1["MOVED TO INACTIVE NUMBER"]),
+      },
+      month2: {
+        month: rangeClean[2],
+        ah: util.cleanNum(dataByMonth.month2["ACTIVELY HOMELESS NUMBER"]),
+        inflow: util.cleanNum(dataByMonth.month2["NEWLY IDENTIFIED NUMBER"]) + 
+                util.cleanNum(dataByMonth.month2["RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"]) + 
+                util.cleanNum(dataByMonth.month2["RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"]),
+        outflow: util.cleanNum(dataByMonth.month2["HOUSING PLACEMENTS"]) + 
+                util.cleanNum(dataByMonth.month2["MOVED TO INACTIVE NUMBER"]),
+      },
+      month3: {
+        month: rangeClean[3],
+        ah: util.cleanNum(dataByMonth.month3["ACTIVELY HOMELESS NUMBER"]),
+        inflow: util.cleanNum(dataByMonth.month3["NEWLY IDENTIFIED NUMBER"]) + 
+                util.cleanNum(dataByMonth.month3["RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"]) + 
+                util.cleanNum(dataByMonth.month3["RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"]),
+        outflow: util.cleanNum(dataByMonth.month3["HOUSING PLACEMENTS"]) + 
+                util.cleanNum(dataByMonth.month3["MOVED TO INACTIVE NUMBER"]),
+      },
+    }
+
+    const netChange = (values.month0.inflow + values.month1.inflow + values.month2.inflow) - (values.month0.outflow + values.month1.outflow + values.month2.outflow);
+
+    const newDR = (values.month0.ah - values.month3.ah - netChange) / values.month0.ah;
+
+    console.log("Data by Month", dataByMonth)
+    console.log("Output", values)
+    console.log("DR", netChange, newDR);
+
+  }
+  
 
   checkStatus(state) {
       let formValues = [
@@ -107,13 +188,7 @@ class FormHandler {
       }
   }
 
-  getDataReliability(data, reportingMonth) {
-    const currentMonth = new Date(reportingMonth)
-    const fourMonthsAgo = d3.timeMonth.offset(currentMonth, -3)
-    const range = d3.timeMonth.range(fourMonthsAgo, currentMonth)
-    range.push(currentMonth);
-  }
-
+  
   setupFields(state, communityList, form) {
 
     const monthMap = {

@@ -33,6 +33,15 @@ class Utils {
     }
   }
 
+  cleanNum(value) {
+    if (value === "" || value === null) {
+      return 0;
+    } else {
+      const cleanedValue = parseInt(value)
+      return cleanedValue;
+    }
+  }
+
   resetData(state) {
     // Reset Validation Step
     d3.select(".reupload-aggregate").classed("hide", true);
