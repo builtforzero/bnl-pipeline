@@ -39,10 +39,10 @@ class FormHandler {
         this.getCommunityData(state, form)
       })
       .catch(error => {
-        console.log('Pulling in headers object');
+        console.log('Pulling in hardcoded community list');
+        console.error('Error in getting community list!', error.message)
         state.comm_list = headers.communities;
         this.getCommunityData(state, form);
-        console.error('Error!', error.message)
     });
   }
 
@@ -68,7 +68,7 @@ class FormHandler {
       })
       .catch(error => {
         this.setupFields(state, state.comm_list, form)
-        console.error('Error!', error.message)
+        console.error('Error in getting community data!', error.message)
     });
 
   }
