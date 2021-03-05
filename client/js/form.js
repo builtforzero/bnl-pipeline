@@ -31,6 +31,7 @@ class FormHandler {
         const nameList = util.getColByName(output, output.length, "Name").sort();
         nameList.unshift("Select a Community");
         if (output.length <= 0) {
+          console.log('Pulling in headers object');
           state.comm_list = headers.communities;
         } else {
           state.comm_list = nameList;
@@ -38,7 +39,9 @@ class FormHandler {
         this.getCommunityData(state, form)
       })
       .catch(error => {
-        this.getDataReliability(state, form)
+        console.log('Pulling in headers object');
+        state.comm_list = headers.communities;
+        this.getCommunityData(state, form);
         console.error('Error!', error.message)
     });
   }
