@@ -2,7 +2,7 @@ const d3 = require("d3");
 const Papa = require("papaparse");
 const XLSX = require("xlsx");
 import {Utils} from './utils.js';
-import { headers, values } from "../dict.js";
+import { headers, pops } from "../dict.js";
 let util = new Utils();
 
 class FormHandler {
@@ -64,7 +64,6 @@ class FormHandler {
         }, {}))
         state.dr_import = output;
         this.setupFields(state, state.comm_list, form)
-        //this.getDataReliability(output, "June 2019", "Jacksonville-Duval, Clay Counties CoC");
       })
       .catch(error => {
         this.setupFields(state, state.comm_list, form)
@@ -73,122 +72,132 @@ class FormHandler {
 
   }
 
-  getDataReliability(data, reportingMonth, community) {
-    console.log(data, reportingMonth, community);
+  getDataReliability(state, data, category) {
+    console.log(state.form_community_clean);
 
     // Get range of months based on reporting month
-    const currentMonth = new Date(reportingMonth)
+    const currentMonth = util.parseDate(state.meta_reportingDate)
     const fourMonthsAgo = d3.timeMonth.offset(currentMonth, -3)
     const range = d3.timeMonth.range(fourMonthsAgo, currentMonth)
     range.push(currentMonth);
     const asMY = d3.timeFormat("%B %Y")
     const rangeClean = range.map(fullDate => { return asMY(fullDate) })
+    console.log(range);
 
-    const pop = "Single Adults"
-    const subpop = "Chronic"
-    const demo = "All"
-    const subpopLookup = "Active " + subpop;
+    let values = {}
+    let netChange, newDR;
+    const monthsWithNoData = []
 
-    // Filter old data for months 0 to 2
-    const filteredOldData = data.filter((d) => {
-      return d["Community"] === community &&
-      d["Population"] === pop &&
-      d["Subpopulation"] === subpop &&
-      d["Demographic"] === demo &&
-      rangeClean.includes(d["Month"], "from MY")
-    });
+    // Get pop, subpop, and demo
+    const pop = pops.output[category].outputPop;
+    const subpop = pops.output[category].outputSubpop;
+    const demo = pops.output[category].outputDemo;
 
-    const dataByMonth = {
-      month0: filteredOldData.filter((d) => { return d["Month"] === rangeClean[0] })[0],
-      month1: filteredOldData.filter((d) => { return d["Month"] === rangeClean[1] })[0],
-      month2: filteredOldData.filter((d) => { return d["Month"] === rangeClean[2] })[0],
-      month3: filteredOldData.filter((d) => { return d["Month"] === rangeClean[3] })[0]
+    rangeClean.map((month, index) => {
+      // First filter data for criteria
+      const filteredData = data.filter((d) => { 
+        return d["Community"] === state.form_community_clean &&
+        d["Population"] === pop &&
+        d["Subpopulation"] === subpop &&
+        d["Demographic"] === demo &&
+        d["Month"] === month 
+      })
+      const thisMonth = `month${index}`;
+
+      if (filteredData.length === 0) {
+        monthsWithNoData.push(month);
+        values[thisMonth] = {
+          month: month,
+          ah: 0,
+          inflow: 0,
+          outflow: 0
+       }
+      } else {
+        values[thisMonth] = {
+          month: month,
+          ah: util.cleanNum(filteredData[0]["ACTIVELY HOMELESS NUMBER"]),
+          inflow: util.cleanNum(filteredData[0]["NEWLY IDENTIFIED NUMBER"]) + 
+                  util.cleanNum(filteredData[0]["RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"]) + 
+                  util.cleanNum(filteredData[0]["RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"]),
+          outflow: util.cleanNum(filteredData[0]["HOUSING PLACEMENTS"]) + 
+                  util.cleanNum(filteredData[0]["MOVED TO INACTIVE NUMBER"])
+       }
+      }
+    })
+
+
+
+    const reportingThisMonth = {
+      month: state.meta_reportingDate,
+      ah: state.output.ah.filter((d) => { return d["subpop"] === category; }).outputValue,
+      inflow: state.output.newlyId.filter((d) => { return d["subpop"] === category; }).outputValue + 
+              state.output.retHousing.filter((d) => { return d["subpop"] === category; }).outputValue + 
+              state.output.retInactive.filter((d) => { return d["subpop"] === category; }).outputValue,
+      outflow: state.output.hp.filter((d) => { return d["subpop"] === category; }).outputValue + 
+              state.output.inactive.filter((d) => { return d["subpop"] === category; }).outputValue
+   }
+
+    console.log(state.output.ah.filter((d) => { return d["subpop"] === category; }).outputValue);
+    console.log(reportingThisMonth);
+
+    if (monthsWithNoData.length > 0) {
+      netChange = null;
+      newDR = null;
+    } else {
+      netChange = (values.month0.inflow + values.month1.inflow + values.month2.inflow) - (values.month0.outflow + values.month1.outflow + values.month2.outflow);
+      newDR = (values.month0.ah - values.month3.ah - netChange) / values.month0.ah
     }
 
-    const values = {
-      month0: {
-        month: rangeClean[0],
-        ah: util.cleanNum(dataByMonth.month0["ACTIVELY HOMELESS NUMBER"]),
-        inflow: util.cleanNum(dataByMonth.month0["NEWLY IDENTIFIED NUMBER"]) + 
-                util.cleanNum(dataByMonth.month0["RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"]) + 
-                util.cleanNum(dataByMonth.month0["RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"]),
-        outflow: util.cleanNum(dataByMonth.month0["HOUSING PLACEMENTS"]) + 
-                util.cleanNum(dataByMonth.month0["MOVED TO INACTIVE NUMBER"]),
-      },
-      month1: {
-        month: rangeClean[1],
-        ah: util.cleanNum(dataByMonth.month1["ACTIVELY HOMELESS NUMBER"]),
-        inflow: util.cleanNum(dataByMonth.month1["NEWLY IDENTIFIED NUMBER"]) + 
-                util.cleanNum(dataByMonth.month1["RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"]) + 
-                util.cleanNum(dataByMonth.month1["RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"]),
-        outflow: util.cleanNum(dataByMonth.month1["HOUSING PLACEMENTS"]) + 
-                util.cleanNum(dataByMonth.month1["MOVED TO INACTIVE NUMBER"]),
-      },
-      month2: {
-        month: rangeClean[2],
-        ah: util.cleanNum(dataByMonth.month2["ACTIVELY HOMELESS NUMBER"]),
-        inflow: util.cleanNum(dataByMonth.month2["NEWLY IDENTIFIED NUMBER"]) + 
-                util.cleanNum(dataByMonth.month2["RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"]) + 
-                util.cleanNum(dataByMonth.month2["RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"]),
-        outflow: util.cleanNum(dataByMonth.month2["HOUSING PLACEMENTS"]) + 
-                util.cleanNum(dataByMonth.month2["MOVED TO INACTIVE NUMBER"]),
-      },
-      month3: {
-        month: rangeClean[3],
-        ah: util.cleanNum(dataByMonth.month3["ACTIVELY HOMELESS NUMBER"]),
-        inflow: util.cleanNum(dataByMonth.month3["NEWLY IDENTIFIED NUMBER"]) + 
-                util.cleanNum(dataByMonth.month3["RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"]) + 
-                util.cleanNum(dataByMonth.month3["RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"]),
-        outflow: util.cleanNum(dataByMonth.month3["HOUSING PLACEMENTS"]) + 
-                util.cleanNum(dataByMonth.month3["MOVED TO INACTIVE NUMBER"]),
-      },
+    const output = {
+      reportingMonth: state.meta_reportingDate,
+      monthsWithNoData: monthsWithNoData,
+      population: pop,
+      subpopulation: subpop,
+      demographic: demo,
+      values: values,
+      netChange: netChange,
+      newDR: newDR
     }
 
-    const netChange = (values.month0.inflow + values.month1.inflow + values.month2.inflow) - (values.month0.outflow + values.month1.outflow + values.month2.outflow);
-
-    const newDR = (values.month0.ah - values.month3.ah - netChange) / values.month0.ah;
-
-    console.log("Data by Month", dataByMonth)
-    console.log("Output", values)
-    console.log("DR", netChange, newDR);
+    console.log(output);
 
   }
   
 
   checkStatus(state) {
-      let formValues = [
-          state.form_community_clean,
-          state.form_month,
-          state.form_year,
-          state.form_name,
-          state.form_email,
-          state.form_org,
-          state.form_file_upload
-      ]
+    let formValues = [
+        state.form_community_clean,
+        state.form_month,
+        state.form_year,
+        state.form_name,
+        state.form_email,
+        state.form_org,
+        state.form_file_upload
+    ]
 
-      let valButton = d3.select("#validateButton")
-      let valMessage = d3.select(".validateBtn-msg")
+    let valButton = d3.select("#validateButton")
+    let valMessage = d3.select(".validateBtn-msg")
 
-      // First check whether required fields are on or off
-      if (state.debug === false) {
-        // If any form values are null or "", deactivate the Validate button
-        if (formValues.some(util.valueIsNull)) {
-          util.deactivate(valButton, false);
-          valMessage.html("Please fill in all required fields to continue.");
-        } else if (formValues.every(util.valueIsNotNull)) {
-          util.activate(valButton, false);
-          valMessage.text("");
-        }
-      } else if (state.debug === true) {
-        // Flag that required fields are off for testing
-        console.log(
-          "%cRequired fields are currently OFF.",
-          "background: white; color: red"
-        );
-        // Activate the Validate button
+    // First check whether required fields are on or off
+    if (state.debug === false) {
+      // If any form values are null or "", deactivate the Validate button
+      if (formValues.some(util.valueIsNull)) {
+        util.deactivate(valButton, false);
+        valMessage.html("Please fill in all required fields to continue.");
+      } else if (formValues.every(util.valueIsNotNull)) {
         util.activate(valButton, false);
         valMessage.text("");
       }
+    } else if (state.debug === true) {
+      // Flag that required fields are off for testing
+      console.log(
+        "%cRequired fields are currently OFF.",
+        "background: white; color: red"
+      );
+      // Activate the Validate button
+      util.activate(valButton, false);
+      valMessage.text("");
+    }
   }
   
   setupFields(state, communityList, form) {
@@ -269,7 +278,6 @@ class FormHandler {
     util.setDefaultOption(document.getElementById('month-dropdown'), state.form_month);
     util.setDefaultOption(document.getElementById('year-dropdown'), state.form_year.toString());
 
-
     // Event listeners
     d3.select("#month-dropdown").on("change", function () {
       state.form_month = this.value;
@@ -345,10 +353,10 @@ class FormHandler {
         dynamicTyping: true,
         header: true,
         complete: function (results) {
+          if (state.debug === true) { console.log("CSV FILE PARSED", results); }
           state.data_raw = results.data;
           state.data_headers = results.meta.fields;
           state.data_length = results.data.length;
-          if (state.debug === true) { console.log("CSV FILE PARSED", results); }
         },
       });
     } else if (fileType === xlsxFileType) {

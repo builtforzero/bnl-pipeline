@@ -279,7 +279,6 @@ function getRowsByStatus(data) {
     const idDate = util.parseDate(d["Date of Identification"])
     const housingDate = util.parseDate(d["Housing Move-In Date"])
     const inactiveDate = util.parseDate(d["Inactive Date"])
-    
     return d["Household Type"] != null &&
     d["Date of Identification"] != null &&
     idDate <= reportingDate &&
@@ -360,29 +359,26 @@ function filterData(data, category) {
 
 function calculate(state, data, calculation) {
   const reportingDate = state.meta_reportingDate;
-  const activeCats = pops.all.map((pop) => {
-    return "Active " + pop;
-  });
-  const allCats = pops.all.map((pop) => {
-    return "All " + pop;
-  });
+  const subpop = pops.all.map((pop) => { return pop; });
+  const activeCats = pops.all.map((pop) => { return "Active " + pop; });
+  const allCats = pops.all.map((pop) => { return "All " + pop; });
 
-  // Console log: category, categoryData, filteredData, clients
   const calcMap = {
-    "ACTIVELY HOMELESS NUMBER": activeCats.map((category) => {
+    "ACTIVELY HOMELESS NUMBER": activeCats.map((category, index) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then get the unique number of clients
       const clients = util.getColByName(categoryData, categoryData.length, pops.clientId);
       return {
         calc: "ACTIVELY HOMELESS NUMBER",
+        subpop: pops.all[index],
         category: category,
         categoryData: categoryData,
         clients: clients,
         outputValue: new Set(clients).size
       };
     }),
-    "HOUSING PLACEMENTS": allCats.map((category) => {
+    "HOUSING PLACEMENTS": allCats.map((category, index) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -394,6 +390,7 @@ function calculate(state, data, calculation) {
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
       return {
         calc: "HOUSING PLACEMENTS",
+        subpop: pops.all[index],
         category: category,
         categoryData: categoryData,
         filteredData: filteredData,
@@ -401,7 +398,7 @@ function calculate(state, data, calculation) {
         outputValue: new Set(clients).size
       };
     }),
-    "MOVED TO INACTIVE NUMBER": allCats.map((category) => {
+    "MOVED TO INACTIVE NUMBER": allCats.map((category, index) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -413,6 +410,7 @@ function calculate(state, data, calculation) {
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
       return {
         calc: "MOVED TO INACTIVE NUMBER",
+        subpop: pops.all[index],
         category: category,
         categoryData: categoryData,
         filteredData: filteredData,
@@ -420,7 +418,7 @@ function calculate(state, data, calculation) {
         outputValue: new Set(clients).size
       };
     }),
-    "NEWLY IDENTIFIED NUMBER": activeCats.map((category) => {
+    "NEWLY IDENTIFIED NUMBER": activeCats.map((category, index) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -434,6 +432,7 @@ function calculate(state, data, calculation) {
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
       return {
         calc: "NEWLY IDENTIFIED NUMBER",
+        subpop: pops.all[index],
         category: category,
         categoryData: categoryData,
         filteredData: filteredData,
@@ -441,7 +440,7 @@ function calculate(state, data, calculation) {
         outputValue: new Set(clients).size
       };
     }),
-    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": activeCats.map((category) => {
+    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": activeCats.map((category, index) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -454,6 +453,7 @@ function calculate(state, data, calculation) {
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
       return {
         calc: "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
+        subpop: pops.all[index],
         category: category,
         categoryData: categoryData,
         filteredData: filteredData,
@@ -461,7 +461,7 @@ function calculate(state, data, calculation) {
         outputValue: new Set(clients).size
       };
     }),
-    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": allCats.map((category) => {
+    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": allCats.map((category, index) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -474,6 +474,7 @@ function calculate(state, data, calculation) {
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
       return {
         calc: "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
+        subpop: pops.all[index],
         category: category,
         categoryData: categoryData,
         filteredData: filteredData,
@@ -481,7 +482,7 @@ function calculate(state, data, calculation) {
         outputValue: new Set(clients).size
       };
     }),
-    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT": allCats.map((category) => {
+    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT": allCats.map((category, index) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
@@ -518,6 +519,7 @@ function calculate(state, data, calculation) {
       if (difference.length === 0) {
         return {
           calc: "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
+          subpop: pops.all[index],
           category: category,
           categoryData: categoryData,
           filteredData: filteredData, 
@@ -528,6 +530,7 @@ function calculate(state, data, calculation) {
         const average = round(d3.mean(difference), 1);
         return {
           calc: "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
+          subpop: pops.all[index],
           category: category,
           categoryData: categoryData,
           filteredData: filteredData, 
@@ -536,8 +539,6 @@ function calculate(state, data, calculation) {
       }
     }),
   };
-
-  
 
   return calcMap[calculation];
 }
@@ -551,7 +552,6 @@ function aggregate(data) {
   state.output.retHousing = null;
   state.output.retInactive = null;
   state.output.lot = null;
-
   state.backend_raw = null;
   state.backend_output = [];
   d3.selectAll(".agg-header").remove();
@@ -591,6 +591,9 @@ function aggregate(data) {
   state.backend_output["Name"] = state.form_name;
   state.backend_output["Email Address"] = state.form_email;
   state.backend_output["Organization"] = state.form_org;
+
+  // Calculate data reliability
+  form.getDataReliability(state, state.dr_import, "Veteran");
 
   // Remap the results by population and print to the page
   pops.all.map((popValue) => {
@@ -716,8 +719,7 @@ function addAggValue(popLookup, value, type) {
       .classed(`${popLookup}`, true)
       .classed("hide", true)
       .html(`<b class='neutral' style='font-weight:400;'>${value}</b>`);
-  }
-  
+  } 
 }
 
 
@@ -736,18 +738,14 @@ function printValue(population, calculation, result) {
 }
 
 function printHeader(population) {
-
   const popLookup = population.replace(' ', '')
-
   d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${popLookup}`, true).classed("hide", true).html(`${state.meta_reportingDate} <b style='color: gray;'>results for </b> ${population}`);
-
   d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${popLookup}`, true).classed("hide", true).html(``);
 }
 
 // Parses data as a CSV and downloads the file
 function submitData(data) {
   state.data_csv = Papa.unparse(data);
-
   let submitForm = document.createElement("form");
   submitForm.setAttribute("id", "submit-form");
   submitForm.setAttribute("method", "POST");
@@ -770,7 +768,6 @@ function submitData(data) {
   submitForm.addEventListener("submit", (e) => {
 
     e.preventDefault();
-
     const value = "form";
 
     fetch(state.scriptUrl, {

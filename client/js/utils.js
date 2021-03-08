@@ -126,7 +126,8 @@ class Utils {
       d3.timeParse("%Y-%m"), // Year short month
       d3.timeParse("%Y-%m-%d"), // Year-day-month
       d3.timeParse("%Y-%m-%d %X"), // Timestamp
-      d3.timeParse("%Q") // Milliseconds
+      d3.timeParse("%Q"), // Milliseconds
+      d3.timeParse() // full time
     ]
     const monthYearTest = d3.timeParse("%B %Y");
 
