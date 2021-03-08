@@ -17,46 +17,11 @@ let form = new FormHandler();
 let agg = new Aggregator();
 let util = new Utils();
 
-/* 
-
-dr = {
-  netChange: (month0.inflow + month1.inflow + month2.inflow) - (month0.outflow + month1.outflow + month2.outflow),
-  newDR: (month0.activelyHomeless - month3.activelyHomeless - netChange) / month0.activelyHomeless,
-  oldDR: null,
-  month0: {
-    month: null,
-    activelyHomeless: null,
-    inflow: null,
-    outflow: null,
-  },
-  month1: {
-    month: null,
-    activelyHomeless: null,
-    inflow: null,
-    outflow: null,
-  },
-  month2: {
-    month: null,
-    activelyHomeless: null,
-    inflow: null,
-    outflow: null,
-  },
-  month3: {
-    month: null,
-    activelyHomeless: null,
-  }
-}
-
-*/
-
 /* APPLICATION STATE */
 let state = {
-  version: "v3.4 | 03/2021",
-  debug: true, // Toggle to remove required fields
-  testSubmit: false, // Toggle to switch to test script URL
-
-  finalScriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
-  testScriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
+  version: "v3.3 | 03/2021",
+  debug: true, // Toggle to remove form field requirement
+  scriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
 
   // Community Name Import
   comm_import: null,
@@ -142,8 +107,6 @@ function init(state, form) {
   form.checkStatus(state);
   form.getCommunityList(state, form);
   setupButtons();
-
-  util.parseDate("February 2020")
 }
 
 /* EVENT LISTENERS */
@@ -334,7 +297,7 @@ function getRowsByStatus(data) {
   })
 }
 
-// Filter data based on population and active status
+// Filter data based on population status
 function filterData(data, category) {
   const filterMap = {
     // ALL CLIENTS
@@ -427,7 +390,8 @@ function calculate(state, data, calculation) {
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
       const filteredData = categoryData.filter((d) => {
-        return d["Housing Move-In Date"] != null && util.getDate(d["Housing Move-In Date"], "MY", state) === reportingDate;
+        return d["Housing Move-In Date"] != null && 
+        util.getMonthYear(d["Housing Move-In Date"]) === reportingDate;
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
@@ -445,7 +409,8 @@ function calculate(state, data, calculation) {
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
       const filteredData = categoryData.filter((d) => {
-        return d["Inactive Date"] != null && util.getDate(d["Inactive Date"], "MY", state) === reportingDate;
+        return d["Inactive Date"] != null && 
+        util.getMonthYear(d["Inactive Date"]) === reportingDate;
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
@@ -463,7 +428,10 @@ function calculate(state, data, calculation) {
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
       const filteredData = categoryData.filter((d) => {
-        return d["Date of Identification"] != null && d["Inactive Date"] === null && d["Returned to Active Date"] === null && util.getDate(d["Date of Identification"], "MY", state) === reportingDate;
+        return d["Date of Identification"] != null && 
+        d["Inactive Date"] === null && 
+        d["Returned to Active Date"] === null && 
+        util.getMonthYear(d["Date of Identification"]) === reportingDate;
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
@@ -481,7 +449,9 @@ function calculate(state, data, calculation) {
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
       const filteredData = categoryData.filter((d) => {
-        return d["Housing Move-In Date"] != null && util.getDate(d["Returned to Active Date"], "MY", state) === reportingDate && util.getDate(d["Returned to Active Date"], "MDY", state) > util.getDate(d["Housing Move-In Date"], "MDY", state);
+        return d["Housing Move-In Date"] != null && 
+        util.getMonthYear(d["Returned to Active Date"]) === reportingDate && 
+        util.parseDate(d["Returned to Active Date"]) > util.parseDate(d["Housing Move-In Date"]);
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
@@ -499,7 +469,9 @@ function calculate(state, data, calculation) {
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
       const filteredData = categoryData.filter((d) => {
-        return d["Inactive Date"] != null && util.getDate(d["Returned to Active Date"], "MY", state) === reportingDate && util.getDate(d["Returned to Active Date"], "MDY", state) > util.getDate(d["Inactive Date"], "MDY", state);
+        return d["Inactive Date"] != null && 
+        util.getMonthYear(d["Returned to Active Date"]) === reportingDate && 
+        util.parseDate(d["Returned to Active Date"]) > util.parseDate(d["Inactive Date"]);
       });
       // Then get the unique number of clients
       const clients = util.getColByName(filteredData, filteredData.length, pops.clientId);
@@ -517,19 +489,19 @@ function calculate(state, data, calculation) {
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
       const filteredData = categoryData.filter((d) => {
-        return d["Housing Move-In Date"] != null && util.getDate(d["Housing Move-In Date"], "MY", state) === reportingDate;
+        return d["Housing Move-In Date"] != null && 
+        util.getMonthYear(d["Housing Move-In Date"]) === reportingDate;
       });
       // Get arrays of values for housing dates and ID dates
       const housingDates = util.getColByName(filteredData, filteredData.length, "Housing Move-In Date");
       const idDates = util.getColByName(filteredData, filteredData.length, "Date of Identification");
       // Map the difference between each housing and ID date, remove null values
-      const difference = housingDates
-        .map((houseDate, index) => {
+      const difference = housingDates.map((houseDate, index) => {
           // Get corresponding ID date value
           const idDate = idDates[index];
           // Get difference in ms and convert to days
           if (houseDate != null && idDate != null) {
-            const diff = util.getDate(houseDate, "MDY", state) - util.getDate(idDate, "MDY", state);
+            const diff = util.parseDate(houseDate) - util.parseDate(idDate);
             const converted = Math.ceil(diff / (1000 * 60 * 60 * 24));
             if (converted < 0) {
               return "N/A";
@@ -598,9 +570,7 @@ function aggregate(data) {
   state.output.retInactive = calculate(state, data, "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER");
   state.output.lot = calculate(state, data, "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT");
 
-  if (state.debug === true) {
-    console.log(state.output);
-  }
+  if (state.debug === true) { console.log("AGGREGATED", state.output); }
   
   // Calculate by population
   state.backend_raw = {
@@ -801,20 +771,12 @@ function submitData(data) {
 
   submitForm.appendChild(s);
   submitForm.addEventListener("submit", (e) => {
-    let scriptUrl;
-
-    if (state.testSubmit === true) {
-      console.log("%cForm submitting to TEST URL.", "background: white; color: red");
-      scriptUrl = state.testScriptUrl;
-    } else {
-      scriptUrl = state.finalScriptUrl;
-    }
 
     e.preventDefault();
 
     const value = "form";
 
-    fetch(scriptUrl, {
+    fetch(state.scriptUrl, {
       method: "POST",
       body: new FormData(submitForm),
     })

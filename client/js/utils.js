@@ -7,6 +7,17 @@ class Utils {
     console.log("I'm working!", "HelperScripts");
   }
 
+  // Set the selected option for a dropdown object
+  setDefaultOption(selectObj, value) {
+    const options = Array.from(selectObj.options);
+    options.map((option) => {
+      if (option.value === value) {
+        option.selected = true;
+        return;
+      }
+    })
+  }
+
   // Clears file picker without reloading the whole page
   clearFileInput(filePickerId) {
     const ctrl = document.getElementById(filePickerId);
@@ -114,12 +125,12 @@ class Utils {
       d3.timeParse("%B %Y"), // Month Year
       d3.timeParse("%Y-%m"), // Year short month
       d3.timeParse("%Y-%m-%d"), // Year-day-month
-      d3.timeParse("%Y-%m-%d %X") // Timestamp
+      d3.timeParse("%Y-%m-%d %X"), // Timestamp
+      d3.timeParse("%Q") // Milliseconds
     ]
     const monthYearTest = d3.timeParse("%B %Y");
 
     if (dateValue === undefined || dateValue === null || dateValue === "") {
-      //console.log(dateValue, ">>> NO VALUE");
       return null;
     } else {
       const result = dateTests.map(test => { return test(dateValue) }).filter((d) => d != null)
@@ -140,75 +151,15 @@ class Utils {
     }
   }
 
-  // Choices: "as timestamp", "as month year", "from full year", "from year month", "from short year"
-  formatDate(dateValue, method1, method2, method3) {
-    const dateMap = {
-      "as timestamp": d3.timeFormat("%Y-%m-%d %X"),
-      "as MY": d3.timeFormat("%B %Y"), // September 2020
-      "as long year": d3.timeFormat("%m/%d/%Y"),
-      "from long year": d3.timeParse("%m/%d/%Y"),
-      "from short year": d3.timeParse("%-m/%-d/%Y"), // no leading zeros
-      "from year month": d3.timeParse("%Y-%m"),
-      "from year day month": d3.timeParse("%Y-%m-%d"),
-      "from ms": d3.timeParse("%Q"), // Q is from UNIX epoch
-      "from MY": d3.timeParse("%B %Y"),
-    };
-
-    if (method2 === undefined && method3 === undefined) {
-      const firstMethod = dateMap[method1];
-      const firstParse = new Date(firstMethod(dateValue));
-      return firstParse;
-    } else if (method2 != undefined && method3 === undefined) {
-      const firstMethod = dateMap[method1];
-      const secondMethod = dateMap[method2];
-      const firstParse = new Date(firstMethod(dateValue));
-      const secondParse = secondMethod(firstParse);
-      return secondParse;
-    } else if (method2 != undefined && method3 != undefined) {
-      const firstMethod = dateMap[method1];
-      const secondMethod = dateMap[method2];
-      const thirdMethod = dateMap[method3];
-      const firstParse = firstMethod(dateValue);
-      const secondParse = secondMethod(firstParse);
-      const thirdParse = thirdMethod(secondParse);
-      return thirdParse;
-    }
-  }
-
-  getDate(dateValue, format, state) {
-    if (dateValue === null) {
+  getMonthYear(dateValue) {
+    const parsed = this.parseDate(dateValue)
+    const formatValue = d3.timeFormat("%B %Y")
+    if (dateValue === null || dateValue === undefined || dateValue === "") {
+      //console.log("NO VALUE", dateValue, parsed, formatValue(parsed));
       return null;
     } else {
-      if (format === "MYFromForm") {
-        return this.formatDate(dateValue, "from year month", "as MY");
-      } else if (format === "MY") {
-        const formatted = this.monthYear(dateValue, state);
-        return formatted;
-      } else if (format === "MDY") {
-        const formatted = this.standardDate(dateValue, state);
-        return formatted;
-      } else if (format === "Timestamp") {
-        return this.formatDate(dateValue, "as timestamp");
-      }
-    }
-  }
-
-  monthYear(dateValue, state) {
-    if (state.fileFormat === "xlsx") {
-      const formatted = this.formatDate(dateValue, "from short year", "as MY");
-      return formatted;
-    } else {
-      return this.formatDate(dateValue, "from long year", "as MY");
-    }
-  }
-
-  standardDate(dateValue, state) {
-    if (state.fileFormat === "xlsx") {
-      const formatted = this.formatDate(dateValue, "from short year");
-      return formatted;
-    } else {
-      const formatted = this.formatDate(dateValue, "from long year");
-      return formatted;
+      //console.log("FORMATTED", dateValue, parsed, formatValue(parsed));
+      return formatValue(parsed);
     }
   }
 

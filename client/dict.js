@@ -1,3 +1,5 @@
+const d3 = require("d3");
+
 const headers = {
   // Backup in case community name import fails
   communities: [

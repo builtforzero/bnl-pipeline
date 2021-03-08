@@ -2,7 +2,7 @@ const d3 = require("d3");
 const Papa = require("papaparse");
 const XLSX = require("xlsx");
 import {Utils} from './utils.js';
-import { headers, pops } from "../dict.js";
+import { headers, values } from "../dict.js";
 let util = new Utils();
 
 class FormHandler {
@@ -190,7 +190,6 @@ class FormHandler {
         valMessage.text("");
       }
   }
-
   
   setupFields(state, communityList, form) {
 
@@ -216,7 +215,7 @@ class FormHandler {
     
     state.form_month = thisMonth;
     state.form_year = thisYear;
-    state.meta_reportingDate = util.formatDate(`${thisYear}-${today.getMonth() + 1}`, "from year month", "as MY");
+    state.meta_reportingDate = util.getMonthYear(`${thisYear}-${today.getMonth() + 1}`);
     
     d3.select("#community-dropdown")
       .selectAll("option")
@@ -233,7 +232,7 @@ class FormHandler {
         /[^A-Z0-9]/gi,
         ""
       );
-      state.meta_timestamp = util.formatDate(Date.now(), "from ms", "as timestamp");
+      state.meta_timestamp = util.parseDate(Date.now());
     })
 
     
@@ -256,6 +255,8 @@ class FormHandler {
       .attr("value", (d) => d)
       .text((d) => d)
 
+    
+      
     d3.select("#year-dropdown")
       .selectAll("option")
       .data(allYears)
@@ -264,20 +265,25 @@ class FormHandler {
       .attr("value", (d) => d)
       .text((d) => d);
     
+    // Set the current month and year as selected by default in the dropdown
+    util.setDefaultOption(document.getElementById('month-dropdown'), state.form_month);
+    util.setDefaultOption(document.getElementById('year-dropdown'), state.form_year.toString());
+
+
+    // Event listeners
     d3.select("#month-dropdown").on("change", function () {
       state.form_month = this.value;
       const monthNum = parseInt(util.getKeyByValue(monthMap, this.value));
-      state.meta_reportingDate = util.formatDate(`${state.form_year}-${monthNum + 1}`, "from year month", "as MY");
-      console.log(state.meta_reportingDate);
-      state.meta_timestamp = util.formatDate(Date.now(), "from ms", "as timestamp");
+      state.meta_reportingDate = util.getMonthYear(`${state.form_year}-${monthNum + 1}`);
+      state.meta_timestamp = util.parseDate(Date.now());
       form.checkStatus(state);
+      if (state.debug === true) { console.log("NEW MONTH", state.meta_reportingDate); }
     })
 
     d3.select("#year-dropdown").on("change", function () {
       state.form_year = this.value;
       const monthNum = parseInt(util.getKeyByValue(monthMap, state.form_month));
-      state.meta_reportingDate = util.formatDate(`${parseInt(this.value)}-${parseInt(monthNum) + 1}`, "from year month", "as MY");
-
+      state.meta_reportingDate = util.getMonthYear(`${parseInt(this.value)}-${parseInt(monthNum) + 1}`);
       // Set the visible months in the dropdown based on the year
       state.form_current_months = null;
       const currentMonthNumsNew = Object.keys(monthMap).filter(monthNumber => {
@@ -288,11 +294,9 @@ class FormHandler {
         }
       })
       state.form_current_months = currentMonthNumsNew.map(num => monthMap[num]);
-
       d3.select("#month-dropdown")
         .selectAll("option")
         .remove()
-      
       d3.select("#month-dropdown")
         .selectAll("option")
         .data(state.form_current_months)
@@ -300,9 +304,9 @@ class FormHandler {
         .append("option")
         .attr("value", (d) => d)
         .text((d) => d)
-
-      state.meta_timestamp = util.formatDate(Date.now(), "from ms", "as timestamp");
+      state.meta_timestamp = util.parseDate(Date.now());
       form.checkStatus(state);
+      if (state.debug === true) { console.log("NEW YEAR", state.meta_reportingDate); }
     })
   
     d3.select("#name-input").on("change", function () {
@@ -324,7 +328,6 @@ class FormHandler {
     d3.select("#filePicker").on("change", function() {
       state.form_file_upload = this.value;
       state.fileList = this.files;
-
       form.checkStatus(state);
       form.getFile(state, form);
     })
@@ -345,6 +348,7 @@ class FormHandler {
           state.data_raw = results.data;
           state.data_headers = results.meta.fields;
           state.data_length = results.data.length;
+          if (state.debug === true) { console.log("CSV FILE PARSED", results); }
         },
       });
     } else if (fileType === xlsxFileType) {
