@@ -101,6 +101,45 @@ class Utils {
     return Object.keys(object).find(key => object[key] === value);
   }
 
+  // Takes any date value and returns a full timestamp.
+  // If value is in a Month Year format, returns last day of month.
+  // A date value may pass multiple tests; this function keeps the
+  // FIRST value that passes
+  parseDate(dateValue) {
+    const dateTests = [
+      d3.timeParse("%m/%d/%Y"), // 4/1/20
+      d3.timeParse("%-m/%-d/%Y"), // Month-Day-Year without leading zeros
+      d3.timeParse("%B %d, %Y"), // Month Day, Year
+      d3.timeParse("%B %d %Y"), // Month Day Year
+      d3.timeParse("%B %Y"), // Month Year
+      d3.timeParse("%Y-%m"), // Year short month
+      d3.timeParse("%Y-%m-%d"), // Year-day-month
+      d3.timeParse("%Y-%m-%d %X") // Timestamp
+    ]
+    const monthYearTest = d3.timeParse("%B %Y");
+
+    if (dateValue === undefined || dateValue === null || dateValue === "") {
+      //console.log(dateValue, ">>> NO VALUE");
+      return null;
+    } else {
+      const result = dateTests.map(test => { return test(dateValue) }).filter((d) => d != null)
+      if (result.length === 0) {
+        //console.log(dateValue, ">>> NOT A DATE");
+        return null;
+      } else {
+        const dateParsed = result[0] // Gets first positive test result
+        if (monthYearTest(dateValue) != null) {
+          const reportingMY = new Date(dateParsed.getFullYear(), dateParsed.getMonth()+1, 0);
+          //console.log("REPORTING MONTH:", dateValue, ">>>", reportingMY);
+          return reportingMY;
+        } else {
+          //console.log("PARSED:", dateValue,">>>", dateParsed);
+          return dateParsed;
+        }
+      }
+    }
+  }
+
   // Choices: "as timestamp", "as month year", "from full year", "from year month", "from short year"
   formatDate(dateValue, method1, method2, method3) {
     const dateMap = {

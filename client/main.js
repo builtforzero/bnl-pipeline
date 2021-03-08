@@ -51,7 +51,7 @@ dr = {
 
 /* APPLICATION STATE */
 let state = {
-  version: "v3.3 | 03/2021",
+  version: "v3.4 | 03/2021",
   debug: true, // Toggle to remove required fields
   testSubmit: false, // Toggle to switch to test script URL
 
@@ -125,6 +125,11 @@ let state = {
     lot: null
   },
 
+  rows: {
+    active: null,
+    all: null,
+  },
+
   // Backend
   backend_raw: null,
   backend_output: [],
@@ -137,6 +142,8 @@ function init(state, form) {
   form.checkStatus(state);
   form.getCommunityList(state, form);
   setupButtons();
+
+  util.parseDate("February 2020")
 }
 
 /* EVENT LISTENERS */
@@ -298,131 +305,97 @@ function runTests(headerArray, data, state) {
  * AGGREGATE
  */
 
-// Filter data based on population and active status
-function filterData(data, category) {
-  const reportingDate = new Date(util.formatDate(state.meta_reportingDate, "from MY"));
+function getRowsByStatus(data) {
+  state.rows.active = null;
+  state.rows.all = null;
 
   // "Active" Status = clients identified 
   // BEFORE the reporting Month Year 
   // that DO NOT have an exit date,
   // or whose exit date is AFTER the reporting MY
-  const status = {
-    "Active": data.filter((d) => {
-      const idDate = new Date(util.formatDate(d["Date of Identification"], "from long year", "as MY"))
-      const housingDate = new Date(util.formatDate(d["Housing Move-In Date"], "from long year", "as MY"))
-      const inactiveDate = new Date(util.formatDate(d["Inactive Date"], "from long year", "as MY"))
+  const reportingDate = util.parseDate(state.meta_reportingDate);
 
-      return d["Household Type"] != null &&
-      d["Date of Identification"] != null &&
-      idDate <= reportingDate &&
-      ( // one of these two conditions:
-        (d["Housing Move-In Date"] === null && d["Inactive Date"] === null) ||
-        (housingDate > reportingDate || inactiveDate > reportingDate)
-      )
-    }),
+  state.rows.active = data.filter((d) => {
+    const idDate = util.parseDate(d["Date of Identification"])
+    const housingDate = util.parseDate(d["Housing Move-In Date"])
+    const inactiveDate = util.parseDate(d["Inactive Date"])
+    
+    return d["Household Type"] != null &&
+    d["Date of Identification"] != null &&
+    idDate <= reportingDate &&
+    ( // one of these two conditions:
+      (d["Housing Move-In Date"] === null && d["Inactive Date"] === null) ||
+      (housingDate > reportingDate || inactiveDate > reportingDate)
+    )
+  })
 
-    "All": data.filter((d) => {
-      return d["Household Type"] != null
-    })
-  }
+  state.rows.all = data.filter((d) => {
+    return d["Household Type"] != null
+  })
+}
 
+// Filter data based on population and active status
+function filterData(data, category) {
   const filterMap = {
     // ALL CLIENTS
     "All All": data,
-    "All All Singles": status["All"].filter((d) => {
+    "All All Singles": state.rows.all.filter((d) => {
       return values.singleAdult.includes(util.clean(d["Household Type"])) === true;
     }),
-    "All Veteran": status["All"].filter((d) => {
+    "All Veteran": state.rows.all.filter((d) => {
       return d["Veteran Status"] != null && 
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
-    "All Chronic": status["All"].filter((d) => {
+    "All Chronic": state.rows.all.filter((d) => {
       return d["Chronic Status"] != null && 
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.chronic.includes(util.clean(d["Chronic Status"])) === true;
     }),
-    "All Chronic Veteran": status["All"].filter((d) => {
+    "All Chronic Veteran": state.rows.all.filter((d) => {
       return d["Chronic Status"] != null && 
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.chronic.includes(util.clean(d["Chronic Status"])) === true &&
       values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
-    "All Youth": status["All"].filter((d) => {
+    "All Youth": state.rows.all.filter((d) => {
       return values.youth.includes(util.clean(d["Household Type"])) === true;
     }),
-    "All Families": status["All"].filter((d) => {
+    "All Families": state.rows.all.filter((d) => {
       return values.family.includes(util.clean(d["Household Type"])) === true;
     }),
 
     // ACTIVE CLIENTS ONLY
-    "Active All": status["Active"],
-    "Active All Singles": status["Active"].filter((d) => {
+    "Active All": state.rows.active,
+    "Active All Singles": state.rows.active.filter((d) => {
       return values.singleAdult.includes(util.clean(d["Household Type"])) === true;
     }),
-    "Active Veteran": status["Active"].filter((d) => {
+    "Active Veteran": state.rows.active.filter((d) => {
       return d["Veteran Status"] != null &&
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
-    "Active Chronic": status["Active"].filter((d) => {
+    "Active Chronic": state.rows.active.filter((d) => {
       return  d["Chronic Status"] != null &&
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.chronic.includes(util.clean(d["Chronic Status"])) === true;
     }),
-    "Active Chronic Veteran": status["Active"].filter((d) => {
+    "Active Chronic Veteran": state.rows.active.filter((d) => {
       return  d["Chronic Status"] != null && 
       d["Veteran Status"] != null &&
       values.singleAdult.includes(util.clean(d["Household Type"])) === true && 
       values.chronic.includes(util.clean(d["Chronic Status"])) === true &&
       values.veteran.includes(util.clean(d["Veteran Status"])) === true;
     }),
-    "Active Youth": status["Active"].filter((d) => {
+    "Active Youth": state.rows.active.filter((d) => {
       return values.youth.includes(util.clean(d["Household Type"])) === true;
     }),
-    "Active Families": status["Active"].filter((d) => {
+    "Active Families": state.rows.active.filter((d) => {
       return values.family.includes(util.clean(d["Household Type"])) === true;
     }),
   };
   return filterMap[category];
 }
-
-
-// Calculate data reliability
-// Reporting month = September 2020
-// Arr of four months prior = 
-// Get AH, Sum of Inflow, and Sum of Outflow for each of the four months
-/* 
-
-dr = {
-  netChange: (values.month0.inflow + values.month1.inflow + values.month2.inflow) - (values.month0.outflow + values.month1.outflow + values.month2.outflow),
-  newDR: (values.month0.activelyHomeless - values.month3.activelyHomeless - netChange) / values.month0.activelyHomeless,
-  oldDR: #,
-  month0: {
-    month: September 2020,
-    activelyHomeless: #,
-    inflow: #,
-    outflow: #,
-  },
-  month1: {
-    month: August 2020,
-    activelyHomeless: #,
-    inflow: #,
-    outflow: #,
-  },
-  month2: {
-    month: July 2020,
-    activelyHomeless: #,
-    inflow: #,
-    outflow: #,
-  },
-  month3: {
-    month: June 2020,
-    activelyHomeless: #,
-  }
-}
-
-*/
 
 
 function calculate(state, data, calculation) {
@@ -616,6 +589,7 @@ function aggregate(data) {
   d3.selectAll(".agg-spacer").remove();
   d3.selectAll(".agg-value").remove();
 
+  getRowsByStatus(data);
   state.output.ah = calculate(state, data, "ACTIVELY HOMELESS NUMBER");
   state.output.hp = calculate(state, data, "HOUSING PLACEMENTS");
   state.output.inactive = calculate(state, data, "MOVED TO INACTIVE NUMBER");

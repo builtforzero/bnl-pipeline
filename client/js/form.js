@@ -44,7 +44,7 @@ class FormHandler {
         state.comm_list = headers.communities;
         this.getCommunityData(state, form);
     });
-  }
+  }s
 
   getCommunityData(state, form) {
     const spreadsheetId = process.env.SPREADSHEET_ID
