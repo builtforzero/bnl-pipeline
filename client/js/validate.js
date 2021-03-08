@@ -14,7 +14,7 @@ class Validator {
    *TESTS
    */
   requiredHeaders(headerArray, stepLocation, resultLocation, errorLocation, state) {
-    const input = [...headerArray];
+    const input = headerArray;
     const required = headers.required;
     const passed = [];
     const failed = [];
@@ -30,7 +30,7 @@ class Validator {
     });
 
     // Which required headers are missing?
-    const missing = [...required]
+    const missing = required
       .map((header) => {
         if (passed.includes(header)) {
           return null;
@@ -69,8 +69,8 @@ class Validator {
   }
 
   piiHeaders(headerArray, stepLocation, resultLocation, errorLocation, state) {
-    const input = [...headerArray];
-    const pii = [...headers.banned];
+    const input = headerArray;
+    const pii = headers.banned;
     const passed = [];
     const failed = [];
     let result;
