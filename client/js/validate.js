@@ -20,11 +20,15 @@ class Validator {
     const failed = [];
     let result;
 
+    console.log("HEADER INPUT", input);
+
     // Which input headers match a required header?
     input.map((header) => {
       if (required.includes(header)) {
+        console.log("HEADER PASSED", header);
         passed.push(header);
       } else {
+        console.log("HEADER FAILED", header);
         failed.push(header);
       }
     });

@@ -7,19 +7,16 @@ const XLSX = require("xlsx");
 import { headers, pops, values } from "./dict.js";
 import { Validator } from "./js/validate.js";
 import { FormHandler } from "./js/form.js";
-import { Aggregator } from "./js/aggregator.js";
 import { Utils } from "./js/utils.js";
-import { difference } from "d3";
 
 // Initialize components
 let test = new Validator();
 let form = new FormHandler();
-let agg = new Aggregator();
 let util = new Utils();
 
 /* APPLICATION STATE */
 let state = {
-  version: "v3.3 | 03/2021",
+  version: "v3.3.1 | 03/2021",
   debug: true, // Toggle to remove form field requirement
   scriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
 
