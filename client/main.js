@@ -622,6 +622,8 @@ function getDataReliability(state, data, category) {
     outflow: thisMonthValues.hp + thisMonthValues.inactive
   }
 
+  const formatPercent = d3.format(".1%")
+
   // month0 = oldest / four months ago
   // month3 = current reporting month
   if (monthsWithNoData.length > 0 || values.month3.ah === 0) {
@@ -632,7 +634,7 @@ function getDataReliability(state, data, category) {
   } else {
     netChange = (values.month1.inflow + values.month2.inflow + values.month3.inflow) - 
                 (values.month1.outflow + values.month2.outflow + values.month3.outflow);
-    newDR = ((values.month3.ah - values.month0.ah - netChange) / values.month3.ah) * 100;
+    newDR = formatPercent((values.month3.ah - values.month0.ah - netChange) / values.month3.ah);
     prevMonthError = values.month3.ah - (values.month2.ah + values.month3.inflow - values.month3.outflow)
     if (prevMonthError <= 0) {
       sentence = `${category} has ${prevMonthError} fewer people reported as Actively Homeless than expected`
@@ -715,6 +717,8 @@ function aggregate(data) {
   console.log(state.dr);
   console.log(" ");
 
+  
+
   // Calculate by population
   state.backend_raw = {
     "ACTIVELY HOMELESS NUMBER": state.output.ah.map((value) => { return value.outputValue }),
@@ -724,7 +728,7 @@ function aggregate(data) {
     "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER":  state.output.retHousing.map((value) => { return value.outputValue }),
     "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER":  state.output.retInactive.map((value) => { return value.outputValue }),
     "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT":  state.output.lot.map((value) => { return value.outputValue }),
-    "POTENTIAL 3-MONTH DATA RELIABILITY": pops.all.map((pop) => { return state.dr[pop].newDR.toString() + "%" })
+    "POTENTIAL 3-MONTH DATA RELIABILITY": pops.all.map((pop) => { return state.dr[pop].newDR })
   };
   
 
