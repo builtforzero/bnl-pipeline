@@ -7,10 +7,6 @@ let util = new Utils();
 
 class FormHandler {
 
-  showMe(){
-      console.log("I'm working!", "FormHandler")
-  }
-
   getCommunityList(state, form) {
     const spreadsheetId = process.env.SPREADSHEET_ID
     const range = 'Community List'
@@ -31,7 +27,7 @@ class FormHandler {
         const nameList = util.getColByName(output, output.length, "Name").sort();
         nameList.unshift("Select a Community");
         if (output.length <= 0) {
-          console.log('Pulling in headers object');
+          console.log('Pulling in hardcoded community list');
           state.comm_list = headers.communities;
         } else {
           state.comm_list = nameList;
@@ -72,97 +68,6 @@ class FormHandler {
 
   }
 
-  getDataReliability(state, data, category) {
-    console.log(state.form_community_clean);
-
-    // Get range of months based on reporting month
-    const currentMonth = util.parseDate(state.meta_reportingDate)
-    const fourMonthsAgo = d3.timeMonth.offset(currentMonth, -3)
-    const range = d3.timeMonth.range(fourMonthsAgo, currentMonth)
-    range.push(currentMonth);
-    const asMY = d3.timeFormat("%B %Y")
-    const rangeClean = range.map(fullDate => { return asMY(fullDate) })
-    console.log(range);
-
-    let values = {}
-    let netChange, newDR;
-    const monthsWithNoData = []
-
-    // Get pop, subpop, and demo
-    const pop = pops.output[category].outputPop;
-    const subpop = pops.output[category].outputSubpop;
-    const demo = pops.output[category].outputDemo;
-
-    rangeClean.map((month, index) => {
-      // First filter data for criteria
-      const filteredData = data.filter((d) => { 
-        return d["Community"] === state.form_community_clean &&
-        d["Population"] === pop &&
-        d["Subpopulation"] === subpop &&
-        d["Demographic"] === demo &&
-        d["Month"] === month 
-      })
-      const thisMonth = `month${index}`;
-
-      if (filteredData.length === 0) {
-        monthsWithNoData.push(month);
-        values[thisMonth] = {
-          month: month,
-          ah: 0,
-          inflow: 0,
-          outflow: 0
-       }
-      } else {
-        values[thisMonth] = {
-          month: month,
-          ah: util.cleanNum(filteredData[0]["ACTIVELY HOMELESS NUMBER"]),
-          inflow: util.cleanNum(filteredData[0]["NEWLY IDENTIFIED NUMBER"]) + 
-                  util.cleanNum(filteredData[0]["RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"]) + 
-                  util.cleanNum(filteredData[0]["RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"]),
-          outflow: util.cleanNum(filteredData[0]["HOUSING PLACEMENTS"]) + 
-                  util.cleanNum(filteredData[0]["MOVED TO INACTIVE NUMBER"])
-       }
-      }
-    })
-
-
-
-    const reportingThisMonth = {
-      month: state.meta_reportingDate,
-      ah: state.output.ah.filter((d) => { return d["subpop"] === category; }).outputValue,
-      inflow: state.output.newlyId.filter((d) => { return d["subpop"] === category; }).outputValue + 
-              state.output.retHousing.filter((d) => { return d["subpop"] === category; }).outputValue + 
-              state.output.retInactive.filter((d) => { return d["subpop"] === category; }).outputValue,
-      outflow: state.output.hp.filter((d) => { return d["subpop"] === category; }).outputValue + 
-              state.output.inactive.filter((d) => { return d["subpop"] === category; }).outputValue
-   }
-
-    console.log(state.output.ah.filter((d) => { return d["subpop"] === category; }).outputValue);
-    console.log(reportingThisMonth);
-
-    if (monthsWithNoData.length > 0) {
-      netChange = null;
-      newDR = null;
-    } else {
-      netChange = (values.month0.inflow + values.month1.inflow + values.month2.inflow) - (values.month0.outflow + values.month1.outflow + values.month2.outflow);
-      newDR = (values.month0.ah - values.month3.ah - netChange) / values.month0.ah
-    }
-
-    const output = {
-      reportingMonth: state.meta_reportingDate,
-      monthsWithNoData: monthsWithNoData,
-      population: pop,
-      subpopulation: subpop,
-      demographic: demo,
-      values: values,
-      netChange: netChange,
-      newDR: newDR
-    }
-
-    console.log(output);
-
-  }
-  
 
   checkStatus(state) {
     let formValues = [
@@ -189,11 +94,6 @@ class FormHandler {
         valMessage.text("");
       }
     } else if (state.debug === true) {
-      // Flag that required fields are off for testing
-      console.log(
-        "%cRequired fields are currently OFF.",
-        "background: white; color: red"
-      );
       // Activate the Validate button
       util.activate(valButton, false);
       valMessage.text("");
@@ -264,8 +164,6 @@ class FormHandler {
       .attr("value", (d) => d)
       .text((d) => d)
 
-    
-      
     d3.select("#year-dropdown")
       .selectAll("option")
       .data(allYears)
@@ -285,13 +183,12 @@ class FormHandler {
       state.meta_reportingDate = util.getMonthYear(`${state.form_year}-${monthNum + 1}`);
       state.meta_timestamp = util.parseDate(Date.now());
       form.checkStatus(state);
-      if (state.debug === true) { console.log("NEW MONTH", state.meta_reportingDate); }
+      if (state.debug === true) { console.log("NEW MONTH >>>", state.meta_reportingDate); }
     })
 
     d3.select("#year-dropdown").on("change", function () {
       state.form_year = this.value;
-      const monthNum = parseInt(util.getKeyByValue(monthMap, state.form_month));
-      state.meta_reportingDate = util.getMonthYear(`${parseInt(this.value)}-${parseInt(monthNum) + 1}`);
+
       // Set the visible months in the dropdown based on the year
       state.form_current_months = null;
       const currentMonthNumsNew = Object.keys(monthMap).filter(monthNumber => {
@@ -302,6 +199,8 @@ class FormHandler {
         }
       })
       state.form_current_months = currentMonthNumsNew.map(num => monthMap[num]);
+
+      // Repopulate the month dropdown with the current months
       d3.select("#month-dropdown")
         .selectAll("option")
         .remove()
@@ -312,9 +211,23 @@ class FormHandler {
         .append("option")
         .attr("value", (d) => d)
         .text((d) => d)
+
+      // If the list of currently available months does NOT include the chosen month, then default to January
+      // Set the month dropdown to the value and update the reporting date
+      if (state.form_current_months.includes(state.form_month)) {
+        util.setDefaultOption(document.getElementById('month-dropdown'), state.form_month);
+        const monthNum = parseInt(util.getKeyByValue(monthMap, state.form_month));
+        state.meta_reportingDate = util.getMonthYear(`${parseInt(this.value)}-${parseInt(monthNum) + 1}`);
+      } else {
+        state.form_month = "January"
+        util.setDefaultOption(document.getElementById('month-dropdown'), state.form_month);
+        const monthNum = parseInt(util.getKeyByValue(monthMap, state.form_month));
+        state.meta_reportingDate = util.getMonthYear(`${parseInt(this.value)}-${parseInt(monthNum) + 1}`);
+      }
+
       state.meta_timestamp = util.parseDate(Date.now());
       form.checkStatus(state);
-      if (state.debug === true) { console.log("NEW YEAR", state.meta_reportingDate); }
+      if (state.debug === true) { console.log("NEW YEAR >>>", state.meta_reportingDate); }
     })
   
     d3.select("#name-input").on("change", function () {
@@ -353,7 +266,12 @@ class FormHandler {
         dynamicTyping: true,
         header: true,
         complete: function (results) {
-          if (state.debug === true) { console.log("CSV FILE PARSED", results); }
+          if (state.debug === true) {
+            console.log(" ");
+            console.log("CSV FILE PARSED vvvvvvvvv"); 
+            console.log(results); 
+            console.log(" "); 
+          }
           state.data_raw = results.data;
           state.data_headers = results.meta.fields;
           state.data_length = results.data.length;
@@ -378,7 +296,10 @@ class FormHandler {
             state.data_raw = results.data;
             state.data_headers = results.meta.fields;
             state.data_length = results.data.length;
-            console.log("Parsing XLSX", state.data_raw, state.data_headers);
+            console.log(" ");
+            console.log("XLSX FILE PARSED vvvvvvvvv"); 
+            console.log(results); 
+            console.log(" "); 
           },
         });
       };

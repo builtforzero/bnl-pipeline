@@ -6,9 +6,6 @@ import { headers, pops, values } from "../dict.js";
 let util = new Utils();
 
 class Validator {
-  showMe() {
-    console.log("I'm working!", "Validator");
-  }
 
   /*
    *TESTS

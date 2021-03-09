@@ -3,9 +3,6 @@ const Papa = require("papaparse");
 const XLSX = require("xlsx");
 
 class Utils {
-  showMe() {
-    console.log("I'm working!", "HelperScripts");
-  }
 
   // Set the selected option for a dropdown object
   setDefaultOption(selectObj, value) {
@@ -45,7 +42,7 @@ class Utils {
   }
 
   cleanNum(value) {
-    if (value === "" || value === null) {
+    if (value === "" || value === null || parseInt(value) === NaN || value === undefined) {
       return 0;
     } else {
       const cleanedValue = parseInt(value)
@@ -54,6 +51,15 @@ class Utils {
   }
 
   resetData(state) {
+    if (state.debug) {
+      console.log("DATA RESET")
+      // Flag that required fields are off for testing
+      console.log(
+        "%cRequired fields are currently OFF.",
+        "background: white; color: red"
+      );
+    }
+
     // Reset Validation Step
     d3.select(".reupload-aggregate").classed("hide", true);
     d3.select(".new-upload-submit").classed("hide", true);
@@ -118,7 +124,8 @@ class Utils {
   // FIRST value that passes
   parseDate(dateValue) {
     const dateTests = [
-      d3.timeParse("%m/%d/%Y"), // 4/1/20
+      d3.timeParse("%m/%d/%y"), // 4/1/20
+      d3.timeParse("%m/%d/%Y"),
       d3.timeParse("%-m/%-d/%Y"), // Month-Day-Year without leading zeros
       d3.timeParse("%B %d, %Y"), // Month Day, Year
       d3.timeParse("%B %d %Y"), // Month Day Year
@@ -127,7 +134,6 @@ class Utils {
       d3.timeParse("%Y-%m-%d"), // Year-day-month
       d3.timeParse("%Y-%m-%d %X"), // Timestamp
       d3.timeParse("%Q"), // Milliseconds
-      d3.timeParse() // full time
     ]
     const monthYearTest = d3.timeParse("%B %Y");
 
@@ -136,16 +142,13 @@ class Utils {
     } else {
       const result = dateTests.map(test => { return test(dateValue) }).filter((d) => d != null)
       if (result.length === 0) {
-        //console.log(dateValue, ">>> NOT A DATE");
         return null;
       } else {
         const dateParsed = result[0] // Gets first positive test result
         if (monthYearTest(dateValue) != null) {
           const reportingMY = new Date(dateParsed.getFullYear(), dateParsed.getMonth()+1, 0);
-          //console.log("REPORTING MONTH:", dateValue, ">>>", reportingMY);
           return reportingMY;
         } else {
-          //console.log("PARSED:", dateValue,">>>", dateParsed);
           return dateParsed;
         }
       }
@@ -156,10 +159,8 @@ class Utils {
     const parsed = this.parseDate(dateValue)
     const formatValue = d3.timeFormat("%B %Y")
     if (dateValue === null || dateValue === undefined || dateValue === "") {
-      //console.log("NO VALUE", dateValue, parsed, formatValue(parsed));
       return null;
     } else {
-      //console.log("FORMATTED", dateValue, parsed, formatValue(parsed));
       return formatValue(parsed);
     }
   }

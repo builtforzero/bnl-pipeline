@@ -16,7 +16,7 @@ let util = new Utils();
 
 /* APPLICATION STATE */
 let state = {
-  version: "v3.3.1 | 03/2021",
+  version: "v3.3 | 03/2021",
   debug: true, // Toggle to remove form field requirement
   scriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
 
@@ -26,29 +26,14 @@ let state = {
 
   // Data Reliability Import
   dr_import: null,
-  dr_netChange: null,
-  dr: null,
-  dr_month0: {
-    month: null,
-    ah: null,
-    inflow: null,
-    outflow: null,
-  },
-  dr_month1: {
-    month: null,
-    ah: null,
-    inflow: null,
-    outflow: null,
-  },
-  dr_month2: {
-    month: null,
-    ah: null,
-    inflow: null,
-    outflow: null,
-  },
-  dr_month3: {
-    month: null,
-    ah: null,
+  dr: {
+    "All": null, 
+    "All Singles": null, 
+    "Veteran": null, 
+    "Chronic": null, 
+    "Chronic Veteran": null, 
+    "Youth": null, 
+    "Families": null
   },
 
   // Form Fields
@@ -104,6 +89,15 @@ function init(state, form) {
   form.checkStatus(state);
   form.getCommunityList(state, form);
   setupButtons();
+
+  if (state.debug) {
+    console.log("APP INTIALIZED")
+    // Flag that required fields are off for testing
+    console.log(
+      "%cRequired fields are currently OFF.",
+      "background: white; color: red"
+    );
+  }
 }
 
 /* EVENT LISTENERS */
@@ -154,6 +148,14 @@ function setupButtons() {
     d3.select(".reupload-submit").classed("hide", false);
     d3.select(".submit-instructions").classed("hide", false);
     d3.select(".review-msg").classed("hide", false);
+
+    if (state.debug) {
+      console.log(" ");
+      console.log("READY TO SUBMIT STATE vvvvvvvvv"); 
+      console.log(state); 
+      console.log(" ");  
+    }
+    
   });
 
   // Submit button
@@ -249,7 +251,10 @@ let section = {
   }),
 };
 
-/* RUN TESTS AND CHECK VALIDATION STATUS */
+
+/* 
+*RUN TESTS AND CHECK VALIDATION STATUS 
+*/
 function runTests(headerArray, data, state) {
   const headersOutput = test.requiredHeaders(headerArray, d3.select("#headers-name"), d3.select(".headers-val-symbol"), d3.select(".header-error"), state);
   const piiOutput = test.piiHeaders(headerArray, d3.select("#pii-name"), d3.select(".pii-val-symbol"), d3.select(".pii-error"), state);
@@ -262,9 +267,8 @@ function runTests(headerArray, data, state) {
 }
 
 /*
- * AGGREGATE
+ * GET FILTERED ROWS
  */
-
 function getRowsByStatus(data) {
   state.rows.active = null;
   state.rows.all = null;
@@ -357,6 +361,9 @@ function filterData(data, category) {
 }
 
 
+/* 
+*CALCULATE
+*/
 function calculate(state, data, calculation) {
   const reportingDate = state.meta_reportingDate;
   const subpop = pops.all.map((pop) => { return pop; });
@@ -383,6 +390,7 @@ function calculate(state, data, calculation) {
       const categoryData = filterData(data, category);
       // Then filter for additional criteria
       const filteredData = categoryData.filter((d) => {
+        const a = util.getMonthYear(d["Housing Move-In Date"]);
         return d["Housing Move-In Date"] != null && 
         util.getMonthYear(d["Housing Move-In Date"]) === reportingDate;
       });
@@ -543,6 +551,118 @@ function calculate(state, data, calculation) {
   return calcMap[calculation];
 }
 
+
+
+/* 
+*DATA RELIABILITY CALCULATION
+*for a single population category
+*/
+function getDataReliability(state, data, category) {
+  // Get range of months based on reporting month
+  const currentMonth = util.parseDate(state.meta_reportingDate)
+  const oneMonthPrior = d3.timeMonth.offset(currentMonth, -1)
+  const fourMonthsAgo = d3.timeMonth.offset(currentMonth, -4)
+  const range = d3.timeMonth.range(fourMonthsAgo, oneMonthPrior)
+
+  let values = {}
+  let netChange, newDR, prevMonthError, sentence;
+  const monthsWithNoData = []
+
+  // Get pop, subpop, and demo
+  const pop = pops.output[category].outputPop;
+  const subpop = pops.output[category].outputSubpop;
+  const demo = pops.output[category].outputDemo;
+
+  range.map((month, index) => {
+    const formatMY = d3.timeFormat("%B %Y")
+    // First filter data for criteria
+    const filteredData = data.filter((d) => { 
+      return d["Community"] === state.form_community_clean &&
+      d["Population"] === pop &&
+      d["Subpopulation"] === subpop &&
+      d["Demographic"] === demo &&
+      d["Month"] === formatMY(month)
+    })
+    const monthNum = `month${index}`;
+
+    if (filteredData.length === 0) {
+      monthsWithNoData.push(month);
+      values[monthNum] = {
+        month: formatMY(month),
+        ah: null,
+        inflow: null,
+        outflow: null
+     }
+    } else {
+      values[monthNum] = {
+        month: formatMY(month),
+        ah: util.cleanNum(filteredData[0]["ACTIVELY HOMELESS NUMBER"]),
+        inflow: util.cleanNum(filteredData[0]["NEWLY IDENTIFIED NUMBER"]) + 
+                util.cleanNum(filteredData[0]["RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"]) + 
+                util.cleanNum(filteredData[0]["RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"]),
+        outflow: util.cleanNum(filteredData[0]["HOUSING PLACEMENTS"]) + 
+                util.cleanNum(filteredData[0]["MOVED TO INACTIVE NUMBER"])
+     }
+    }
+  })
+
+  const thisMonthValues = {
+    ah: state.output.ah.filter((d) => { return d["subpop"] === category; })[0].outputValue,
+    hp: state.output.hp.filter((d) => { return d["subpop"] === category; })[0].outputValue,
+    inactive: state.output.inactive.filter((d) => { return d["subpop"] === category; })[0].outputValue,
+    newlyId:  state.output.newlyId.filter((d) => { return d["subpop"] === category; })[0].outputValue,
+    retHousing: state.output.retHousing.filter((d) => { return d["subpop"] === category; })[0].outputValue,
+    retInactive:  state.output.retInactive.filter((d) => { return d["subpop"] === category; })[0].outputValue,
+  }
+
+  values["month3"] = {
+    month: state.meta_reportingDate,
+    ah: thisMonthValues.ah,
+    inflow: thisMonthValues.newlyId + thisMonthValues.retHousing + thisMonthValues.retInactive,
+    outflow: thisMonthValues.hp + thisMonthValues.inactive
+  }
+
+  // month0 = oldest / four months ago
+  // month3 = current reporting month
+  if (monthsWithNoData.length > 0 || values.month3.ah === 0) {
+    netChange = null;
+    newDR = "N/A";
+    prevMonthError = null;
+    sentence = `${category}: Not enough data to calculate data reliability`
+  } else {
+    netChange = (values.month1.inflow + values.month2.inflow + values.month3.inflow) - 
+                (values.month1.outflow + values.month2.outflow + values.month3.outflow);
+    newDR = ((values.month3.ah - values.month0.ah - netChange) / values.month3.ah) * 100;
+    prevMonthError = values.month3.ah - (values.month2.ah + values.month3.inflow - values.month3.outflow)
+    if (prevMonthError <= 0) {
+      sentence = `${category} has ${prevMonthError} fewer people reported as Actively Homeless than expected`
+    } else {
+      sentence = `${category} has ${prevMonthError} more people reported as Actively Homeless than expected`
+    }
+  }
+
+  const output = {
+    category: category,      
+    newDR: newDR,
+    netChange: netChange,
+    prevMonthError: prevMonthError,
+    sentence: sentence,
+    reportingMonth: state.meta_reportingDate,
+    monthsWithNoData: monthsWithNoData,
+    population: pop,
+    subpopulation: subpop,
+    demographic: demo,
+    values: values,
+  }
+
+  return output;
+}
+
+
+
+/* 
+* AGGREGATE DATA
+*/
 function aggregate(data) {
   // Reset values
   state.output.ah = null;
@@ -567,19 +687,13 @@ function aggregate(data) {
   state.output.retInactive = calculate(state, data, "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER");
   state.output.lot = calculate(state, data, "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT");
 
-  if (state.debug === true) { console.log("AGGREGATED", state.output); }
+  if (state.debug === true) { 
+    console.log(" ");
+    console.log("AGGREGATED OUTPUT DATA vvvvvvvvv"); 
+    console.log(state.output); 
+    console.log(" ");  
+  }
   
-  // Calculate by population
-  state.backend_raw = {
-    "ACTIVELY HOMELESS NUMBER": state.output.ah.map((value, index) => { return value.outputValue }),
-    "HOUSING PLACEMENTS":  state.output.hp.map((value, index) => { return value.outputValue }),
-    "MOVED TO INACTIVE NUMBER":  state.output.inactive.map((value, index) => { return value.outputValue }),
-    "NEWLY IDENTIFIED NUMBER":  state.output.newlyId.map((value, index) => { return value.outputValue }),
-    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER":  state.output.retHousing.map((value, index) => { return value.outputValue }),
-    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER":  state.output.retInactive.map((value, index) => { return value.outputValue }),
-    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT":  state.output.lot.map((value, index) => { return value.outputValue }),
-  };
-
   // Update visible reporting month and community
   d3.select(".reporting-month").text(`${state.meta_reportingDate}`);
   d3.select(".reporting-community").text(state.form_community_clean);
@@ -593,7 +707,26 @@ function aggregate(data) {
   state.backend_output["Organization"] = state.form_org;
 
   // Calculate data reliability
-  form.getDataReliability(state, state.dr_import, "Veteran");
+  pops.all.map((pop) => {
+    state.dr[pop] = getDataReliability(state, state.dr_import, pop);
+  })
+  console.log(" ");
+  console.log("DR CALC OUTPUT vvvvvvvvv");
+  console.log(state.dr);
+  console.log(" ");
+
+  // Calculate by population
+  state.backend_raw = {
+    "ACTIVELY HOMELESS NUMBER": state.output.ah.map((value) => { return value.outputValue }),
+    "HOUSING PLACEMENTS":  state.output.hp.map((value) => { return value.outputValue }),
+    "MOVED TO INACTIVE NUMBER":  state.output.inactive.map((value) => { return value.outputValue }),
+    "NEWLY IDENTIFIED NUMBER":  state.output.newlyId.map((value) => { return value.outputValue }),
+    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER":  state.output.retHousing.map((value) => { return value.outputValue }),
+    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER":  state.output.retInactive.map((value) => { return value.outputValue }),
+    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT":  state.output.lot.map((value) => { return value.outputValue }),
+    "POTENTIAL 3-MONTH DATA RELIABILITY": pops.all.map((pop) => { return state.dr[pop].newDR.toString() + "%" })
+  };
+  
 
   // Remap the results by population and print to the page
   pops.all.map((popValue) => {
@@ -658,9 +791,6 @@ function aggregate(data) {
     }
   });
 
-  if (state.debug === true) {
-    console.log("STATE", state);
-  }
 }
 
 // Map output to form values
@@ -691,14 +821,14 @@ function getOutput(population, pops, aggRaw) {
 }
 
 function addAggValue(popLookup, value, type) {
-  if (type === 'result' && (value === null || value === 0 || value === "N/A")) {
+  if (type === 'result' && (value === null || value === 0 || value === "N/A" || value === "N/A%")) {
     d3.select(".agg-table")
       .append("div")
       .classed("agg-value", true)
       .classed(`${popLookup}`, true)
       .classed("hide", true)
       .html(`<b class='neutral' style='font-weight:400;'>${value}</b>`);
-  } else if (type === 'result' && value != null && value != 0 && value != "N/A") {
+  } else if (type === 'result' && value != null && value != 0 && value != "N/A" || value != "N/A%") {
     d3.select(".agg-table")
       .append("div")
       .classed("agg-value", true)
@@ -796,7 +926,7 @@ function submitData(data) {
           .transition()
           .duration(200)
           .style("opacity", "1");
-        console.error("Error!", error.message);
+        console.error("Error submitting data to backend", error.message);
         submitForm.remove();
       });
   });
