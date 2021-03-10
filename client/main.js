@@ -16,7 +16,7 @@ let util = new Utils();
 
 /* APPLICATION STATE */
 let state = {
-  version: "v3.3 | 03/2021",
+  version: "v3.3.2 | 03/2021",
   debug: true, // Toggle to remove form field requirement
   scriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
 
@@ -91,12 +91,16 @@ function init(state, form) {
   setupButtons();
 
   if (state.debug) {
-    console.log("APP INTIALIZED")
+    console.log("✨ APP INITIALIZED ✨");
     // Flag that required fields are off for testing
     console.log(
-      "%cRequired fields are currently OFF.",
+      "  %cRequired fields are currently OFF.",
       "background: white; color: red"
     );
+    console.log("  Version:", state.version);
+    console.log("  Debug On?", state.debug);
+    console.log("  Overall State:", state);
+    console.log(" ");
   }
 }
 
@@ -104,22 +108,36 @@ function init(state, form) {
 function setupButtons() {
   // Validate button
   d3.select("#validateButton").on("click", function () {
-    // Run the validation tests
-    runTests(state.data_headers, state.data_raw, state);
+    console.log("✨ CLICKED VALIDATE BUTTON ✨");
+    console.log("  File List:", state.fileList);
+    console.log("  Headers Detected:", state.data_headers.length, "fields");
+    console.log("  Raw Data:", state.data_raw.length, "rows");
+    console.log("  Overall State:", state);
+    console.log(" ");
 
-    // Remove any lingering values from a previous aggregation
-    state.backend_raw = null;
-    state.backend_output = [];
-    d3.selectAll(".agg-header").remove();
-    d3.selectAll(".agg-value").remove();
-    d3.selectAll(".filter-btn").remove();
+    if (state.fileList === null || state.data_headers === null) {
+      util.clearFileInput("filePicker");
+      d3.select(".validateBtn-msg").text("Please upload a valid by-name list file. The file picker is empty.")
+    } else {
+      d3.select(".validateBtn-msg").text("")
+      // Run the validation tests
+      runTests(state.data_headers, state.data_raw, state);
 
-    // Deactivate the submit button
-    // Activate the aggregate button
-    // Show the reupload button
-    util.deactivate(d3.select("#submitButton"), false);
-    util.activate(d3.select("#aggregateButton"), false);
-    d3.select(".reupload-aggregate").classed("hide", false);
+      // Remove any lingering values from a previous aggregation
+      state.backend_raw = null;
+      state.backend_output = [];
+      d3.selectAll(".agg-header").remove();
+      d3.selectAll(".agg-value").remove();
+      d3.selectAll(".filter-btn").remove();
+
+      // Deactivate the submit button
+      // Activate the aggregate button
+      // Show the reupload button
+      util.deactivate(d3.select("#submitButton"), false);
+      util.activate(d3.select("#aggregateButton"), false);
+      d3.select(".reupload-aggregate").classed("hide", false);
+    }
+
   });
 
   // Reupload and new upload buttons
@@ -148,13 +166,6 @@ function setupButtons() {
     d3.select(".reupload-submit").classed("hide", false);
     d3.select(".submit-instructions").classed("hide", false);
     d3.select(".review-msg").classed("hide", false);
-
-    if (state.debug) {
-      console.log(" ");
-      console.log("READY TO SUBMIT STATE vvvvvvvvv"); 
-      console.log(state); 
-      console.log(" ");  
-    }
     
   });
 
@@ -173,6 +184,13 @@ function setupButtons() {
     d3.select(".progress-bar").html(`<progress id="file" value="${0}" max="6">${0}</progress>`).style("opacity", "0").transition().duration(200).style("opacity", "1");
     d3.select(".submit-instructions").classed("hide", true);
     d3.select(".review-msg").classed("hide", true);
+
+    if (state.debug === true) { 
+      console.log("✨ CLICKED SUBMIT BUTTON ✨");
+      console.log("  Data To Submit:", state.backend_output);
+      console.log("  Overall State:", state);
+      console.log(" ");
+    }
   });
 }
 
@@ -295,6 +313,7 @@ function getRowsByStatus(data) {
   state.rows.all = data.filter((d) => {
     return d["Household Type"] != null
   })
+
 }
 
 // Filter data based on population status
@@ -688,13 +707,6 @@ function aggregate(data) {
   state.output.retHousing = calculate(state, data, "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER");
   state.output.retInactive = calculate(state, data, "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER");
   state.output.lot = calculate(state, data, "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT");
-
-  if (state.debug === true) { 
-    console.log(" ");
-    console.log("AGGREGATED OUTPUT DATA vvvvvvvvv"); 
-    console.log(state.output); 
-    console.log(" ");  
-  }
   
   // Update visible reporting month and community
   d3.select(".reporting-month").text(`${state.meta_reportingDate}`);
@@ -712,12 +724,13 @@ function aggregate(data) {
   pops.all.map((pop) => {
     state.dr[pop] = getDataReliability(state, state.dr_import, pop);
   })
-  console.log(" ");
-  console.log("DR CALC OUTPUT vvvvvvvvv");
-  console.log(state.dr);
-  console.log(" ");
 
-  
+  if (state.debug === true) { 
+    console.log("✨ CALCULATED DATA RELIABILITY ✨");
+    console.log("  Data Reliability:", state.dr);
+    console.log("  Overall State:", state);
+    console.log(" ");
+  }
 
   // Calculate by population
   state.backend_raw = {
@@ -731,6 +744,12 @@ function aggregate(data) {
     "POTENTIAL 3-MONTH DATA RELIABILITY": pops.all.map((pop) => { return state.dr[pop].newDR })
   };
   
+  if (state.debug === true) { 
+    console.log("✨ CLICKED AGGREGATE BUTTON ✨");
+    console.log("  Aggregated Output:", state.output);
+    console.log("  Overall State:", state);
+    console.log(" ");
+  }
 
   // Remap the results by population and print to the page
   pops.all.map((popValue) => {

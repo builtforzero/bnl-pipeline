@@ -59,6 +59,13 @@ class FormHandler {
           return obj
         }, {}))
         state.dr_import = output;
+        if (state.debug) {
+          console.log("✨ COMMUNITY DATA IMPORTED ✨");
+          console.log("  Community List:", state.comm_list.length, "communities");
+          console.log("  Community Data:", state.dr_import.length, "rows");
+          console.log("  Overall State:", state);
+          console.log(" ");
+        }
         this.setupFields(state, state.comm_list, form)
       })
       .catch(error => {
@@ -142,6 +149,9 @@ class FormHandler {
         ""
       );
       state.meta_timestamp = util.parseDate(Date.now());
+      if (state.debug === true) { 
+        console.log("  NEW COMMUNITY ➡️", state.form_community_clean); 
+      }
     })
 
     
@@ -183,7 +193,9 @@ class FormHandler {
       state.meta_reportingDate = util.getMonthYear(`${state.form_year}-${monthNum + 1}`);
       state.meta_timestamp = util.parseDate(Date.now());
       form.checkStatus(state);
-      if (state.debug === true) { console.log("NEW MONTH >>>", state.meta_reportingDate); }
+      if (state.debug === true) { 
+        console.log("  NEW MONTH ➡️", state.meta_reportingDate);
+      }
     })
 
     d3.select("#year-dropdown").on("change", function () {
@@ -227,22 +239,33 @@ class FormHandler {
 
       state.meta_timestamp = util.parseDate(Date.now());
       form.checkStatus(state);
-      if (state.debug === true) { console.log("NEW YEAR >>>", state.meta_reportingDate); }
+      if (state.debug === true) { 
+        console.log("  NEW YEAR ➡️", state.meta_reportingDate); 
+      }
     })
   
     d3.select("#name-input").on("change", function () {
       state.form_name = this.value;
       form.checkStatus(state);
+      if (state.debug === true) { 
+        console.log("  NEW NAME ➡️", state.form_name); 
+      }
     }),
   
     d3.select("#org-input").on("change", function () {
       state.form_org = this.value;
       form.checkStatus(state);
+      if (state.debug === true) { 
+        console.log("  NEW ORGANIZATION ➡️", state.form_org); 
+      }
     })
   
     d3.select("#email-input").on("change", function () {
       state.form_email = this.value;
       form.checkStatus(state);
+      if (state.debug === true) { 
+        console.log("  NEW EMAIL ➡️", state.form_email); 
+      }
     })
   
     // File Picker: call getFile() function
@@ -251,6 +274,9 @@ class FormHandler {
       state.fileList = this.files;
       form.checkStatus(state);
       form.getFile(state, form);
+      if (state.debug === true) { 
+        console.log("  NEW FILE ➡️", state.form_file_upload); 
+      }
     })
   }
 
@@ -266,11 +292,13 @@ class FormHandler {
         dynamicTyping: true,
         header: true,
         complete: function (results) {
-          if (state.debug === true) {
+          if (state.debug) {
             console.log(" ");
-            console.log("CSV FILE PARSED vvvvvvvvv"); 
-            console.log(results); 
-            console.log(" "); 
+            console.log("✨ CSV FILE PARSED ✨");
+            console.log("  Headers Parsed:", results.meta.fields.length);
+            console.log("  All Results:", results);
+            console.log("  Overall State:", state);
+            console.log(" ");
           }
           state.data_raw = results.data;
           state.data_headers = results.meta.fields;
@@ -296,10 +324,14 @@ class FormHandler {
             state.data_raw = results.data;
             state.data_headers = results.meta.fields;
             state.data_length = results.data.length;
-            console.log(" ");
-            console.log("XLSX FILE PARSED vvvvvvvvv"); 
-            console.log(results); 
-            console.log(" "); 
+            if (state.debug) {
+              console.log(" ");
+              console.log("✨ XLSX FILE PARSED ✨");
+              console.log("  Headers Parsed:", results.meta.fields.length);
+              console.log("  All Results:", results);
+              console.log("  Overall State:", state);
+              console.log(" ");
+            }
           },
         });
       };
