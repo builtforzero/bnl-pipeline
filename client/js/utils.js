@@ -124,30 +124,42 @@ class Utils {
   // FIRST value that passes
   parseDate(dateValue) {
     const dateTests = [
-      d3.timeParse("%m/%d/%y"), // 4/1/20
-      d3.timeParse("%m/%d/%Y"),
-      d3.timeParse("%-m/%-d/%Y"), // Month-Day-Year without leading zeros
+      d3.timeParse("%m/%d/%Y"), // mm/dd/yyyy
+      d3.timeParse("%m/%d/%y"), // mm/dd/yy
+      d3.timeParse("%A, %B %D, %Y"), // Friday, May 01, 2021
+      d3.timeParse("%A, %B %d, %Y"), // Friday, May 01, 2021
+      d3.timeParse("%A %B %d, %Y"), // Friday May 01, 2021
+      d3.timeParse("%-m/%-d/%Y"), // Without leading zeros
       d3.timeParse("%B %d, %Y"), // Month Day, Year
       d3.timeParse("%B %d %Y"), // Month Day Year
       d3.timeParse("%B %Y"), // Month Year
       d3.timeParse("%Y-%m"), // Year short month
       d3.timeParse("%Y-%m-%d"), // Year-day-month
-      d3.timeParse("%Y-%m-%d %X"), // Timestamp
+      d3.timeParse("%Y-%m-%d %X"), // Timestamp with dashes
+      d3.timeParse("%-m/%-d/%Y %X"), // Timestamp no leading zeros
       d3.timeParse("%Q"), // Milliseconds
     ]
-    const monthYearTest = d3.timeParse("%B %Y");
-
-    if (dateValue === undefined || dateValue === null || dateValue === "") {
+    
+    if (dateValue === undefined || dateValue === null || dateValue === "" || dateValue.toString().length < 6) {
       return null;
     } else {
-      const result = dateTests.map(test => { return test(dateValue) }).filter((d) => d != null)
+      // Run the date value through each of the tests
+      // Filter out the nulls and obviously wrong dates (too old or in the future)
+      const result = dateTests.map(test => { return test(dateValue) }).filter((d) => {
+        return d != null &&
+        d.getFullYear() > "1900" &&
+        d.getFullYear() <= new Date().getFullYear()
+      })
       if (result.length === 0) {
         return null;
       } else {
-        const dateParsed = result[0] // Gets first positive test result
+        // Get the first valid test result
+        const dateParsed = result[0]
+        // If the date is in a Month Year format, return the last day of the month
+        const monthYearTest = d3.timeParse("%B %Y");
         if (monthYearTest(dateValue) != null) {
-          const reportingMY = new Date(dateParsed.getFullYear(), dateParsed.getMonth()+1, 0);
-          return reportingMY;
+          const lastDayOfMonth = new Date(dateParsed.getFullYear(), dateParsed.getMonth()+1, 0);
+          return lastDayOfMonth;
         } else {
           return dateParsed;
         }
@@ -178,8 +190,13 @@ class Utils {
     if (value === null) {
       return null;
     } else if (dataType === "date") {
-      const dateRegex = /(0?[1-9]|1[012])\/(0?[1-9]|[12][0-9]|3[01])\/\d{2,4}/;
-      return dateRegex.test(value.toString());
+      let result;
+      if(this.parseDate(value) === null) {
+        result = false;
+      } else {
+        result = true;
+      }
+      return result;
     } else if (dataType === "num") {
       return Number.isInteger(value);
     } else if (dataType === "alphanum") {

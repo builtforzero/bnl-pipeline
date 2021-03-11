@@ -31,27 +31,27 @@ const headers = {
     "Date of Identification": {
       altNames: [],
       datatype: "date",
-      error: `must be in the format <b style='color:black'>MM/DD/YYYY</b>, e.g. "12/31/2020".`,
+      error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
     }, 
     "Homeless Start Date": {
       altNames: [],
       datatype: "date",
-      error: `must be in the format <b style='color:black'>MM/DD/YYYY</b>, e.g. "12/31/2020".`,
+      error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
     },  
     "Housing Move-In Date": {
       altNames: [],
       datatype: "date",
-      error: `must be in the format <b style='color:black'>MM/DD/YYYY</b>, e.g. "12/31/2020".`,
+      error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
     },  
     "Inactive Date": {
       altNames: [],
       datatype: "date",
-      error: `must be in the format <b style='color:black'>MM/DD/YYYY</b>, e.g. "12/31/2020".`,
+      error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
     }, 
     "Returned to Active Date": {
       altNames: [],
       datatype: "date",
-      error: `must be in the format <b style='color:black'>MM/DD/YYYY</b>, e.g. "12/31/2020".`,
+      error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
     },  
     "Age": {
       altNames: [],
