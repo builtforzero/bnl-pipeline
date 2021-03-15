@@ -12,20 +12,22 @@ const headers = {
     "Rockford/Winnebago, Boone Counties CoC"
   ],
   required: [
-    "Date of Identification", 
-    "Homeless Start Date", 
-    "Housing Move-In Date", 
-    "Inactive Date", 
-    "Returned to Active Date", 
-    "Age", 
-    "Client ID", 
-    "Household Type", 
-    "Household Size", 
-    "Chronic Status", 
-    "Veteran Status", 
-    "Ethnicity", 
-    "Race", 
-    "Gender"
+    'Client ID',
+    'Date of Identification',
+    'Housing Move-In Date',
+    'Inactive Date',
+    'Returned to Active Date',
+    'Household Type',
+    'Chronic Status',
+    'Veteran Status',
+  ],
+  recommended: [
+    'BNL Status',
+    'Homeless Start Date',
+    'Race',
+    'Ethnicity',
+    'Gender',
+    'Age',
   ],
   meta: {
     "Date of Identification": {

@@ -122,7 +122,7 @@ class Validator {
         // If the test passes, return the index of the value
         const fail = arr
           .map((value, index) => {
-            if (value === null) {
+            if (util.clean(value) === null) {
               return null;
             } else if (regex.test(value.toString()) === true) {
               return index;

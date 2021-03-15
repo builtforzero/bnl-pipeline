@@ -86,6 +86,31 @@ init(state, form);
 
 function init(state, form) {
   d3.select(".version-number").text(state.version);
+  
+  d3.select(".required-header-list")
+    .selectAll("li")
+    .data(headers.required)
+    .enter()
+    .append("li")
+    .attr("value", (d) => d)
+    .text((d) => d);
+
+  d3.select('.required-header-count')
+    .text(headers.required.length)
+
+  console.log(headers.recommended);
+
+  d3.select(".recommended-header-list")
+    .selectAll("li")
+    .data(headers.recommended)
+    .enter()
+    .append("li")
+    .attr("value", (d) => d)
+    .text((d) => d);
+
+  d3.select('.recommended-header-count')
+    .text(headers.recommended.length)
+
   form.checkStatus(state);
   form.getCommunityList(state, form);
   setupButtons();

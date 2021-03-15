@@ -29,7 +29,7 @@ class Utils {
   }
 
   clean(value) {
-    if (value === null) {
+    if (value === "" || value === null || value === undefined) {
       return null
     } else {
       const cleanedValue = value
@@ -147,7 +147,7 @@ class Utils {
       // Filter out the nulls and obviously wrong dates (too old or in the future)
       const result = dateTests.map(test => { return test(dateValue) }).filter((d) => {
         return d != null &&
-        d.getFullYear() > "1900" &&
+        d.getFullYear() > "1970" &&
         d.getFullYear() <= new Date().getFullYear()
       })
       if (result.length === 0) {
