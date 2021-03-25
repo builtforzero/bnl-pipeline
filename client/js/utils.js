@@ -77,6 +77,7 @@ class Utils {
 
     // Reset Submission Step
     d3.select(".reupload-submit").classed("hide", true);
+    d3.select(".download-btn").classed("hide", true);
     this.deactivate(d3.select("#submitButton"), false);
     d3.select(".button-group-title").text("");
     d3.select(".reporting-month").text("");

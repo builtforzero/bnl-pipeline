@@ -382,22 +382,25 @@ select {
 
 .reupload-submit,
 .reupload-aggregate,
-.new-upload-submit {
+.new-upload-submit,
+.download-btn {
   background-color: white;
   color: gray;
   border: 0px solid var(--color-main);
   font-size: var(--root-size);
-  margin: 15px 0px 25px;
+  margin: 5px 0px 10px;
   padding: 10px;
   width: 100%;
 }
 
 .reupload-submit:hover,
 .reupload-aggregate:hover,
-.new-upload-submit:hover {
+.new-upload-submit:hover,
+.download-btn:hover {
   color: var(--color-main);
   cursor: pointer;
 }
+
 
 .submit-instructions {
   margin: 0px 20px 0px 20px;

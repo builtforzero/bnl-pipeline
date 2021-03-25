@@ -184,6 +184,10 @@ function setupButtons() {
     util.clearFileInput("filePicker");
   });
 
+  d3.select(".download-btn").on("click", function () {
+    downloadData(state.backend_output);
+  })
+
   // Aggregate Button
   d3.select("#aggregateButton").on("click", function () {
     // Remove any lingering values
@@ -202,9 +206,10 @@ function setupButtons() {
     util.activate(d3.select("#submitButton"), false);
     d3.select(".reupload-aggregate").classed("hide", true);
     d3.select(".reupload-submit").classed("hide", false);
+    d3.select(".download-btn").classed("hide", false);
     d3.select(".submit-instructions").classed("hide", false);
     d3.select(".review-msg").classed("hide", false);
-    
+
   });
 
   // Submit button
@@ -216,6 +221,7 @@ function setupButtons() {
     // Hide the reupload button
     d3.select(".reupload-aggregate").classed("hide", true);
     d3.select(".reupload-submit").classed("hide", true);
+    d3.select(".download-btn").classed("hide", true);
     util.deactivate(d3.select("#aggregateButton"), false);
     util.deactivate(d3.select("#submitButton"), false);
     d3.select(".progress-msg").html(`Submitting...`).style("opacity", "0").transition().duration(200).style("opacity", "1");
@@ -947,9 +953,34 @@ function printHeader(population) {
   d3.select(".agg-table").append("div").classed("agg-header", true).classed(`${popLookup}`, true).classed("hide", true).html(``);
 }
 
+
+/* 
+* DOWNLOAD & SUBMIT DATA
+*/
+function downloadData(data) {
+  const headers = [...Object.keys(data)]
+  const values = [...Object.values(data)]
+  console.log(headers, values);
+  state.data_csv = "data:text/csv;charset=utf-8," + headers.map((header, index) => {
+    const output = header + "," + values[index] + "\n"
+    console.log(output);
+    return output;
+  })
+
+  const dateFormat = d3.timeFormat("%m-%d-%Y_%H%M")
+  const formattedTimestamp = dateFormat(state.meta_timestamp)
+  const fileName =  state.form_month + state.form_year.toString() + "_" + state.meta_community + "_" + formattedTimestamp.toString() + ".csv"
+  const encodedUri = encodeURI(state.data_csv);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", fileName);
+  document.body.appendChild(link); // Required for FF
+  link.click(); //
+}
+
 // Parses data as a CSV and downloads the file
 function submitData(data) {
-  state.data_csv = Papa.unparse(data);
+
   let submitForm = document.createElement("form");
   submitForm.setAttribute("id", "submit-form");
   submitForm.setAttribute("method", "POST");
