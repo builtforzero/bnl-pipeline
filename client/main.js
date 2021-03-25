@@ -16,7 +16,7 @@ let util = new Utils();
 
 /* APPLICATION STATE */
 let state = {
-  version: "v3.3.3 | 03/2021",
+  version: "v3.4.2 | 03/2021",
   debug: true, // Toggle to remove form field requirement
   scriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
 
@@ -61,6 +61,21 @@ let state = {
   data_csv: null,
   data_form: null,
 
+  headerTestOutput: {},
+
+  test: {
+    required: {
+      pass: [],
+      fail: []
+    },
+    pii: {
+      pass: [],
+      fail: [],
+    },
+    ssn: {},
+    datatype: {}
+  },
+
   // Output
   output: {
     ah: null,
@@ -97,8 +112,6 @@ function init(state, form) {
 
   d3.select('.required-header-count')
     .text(headers.required.length)
-
-  console.log(headers.recommended);
 
   d3.select(".recommended-header-list")
     .selectAll("li")
@@ -299,6 +312,18 @@ let section = {
 *RUN TESTS AND CHECK VALIDATION STATUS 
 */
 function runTests(headerArray, data, state) {
+
+  headerArray.map((headerVal) => {
+    if (headerVal === "" || headerVal === undefined || headerVal === null) {
+      //console.log(headerVal);
+      return;
+    } else {
+      test.validateHeader(headerVal, data, data.length, state);
+    }
+  });
+
+  console.log(state.test);
+
   const headersOutput = test.requiredHeaders(headerArray, d3.select("#headers-name"), d3.select(".headers-val-symbol"), d3.select(".header-error"), state);
   const piiOutput = test.piiHeaders(headerArray, d3.select("#pii-name"), d3.select(".pii-val-symbol"), d3.select(".pii-error"), state);
   const ssnOutput = test.ssnValues(headerArray, data, d3.select("#ssn-name"), d3.select(".ssn-val-symbol"), d3.select(".ssn-error"), state);
@@ -329,9 +354,10 @@ function getRowsByStatus(data) {
     return d["Household Type"] != null &&
     d["Date of Identification"] != null &&
     idDate <= reportingDate &&
-    ( // one of these two conditions:
+    ( // any one of these conditions:
       (d["Housing Move-In Date"] === null && d["Inactive Date"] === null) ||
-      (housingDate > reportingDate || inactiveDate > reportingDate)
+      (inactiveDate != null && inactiveDate < idDate) ||
+      ((housingDate != null && housingDate > reportingDate) || (inactiveDate != null && inactiveDate > reportingDate))
     )
   })
 

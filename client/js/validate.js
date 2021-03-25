@@ -10,6 +10,86 @@ class Validator {
   /*
    *TESTS
    */
+  
+  validateHeader(headerValue, data, length, state) {
+      // Required test result
+      const requiredTestResult = headers.required.includes(headerValue);
+      if (requiredTestResult === true) {
+        state.test.required.pass.push(headerValue);
+      } else {
+        state.test.required.fail.push(headerValue);
+      }
+      
+      // PII header test result
+      const piiTestResult = headers.banned.includes(headerValue);
+      if (piiTestResult === true) {
+        state.test.pii.pass.push(headerValue);
+      } else {
+        state.test.pii.fail.push(headerValue);
+      }
+
+
+      // Only apply data-level tests to required headers
+      // Get the data values associated with the header
+      // Apply the datatype and ssn tests to each value
+      if (requiredTestResult === true) {
+        // Set up data-level tests in state
+        state.test.ssn[headerValue] = {
+          testResultByValue: [],
+          failIndices: [],
+          failValues: [],
+          passIndices: [],
+          passValues: []
+        }
+        state.test.datatype[headerValue] = {
+          testResultByValue: [],
+          failIndices: [],
+          failValues: [],
+          passIndices: [],
+          passValues: []
+        }
+
+        const regex = RegExp("^\\d{9}$");
+        const datatype = headers.meta[headerValue].datatype
+        const headerData = util.getColByName(data, length, headerValue);
+
+        headerData.map((value, index) => {
+          if (value === "" || value === undefined || value === null || util.clean(value) === null) {
+            // If the value is null, push null to state
+            state.test.datatype[headerValue].testResultByValue.push(null);
+            state.test.ssn[headerValue].testResultByValue.push(null);
+          } else {
+            // Test value for datatype and SSN values
+            const datatypeTestResult = util.validate(value, datatype);
+            const ssnTestResult = regex.test(value.toString());
+            // Push the test results to state
+            state.test.datatype[headerValue].testResultByValue.push(datatypeTestResult);
+            state.test.ssn[headerValue].testResultByValue.push(ssnTestResult);
+      
+            // Sort the data type test results into pass and fail
+            if (datatypeTestResult === true) {
+              state.test.datatype[headerValue].passIndices.push(index)
+              state.test.datatype[headerValue].passValues.push(value)
+            } else {
+              state.test.datatype[headerValue].failIndices.push(index)
+              state.test.datatype[headerValue].failValues.push(value)
+            }
+
+            // Sort the SSN test results into pass and fail
+            if (ssnTestResult === true) {
+              state.test.ssn[headerValue].passIndices.push(index)
+              state.test.ssn[headerValue].passValues.push(value)
+            } else {
+              state.test.ssn[headerValue].failIndices.push(index)
+              state.test.ssn[headerValue].failValues.push(value)
+            }
+          }
+        })
+      }
+      
+  }
+
+
   requiredHeaders(headerArray, stepLocation, resultLocation, errorLocation, state) {
     const input = headerArray;
     const required = headers.required;
