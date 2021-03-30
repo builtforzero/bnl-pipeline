@@ -16,7 +16,7 @@ let util = new Utils();
 
 /* APPLICATION STATE */
 let state = {
-  version: "v3.4.2 | 03/2021",
+  version: "v3.4.3 | 03/2021",
   debug: true, // Toggle to remove form field requirement
   scriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
 
@@ -97,11 +97,42 @@ let state = {
   backend_output: [],
 };
 
-init(state, form);
+/* SECTION TOGGLING STATE */
+let section = {
+  // State of each section
+  validationSteps: ["headers", "pii", "ssn", "datatype"],
+  remainingSections: null,
+  headers: {
+    isOpen: false,
+    selectLocation: "#headers-name",
+    infoLocation: "#headers-info",
+    toggleLocation: "#headers-name-toggle"
+  },
+  pii: {
+    isOpen: false,
+    selectLocation: "#pii-name",
+    infoLocation: "#pii-info",
+    toggleLocation: "#pii-toggle"
+  },
+  ssn: {
+    isOpen: false,
+    selectLocation: "#ssn-name",
+    infoLocation: "#ssn-info",
+    toggleLocation: "#ssn-name-toggle"
+  },
+  datatype: {
+    isOpen: false,
+    selectLocation: "#datatype-name",
+    infoLocation: "#datatype-info",
+    toggleLocation: "#datatype-name-toggle"
+  },
+};
 
-function init(state, form) {
+init(state, section, form);
+
+function init(state, section, form) {
   d3.select(".version-number").text(state.version);
-  
+
   d3.select(".required-header-list")
     .selectAll("li")
     .data(headers.required)
@@ -127,6 +158,7 @@ function init(state, form) {
   form.checkStatus(state);
   form.getCommunityList(state, form);
   setupButtons();
+  setUpSectionToggle(section);
 
   if (state.debug) {
     console.log("✨ APP INITIALIZED ✨");
@@ -238,80 +270,35 @@ function setupButtons() {
   });
 }
 
-/* MANAGE SECTION TOGGLING OPEN / CLOSE */
-let section = {
-  // State of each section
-  headers_open: false,
-  pii_open: false,
-  ssn_open: false,
-  datatype_open: false,
-
-  // Toggle function
-  toggle: function (infoLocation, toggleLocation, stateField) {
-    if (stateField === true) {
-      d3.select(infoLocation).style("opacity", "0").transition().duration(200).style("opacity", "1");
-      d3.select(infoLocation).classed("hide", false);
-      d3.select(toggleLocation).text("HIDE DETAILS ▲");
-    } else {
-      d3.select(infoLocation).style("opacity", "1").transition().duration(200).style("opacity", "0");
-      d3.select(infoLocation).classed("hide", true);
-      d3.select(toggleLocation).text("SHOW DETAILS ▼");
-    }
-  },
-
-  // Event Listeners
-  toggleHeaderInfo: d3.select("#headers-name").on("click", function () {
-    // Set opposite status for selected section
-    section.headers_open = !section.headers_open;
-    section.pii_open = false;
-    section.ssn_open = false;
-    section.datatype_open = false;
-    // Open/close selected section, close all others
-    section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
-    section.toggle("#pii-info", "#pii-toggle", section.pii_open);
-    section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
-    section.toggle("#datatype-info", "#datatype-name-toggle", section.datatype_open);
-  }),
-
-  togglePiiInfo: d3.select("#pii-name").on("click", function () {
-    // Set opposite status for selected section
-    section.pii_open = !section.pii_open;
-    section.headers_open = false;
-    section.ssn_open = false;
-    section.datatype_open = false;
-    // Open/close selected section, close all others
-    section.toggle("#pii-info", "#pii-toggle", section.pii_open);
-    section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
-    section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
-    section.toggle("#datatype-info", "#datatype-name-toggle", section.datatype_open);
-  }),
-
-  toggleSsnInfo: d3.select("#ssn-name").on("click", function () {
-    // Set opposite status for selected section
-    section.ssn_open = !section.ssn_open;
-    section.headers_open = false;
-    section.pii_open = false;
-    section.datatype_open = false;
-    // Open/close selected section, close all others
-    section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
-    section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
-    section.toggle("#pii-info", "#pii-toggle", section.pii_open);
-    section.toggle("#datatype-info", "#datatype-name-toggle", section.datatype_open);
-  }),
-
-  toggleDatatypeInfo: d3.select("#datatype-name").on("click", function () {
-    // Set opposite status for selected section
-    section.datatype_open = !section.datatype_open;
-    section.ssn_open = false;
-    section.headers_open = false;
-    section.pii_open = false;
-    // Open/close selected section, close all others
-    section.toggle("#datatype-info", "#datatype-name-toggle", section.datatype_open);
-    section.toggle("#ssn-info", "#ssn-name-toggle", section.ssn_open);
-    section.toggle("#headers-info", "#headers-name-toggle", section.headers_open);
-    section.toggle("#pii-info", "#pii-toggle", section.pii_open);
-  }),
-};
+function setUpSectionToggle(section) {
+  // Apply event listeners to each validation step
+  section.validationSteps.map((currentStep) => {
+    d3.select(section[currentStep].selectLocation).on("click", function () {
+      section.remainingSections = section.validationSteps.filter(d => d != currentStep)
+      const infoLocation = section[currentStep].infoLocation
+      const toggleLocation = section[currentStep].toggleLocation
+      section[currentStep].isOpen = !section[currentStep].isOpen
+      // Close inactive steps
+      section.remainingSections.map((remainingStep) => {
+        section[remainingStep].isOpen = false;
+        d3.select(section[remainingStep].infoLocation).style("opacity", "1").transition().duration(200).style("opacity", "0");
+        d3.select(section[remainingStep].infoLocation).classed("hide", true);
+        d3.select(section[remainingStep].toggleLocation).text("SHOW DETAILS ▼");
+      })
+      // Open or close the active step
+      if (section[currentStep].isOpen === true) {
+        d3.select(infoLocation).style("opacity", "0").transition().duration(200).style("opacity", "1");
+        d3.select(infoLocation).classed("hide", false);
+        d3.select(toggleLocation).text("HIDE DETAILS ▲");
+      } else {
+        d3.select(infoLocation).style("opacity", "1").transition().duration(200).style("opacity", "0");
+        d3.select(infoLocation).classed("hide", true);
+        d3.select(toggleLocation).text("SHOW DETAILS ▼");
+      }
+      
+    })
+  })
+}
 
 
 /* 
@@ -339,6 +326,7 @@ function runTests(headerArray, data, state) {
 
   test.checkStatus(results, state);
 }
+
 
 /*
  * GET FILTERED ROWS
@@ -900,6 +888,11 @@ function getOutput(population, pops, aggRaw) {
   });
 }
 
+
+/* 
+* PRINT DATA
+*/
+
 function addAggValue(popLookup, value, type) {
   if (type === 'result' && (value === null || value === 0 || value === "N/A" || value === "N/A%")) {
     d3.select(".agg-table")
@@ -931,7 +924,6 @@ function addAggValue(popLookup, value, type) {
       .html(`<b class='neutral' style='font-weight:400;'>${value}</b>`);
   } 
 }
-
 
 function printValue(population, calculation, result) {
   const popLookup = population.replace(' ', '')
