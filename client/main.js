@@ -512,7 +512,7 @@ function calculate(state, data, calculation) {
         outputValue: new Set(clients).size
       };
     }),
-    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": activeCats.map((category, index) => {
+    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": allCats.map((category, index) => {
       // First filter data for the selected category
       const categoryData = filterData(data, category);
       // Then filter for additional criteria

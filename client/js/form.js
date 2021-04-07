@@ -134,12 +134,7 @@ class FormHandler {
     state.meta_reportingDate = util.getMonthYear(`${thisYear}-${today.getMonth() + 1}`);
     
     d3.select("#community-dropdown")
-      .selectAll("option")
-      .data(communityList)
-      .enter()
-      .append("option")
-      .attr("value", (d) => d)
-      .text((d) => d);
+      
 
     d3.select("#community-dropdown").on("change", function () {
       form.checkStatus(state);
