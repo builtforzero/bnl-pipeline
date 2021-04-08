@@ -351,6 +351,7 @@ function getRowsByStatus(data) {
     ( // any one of these conditions:
       (d["Housing Move-In Date"] === null && d["Inactive Date"] === null) ||
       (inactiveDate != null && inactiveDate < idDate) ||
+      (housingDate != null && housingDate < idDate) ||
       ((housingDate != null && housingDate > reportingDate) || (inactiveDate != null && inactiveDate > reportingDate))
     )
   })
