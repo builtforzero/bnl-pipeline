@@ -61,7 +61,7 @@ class FormHandler {
         state.dr_import = output;
         if (state.debug) {
           console.log("✨ COMMUNITY DATA IMPORTED ✨");
-          console.log("  Community List:", state.comm_list.length, "communities");
+          console.log("  Community List:", state.comm_list.length-1, "communities");
           console.log("  Community Data:", state.dr_import.length, "rows");
           console.log("  Overall State:", state);
           console.log(" ");
@@ -134,6 +134,12 @@ class FormHandler {
     state.meta_reportingDate = util.getMonthYear(`${thisYear}-${today.getMonth() + 1}`);
     
     d3.select("#community-dropdown")
+      .selectAll("option")
+      .data(state.comm_list)
+      .enter()
+      .append("option")
+      .attr("value", (d) => d)
+      .text((d) => d);
       
 
     d3.select("#community-dropdown").on("change", function () {
