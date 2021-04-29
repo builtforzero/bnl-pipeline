@@ -3,6 +3,7 @@
   --color-main: #0494cb;
   --color-second: #0494cb;
   --color-neutral: #abacaf;
+  --color-bg-gray: rgb(238, 238, 238);
   --color-alert: rgb(235, 51, 51);
 
   /* Fonts */
@@ -13,7 +14,7 @@
   --root-size: 16px;
   --h1-size: 3.2em;
   --h2-size: 1.8em;
-  --h3-size: 21px;
+  --h3-size: 1.3em;
   --h4-size: 1.1em;
   --subtitle-size: 0.8em;
   --tiny-size: 0.6em;
@@ -116,14 +117,25 @@ select {
   font-size: 1rem;
   margin: 5px 0px;
   padding: 10px;
-  width: 95.5%;
+  width: 92%;
   font-weight: 500;
+  border: 2px solid var(--color-bg-gray);
+  background-color: var(--color-bg-gray);
+}
+
+input:focus,select:focus {
+  outline: none !important;
+  border: 2px solid var(--color-main);
+}
+
+input:hover,select:hover {
+  outline: none !important;
+  border: 2px solid gray;
 }
 
 #filePicker {
-  background-color: lightgray;
-  font-weight: 600;
-  font-family: var(--font-title);
+  font-weight: 500;
+  font-family: var(--font-body);
 }
 
 select {
@@ -143,8 +155,8 @@ select {
 
 .month-year-input {
   display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  column-gap: 10px;
+  grid-template-columns: 1.6fr 1fr;
+  column-gap: 5px;
 }
 
 
@@ -228,9 +240,12 @@ select {
 .validation-step {
   display: grid;
   grid-template-columns: 5fr 1fr;
-  column-gap: 10px;
   border-bottom: 1px solid lightgrey;
   font-family: var(--font-title);
+}
+
+.validation-step:hover {
+  cursor: pointer;
 }
 
 .validation-name {
@@ -238,11 +253,6 @@ select {
   font-weight: 500;
   margin: 0%;
   padding: 15px 10px;
-}
-
-.validation-name:hover {
-  background-color: rgb(233, 232, 232);
-  cursor: pointer;
 }
 
 .validation-info {
@@ -296,6 +306,10 @@ select {
 
 /* AGGREGATION */
 
+.filter-buttons {
+  line-height: 25px;
+}
+
 .reporting-month {
   margin: 15px 0px 5px 0px;
   font-size: var(--h3-size);
@@ -310,7 +324,7 @@ select {
 
 .agg-table {
   display: grid;
-  grid-template-columns: 3.5fr 1fr;
+  grid-template-columns: 3.5fr 1fr 3.5fr 1fr;
   column-gap: 0px;
   font-family: var(--font-title);
 }
@@ -325,14 +339,38 @@ select {
 }
 
 .agg-value {
-  font-size: var(--root-size);
-  margin: 0px 0px;
-  padding: 6px;
-  border-bottom: 1px solid lightgrey;
+  font-size: 20px;
+  margin: 0px 20px 0px 0px;
+  padding: 4px;
+  border-bottom: 2px solid var(--color-bg-gray);
 }
 
-.agg-value:hover {
-  background-color: rgb(235, 235, 235);
+.agg-value-calc {
+  font-size: var(--root-size);
+  margin: 0px;
+  padding: 8px;
+  border-bottom: 2px solid var(--color-bg-gray);
+  font-weight: 900;
+}
+
+.agg-value-calc:hover, .agg-value:hover {
+  cursor: pointer;
+}
+
+.metric-tooltip {
+  position: absolute;
+  padding: 5px;
+  background-color: white;
+  margin: 15px 0px 0px;
+  border: 2px solid lightblue;
+  opacity: 0.95;
+  max-width: 300px;
+}
+
+.metric-help-text {
+  margin: 0;
+  font-size: 14px;
+  color:rgb(31, 30, 30)
 }
 
 .agg-spacer {
@@ -374,10 +412,28 @@ select {
 }
 
 .button-group-title {
-  font-size: var(--h4-size);
-  font-weight: 600;
-  margin: 30px 0px 0px 0px;
+  font-size: var(--h3-size);
+  font-weight: 900;
   text-align: center;
+  background-color:var(--color-bg-gray);
+  color:black;
+  padding: 10px;
+  margin: 10px;
+}
+
+.button-group-title>b{
+  font-weight: 900;
+}
+
+.button-group-subtitle {
+  font-size: var(--h3-size);
+  color: var(--color-main);
+  margin: 0px 0px 10px;
+  font-weight: 600;
+}
+
+.button-group-instructions {
+  color:var(--color-neutral);
 }
 
 .reupload-submit,
@@ -388,7 +444,7 @@ select {
   color: gray;
   border: 0px solid var(--color-main);
   font-size: var(--root-size);
-  margin: 5px 0px 10px;
+  margin: 15px 0px 10px;
   padding: 10px;
   width: 100%;
 }
@@ -408,10 +464,16 @@ select {
   text-align: center;
 }
 
-.progress-msg {
+.agg-progress-msg,.submit-progress-msg {
   font-size: var(--h3-size);
   font-weight: 600;
   margin: 10px 20px 0px 20px;
+}
+
+.aggregateBtn-msg {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin: 25px 0px 0px 0px;
 }
 
 .submitBtn-msg {

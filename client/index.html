@@ -104,13 +104,13 @@
 
                             <!-- STEP 1: REQUIRED COLUMN HEADERS -->
                             <div class="validation-step">
-                                <div class="validation-name" id="headers-name">1. Required column headers must be present.
+                                <div class="required-header validation-name" id="required-name">1. Required column headers must be present.
                                     <span>
-                                        <div class="toggle" id="headers-name-toggle">SHOW DETAILS ▼</div>
+                                        <div class="toggle" id="required-name-toggle">SHOW DETAILS ▼</div>
                                     </span>
                                 </div>
-                                <div class="validation-symbol center headers-val-symbol">N/A</div>
-                                <div class="validation-info hide" id="headers-info">
+                                <div class="required-header validation-symbol center required-val-symbol">N/A</div>
+                                <div class="validation-info hide" id="required-info">
                                     <div class="info">
                                         <h3>Requirement</h3>
                                         <p>The first row of your data file must contain all <b><span class='required-header-count'></span> required column headers</b>:</p>
@@ -119,20 +119,20 @@
                                         <ol class="recommended-header-list list"></ol>
                                     </div>
                                     <div class="result">
-                                        <div class="header-error error-detail"></div>
+                                        <div class="required-error error-detail"></div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- STEP 2: NO PII HEADERS -->
                             <div class="validation-step">
-                                <div class="validation-name" id="pii-name">
+                                <div class="pii-header validation-name" id="pii-name">
                                     2. No personally-identifiable information (PII).
                                     <span>
-                                        <div class="toggle" id="pii-toggle">SHOW DETAILS ▼</div>
+                                        <div class="toggle" id="pii-name-toggle">SHOW DETAILS ▼</div>
                                     </span>
                                 </div>
-                                <div class="validation-symbol center pii-val-symbol">N/A</div>
+                                <div class="pii-header validation-symbol center pii-val-symbol">N/A</div>
                                 <div class="validation-info hide" id="pii-info">
                                     <div class="info">
                                         <h3>Requirement</h3>
@@ -151,12 +151,12 @@
 
                             <!-- STEP 3: NO SSN VALUES -->
                             <div class="validation-step">
-                                <div class="validation-name" id="ssn-name">3. No Social Security Numbers.
+                                <div class="ssn-header validation-name" id="ssn-name">3. No Social Security Numbers.
                                     <span>
                                         <div class="toggle" id="ssn-name-toggle">SHOW DETAILS ▼</div>
                                     </span>
                                 </div>
-                                <div class="validation-symbol center ssn-val-symbol">N/A</div>
+                                <div class="ssn-header validation-symbol center ssn-val-symbol">N/A</div>
                                 <div class="validation-info hide" id="ssn-info">
                                     <div class="info">
                                         <h3>Requirement</h3>
@@ -170,12 +170,12 @@
 
                             <!-- STEP 4: MATCH DATA TYPE -->
                             <div class="validation-step">
-                                <div class="validation-name" id="datatype-name">4. Required columns must contain the right values.
+                                <div class="datatype-header validation-name" id="datatype-name">4. Required columns must contain the right values.
                                     <span>
                                         <div class="toggle" id="datatype-name-toggle">SHOW DETAILS ▼</div>
                                     </span>
                                 </div>
-                                <div class="validation-symbol center datatype-val-symbol">N/A</div>
+                                <div class="datatype-header validation-symbol center datatype-val-symbol">N/A</div>
                                 <div class="validation-info hide" id="datatype-info">
                                     <div class="info">
                                         <h3>Requirement</h3>
@@ -183,8 +183,7 @@
                                         <p><b>Required columns</b> in your file must have values in the <b>right format</b>. Specifically:</p>
                                         <ul>
                                             <li><b style='color:var(--color-main);'>DATES</b> must be a <b>single date</b> in a <b>valid format</b> (e.g. 3/1/2021 or March 1, 2021), and cannot be in the <b>future</b>.</li>
-                                            <li><b style='color:var(--color-main);'>NUMERICAL FIELDS</b> like <b class='neutral'>Age</b> and <b class='neutral'>Household Size</b> must only contain <b>whole numbers</b> e.g. <b>"31"</b>.</li>
-                                            <li><b style='color:var(--color-main);'>OPEN TEXT FIELDS</b> like <b class='neutral'>Race</b> and <b class='neutral'>Gender</b> can accept any combination of letters, numbers, and special characters.</li>
+                                            <li><b style='color:var(--color-main);'>NUMBERS</b> like <b class='neutral'>Client ID</b> must only contain <b>whole numbers</b> e.g. <b>"123456"</b>.</li>
                                         </ul>
                                     </div>
                                     <div class="result">
@@ -198,18 +197,16 @@
                         <div class="center">
                             <button class="inactive" type='button' id="aggregateButton" disabled>AGGREGATE DATA</button>
                         </div>
-                        <div class="aggregateBtn-msg center">
-                            <button class='hide reupload-aggregate'>
-                                REUPLOAD CORRECTED FILE &nbsp &#8630
-                            </button>
-                        </div>
+                        <button class='hide reupload-aggregate'>
+                            UPLOAD A NEW FILE &nbsp &#8630
+                        </button>
                     </div>
 
                 </section>
 
                 <section class="row2">
                     <div class="step-header">
-                        <h2>3. AGGREGATE & SUBMIT</h2>
+                        <h2>3. REVIEW & SUBMIT</h2>
                         <p>Review your aggregated data and submit to BFZ.</p>
                     </div>
 
@@ -217,7 +214,9 @@
                         <div class='reporting-month'></div>
                         <div class='reporting-community'></div>
                         <div class='filter-buttons'>
-                            <div class='button-group-title'></div>
+                            <div class='button-group-title center'></div>
+                            <div class='button-group-subtitle center'></div>
+                            <div class='button-group-instructions center'></div>
                             <div class='button-group'></div>
                         </div>
 
@@ -225,7 +224,7 @@
 
                         <div class="submitBtn-msg center">
                             <button class='hide reupload-submit'>
-                                REUPLOAD CORRECTED FILE &nbsp &#8630
+                                UPLOAD A NEW FILE &nbsp &#8630
                             </button>
                             <button class='hide download-btn'>
                                 DOWNLOAD AGGREGATED DATA AS CSV
@@ -237,8 +236,8 @@
                         </div>
 
                         <div class="submitBtn-msg center">
-                            <div class="progress-msg center"></div>
-                            <div class="progress-bar center"></div>
+                            <div class="submit-progress-msg center"></div>
+                            <div class="submit-progress-bar center"></div>
                         </div>
                         <button class='hide new-upload-submit'>
                             UPLOAD A NEW FILE &nbsp &#8630

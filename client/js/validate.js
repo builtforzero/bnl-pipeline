@@ -1,386 +1,235 @@
 const d3 = require("d3");
-const Papa = require("papaparse");
-const XLSX = require("xlsx");
 import { Utils } from "./utils.js";
-import { headers, pops, values } from "../dict.js";
+import { headers } from "../dict.js";
 let util = new Utils();
 
 class Validator {
-
-  /*
-   *TESTS
-   */
   
-  validateHeader(headerValue, data, length, state) {
-      // Required test result
-      const requiredTestResult = headers.required.includes(headerValue);
-      if (requiredTestResult === true) {
-        state.test.required.pass.push(headerValue);
-      } else {
-        state.test.required.fail.push(headerValue);
-      }
-      
-      // PII header test result
-      const piiTestResult = headers.banned.includes(headerValue);
-      if (piiTestResult === true) {
-        state.test.pii.pass.push(headerValue);
-      } else {
-        state.test.pii.fail.push(headerValue);
-      }
-
-
-      // Only apply data-level tests to required headers
-      // Get the data values associated with the header
-      // Apply the datatype and ssn tests to each value
-      if (requiredTestResult === true) {
-        // Set up data-level tests in state
-        state.test.ssn[headerValue] = {
-          testResultByValue: [],
-          failIndices: [],
-          failValues: [],
-          passIndices: [],
-          passValues: []
-        }
-        state.test.datatype[headerValue] = {
-          testResultByValue: [],
-          failIndices: [],
-          failValues: [],
-          passIndices: [],
-          passValues: []
-        }
-
-        const regex = RegExp("^\\d{9}$");
-        const datatype = headers.meta[headerValue].datatype
-        const headerData = util.getColByName(data, length, headerValue);
-
-        headerData.map((value, index) => {
-          if (value === "" || value === undefined || value === null || util.clean(value) === null) {
-            // If the value is null, push null to state
-            state.test.datatype[headerValue].testResultByValue.push(null);
-            state.test.ssn[headerValue].testResultByValue.push(null);
+  testHeaderAndValues(headerValue, data, state) {
+      // Match the header value against the required list
+      // Test for alternate spellings
+      // If the header is found, and doesn't match the required spelling, rename and standardize
+      let headerLookup = headerValue;
+      let requiredTestResult = false;
+      headers.required.map((reqHeader) => {
+        const altNames = headers.meta[reqHeader].altNames;
+        if (altNames.includes(util.clean(headerLookup))) {
+          state.test.required.pass.push(reqHeader)
+          if (headerValue !== reqHeader) {
+            util.renameCol(data, headerValue, reqHeader);
+            headerLookup = reqHeader;
           } else {
-            // Test value for datatype and SSN values
-            const datatypeTestResult = util.validate(value, datatype);
-            const ssnTestResult = regex.test(value.toString());
-            // Push the test results to state
-            state.test.datatype[headerValue].testResultByValue.push(datatypeTestResult);
-            state.test.ssn[headerValue].testResultByValue.push(ssnTestResult);
-      
-            // Sort the data type test results into pass and fail
-            if (datatypeTestResult === true) {
-              state.test.datatype[headerValue].passIndices.push(index)
-              state.test.datatype[headerValue].passValues.push(value)
-            } else {
-              state.test.datatype[headerValue].failIndices.push(index)
-              state.test.datatype[headerValue].failValues.push(value)
-            }
-
-            // Sort the SSN test results into pass and fail
-            if (ssnTestResult === true) {
-              state.test.ssn[headerValue].passIndices.push(index)
-              state.test.ssn[headerValue].passValues.push(value)
-            } else {
-              state.test.ssn[headerValue].failIndices.push(index)
-              state.test.ssn[headerValue].failValues.push(value)
-            }
+            headerLookup = headerValue;
           }
-        })
-      }
-      
-  }
-
-
-  requiredHeaders(headerArray, stepLocation, resultLocation, errorLocation, state) {
-    const input = headerArray;
-    const required = headers.required;
-    const passed = [];
-    const failed = [];
-    let result;
-
-    // Which input headers match a required header?
-    input.map((header) => {
-      if (required.includes(header)) {
-        passed.push(header);
-      } else {
-        failed.push(header);
-      }
-    });
-
-    // Which required headers are missing?
-    const missing = required
-      .map((header) => {
-        if (passed.includes(header)) {
-          return null;
-        } else return header;
+          requiredTestResult = true;
+        } else {
+          null
+        }
       })
-      .filter((header) => header != null);
 
-    // Did the test result pass?
-    if (missing.length === 0) {
-      result = true;
-    } else if (missing.length > 0) {
-      result = false;
-    }
-
-    // Set the error message
-    const errorMessage = `<h3>Result</h3><br>
-            <b class='fail'>${missing.length} / ${required.length} required headers are not present (or named differently) in your file. <br></b>
-            <ul class='list'> ${missing.map((i) => `<li><b>${i}</b></li>`).join("")} </ul> <br> 
-            <b class='success'>${passed.length} / ${required.length} required headers are present in your file.</b><br>
-            <ul class='list'> ${passed.map((i) => `<li><b class='success'>${i}</b></li>`).join("")}</ul><br>
-            Please check that all ${required.length} required column headers are <b>present</b> in your file and <b>named correctly</b>, and try again.`;
-
-    // Set the success message
-    const successMessage = `<h3>Result</h3><br>
-        <b class='success'>Passed: All required headers are included in your file.</b>`;
-
-    // Show a message on the page based on the test result
-    this.displayResult(result, stepLocation, resultLocation, errorLocation, errorMessage, successMessage);
-
-    return {
-      passed,
-      failed,
-      missing,
-      result,
-    };
-  }
-
-  piiHeaders(headerArray, stepLocation, resultLocation, errorLocation, state) {
-    const input = headerArray;
-    const pii = headers.banned;
-    const passed = [];
-    const failed = [];
-    let result;
-
-    // Which input headers DO NOT match PII headers?
-    input.map((header) => {
-      if (!pii.includes(header)) {
-        passed.push(header);
+      // PII header test
+      const piiTestResult = headers.banned.includes(headerLookup);
+      if (piiTestResult === true) {
+        state.test.pii.fail.push(headerLookup);
       } else {
-        failed.push(header);
+        state.test.pii.pass.push(headerLookup);
       }
-    });
 
-    // Did the test result pass?
-    if (failed.length === 0) {
-      result = true;
-    } else if (failed.length > 0) {
-      result = false;
-    }
+      const ssnObject = {
+        testResultByValue: [],
+        failIndices: [],
+        failValues: [],
+        passIndices: [],
+        passValues: []
+      }
 
-    // Set the error message
-    const errorMessage = `<h3>Result</h3><br>
-      <b class='fail'>${failed.length} column header(s) are flagged as potentially containing PII:</b>
-      <ul> ${failed.map((i) => `<li><b>${i}`).join("")}</ul> <br>
-      Please remove the PII column(s) from your data file and try again.`;
+      const datatypeObject = {
+        testResultByValue: [],
+        failIndices: [],
+        failValues: [],
+        passIndices: [],
+        passValues: []
+      }
 
-    // Set the success message
-    const successMessage = `<h3>Result</h3><br>
-      <b class='success'>Passed: No headers in your file are PII.</b>`;
+      // Value-level data tests
+      // Apply the SSN value test on all headers
+      // Apply the datatype matching test on required headers only
+      const headerData = util.getColByName(data, headerLookup);
 
-    // Show a message on the page based on the test result
-    this.displayResult(result, stepLocation, resultLocation, errorLocation, errorMessage, successMessage);
+      headerData.map((value, index) => {
+        if (value === "" || value === undefined || value === null || util.clean(value) === null) { 
+          ssnObject.testResultByValue.push(null);
+          datatypeObject.testResultByValue.push(null);
+        } else {
+          // SSN value test
+          const regex = new RegExp("^\\d{9}$");
+          const ssnTestResult = regex.test(value.toString());
+          ssnObject.testResultByValue.push(ssnTestResult);
+          if (ssnTestResult === false) { 
+            ssnObject.passIndices.push(index)
+            ssnObject.passValues.push(value)
+          } else {
+            ssnObject.failIndices.push(index)
+            ssnObject.failValues.push(value)
+          }
+          // Data type matching test
+          if (requiredTestResult === true) {
+            const datatype = headers.meta[headerLookup].datatype
+            const datatypeTestResult = util.validate(value, datatype);
+            datatypeObject.testResultByValue.push(datatypeTestResult);
+            if (datatypeTestResult === true) {
+              datatypeObject.passIndices.push(index)
+              datatypeObject.passValues.push(value)
+            } else {
+              datatypeObject.failIndices.push(index)
+              datatypeObject.failValues.push(value)
+            }
+          } else null;
+        }
+      })
 
-    return {
-      passed,
-      failed,
-      result,
-    };
+      if (ssnObject.failIndices.length === 0) {
+        state.test.ssn.pass[headerLookup] = ssnObject;
+      } else if (ssnObject.failIndices.length > 0) {
+        state.test.ssn.fail[headerLookup] = ssnObject;
+      }
+
+      if (datatypeObject.failIndices.length === 0) {
+        state.test.datatype.pass[headerLookup] = ssnObject;
+      } else if (ssnObject.failIndices.length > 0) {
+        state.test.datatype.fail[headerLookup] = ssnObject;
+      }
   }
 
-  ssnValues(headerArray, data, stepLocation, resultLocation, errorLocation, state) {
-    let result;
-    let regex = RegExp("^\\d{9}$");
-    let failedHeaders = [];
-    let failedIndices = [];
+  evaluateAndPrintTestResults(state) {
+    const testObj = state.test;
+    headers.required.map((header) => {
+      if (!testObj.required.pass.includes(header)) {
+        testObj.required.fail.push(header)
+      } else null
+    })
+    testObj.ssn.passHeaders = Object.keys(testObj.ssn.pass);
+    testObj.ssn.failHeaders = Object.keys(testObj.ssn.fail);
+    testObj.datatype.passHeaders = Object.keys(testObj.datatype.pass);
+    testObj.datatype.failHeaders = Object.keys(testObj.datatype.fail);
 
-    const output = headerArray
-      .map((header) => {
-        // Get the values for the header
-        const arr = util.getColByName(data, data.length - 1, header);
-        // Map through each value and test against the regex pattern
-        // If the test passes, return the index of the value
-        const fail = arr
-          .map((value, index) => {
-            if (util.clean(value) === null) {
-              return null;
-            } else if (regex.test(value.toString()) === true) {
-              return index;
-            } else return null;
+    const resultObj = {
+      required: testObj.required.fail.length,
+      pii: testObj.pii.fail.length,
+      ssn: testObj.ssn.failHeaders.length,
+      datatype: testObj.datatype.failHeaders.length
+    }
+
+    testObj._names.map((test) => {
+      if (resultObj[test] === 0) {
+        testObj._pass[test] = true;
+      } else if (resultObj[test] > 0) {
+        testObj._pass[test] = false;
+      }
+      const params = {
+        testResult: state.test._pass[test], 
+        stepLocation: d3.selectAll(`.${test}-header`),
+        resultLocation: d3.select(`.${test}-val-symbol`),
+        errorLocation: d3.select(`.${test}-error`), 
+        errorMessage: this.getErrorMessage(test, state), 
+        successMessage: this.getSuccessMessage(test)
+      }
+      this.displayResult(params);
+    })
+  }
+
+  // Params = state object for specific test
+  getErrorMessage(testName, state) {
+    const params = state.test[testName];
+    const errorMessages = {
+      required: (params) => {
+        return `<h3>Result</h3><br>
+            <b class='fail'>${params.fail.length} / ${headers.required.length} required headers are not present (or named differently) in your file. <br></b>
+            <ul class='list'> ${params.fail.map((i) => `<li><b>${i}</b></li>`).join("")} </ul> <br> 
+            <b class='success'>${params.pass.length} / ${headers.required.length} required headers are present in your file.</b><br>
+            <ul class='list'> ${params.pass.map((i) => `<li><b class='success'>${i}</b></li>`).join("")}</ul><br>
+            Please check that all ${headers.required.length} required column headers are <b>present</b> in your file and <b>named correctly</b>, and try again.`;
+      },
+      pii: (params) => {
+        return `<h3>Result</h3><br>
+        <b class='fail'>${params.fail.length} column header(s) are flagged as potentially containing PII:</b>
+        <ul> ${params.fail.map((i) => `<li><b>${i}`).join("")}</ul> <br>
+        Please remove the PII column(s) from your data file and try again.`
+      },
+      ssn: (params) => {
+        return `<h3>Result</h3><br>
+        <b>${params.failHeaders.length} / ${state.data.headers.length} columns</b> in your file contain values that could be Social Security Numbers. <b style='color:grey; font-weight:400;'> &nbsp (Potential SSNs include values with 9 digits or in the format ###-##-####)</b>. <br>
+        <ul>
+          ${params.failHeaders.map((header) => `<li> <b class='fail'>${header}</b> has <b>${params.fail[header].failIndices.length} potential SSN(s)</b> at the following location(s): &nbsp ${params.fail[header].failIndices.map((v) => `<br> &nbsp &nbsp <b style='color:lightgrey;'>></b> Row <b>${v + 2}</b> &nbsp `).join("")}</li><br>`).join("")}
+        </ul>
+        Please remove the Social Security Numbers from your data file and try again.`
+      },
+      datatype: (params) => {
+        const message = []
+        params.failHeaders.map((header) => {
+          const helpText = headers.meta[header].error;
+          const headline = `<ul><li><b class='fail'>${header}</b><b class='neutral'> contains <b style='color:black;'>${params.fail[header].failValues.length} value(s)</b> to fix. These values ${helpText}</b></li></ul>`
+          message.push(headline);
+          params.fail[header].failValues.map((v, index) => {
+            const detailRow = `<b style='padding: 0px 0px 0px 50px; font-weight:400;'><b style='color:lightgrey;'>></b> &nbsp <b>Row ${v[index] + 2}</b> contains the value <b>'${v}'</b>.<br></b>`
+            message.push(detailRow);
           })
-          .filter((value) => value != null);
-        // If at least one value failed, return the header with the failed indices
-        if (fail.length > 0) {
-          failedHeaders.push(header);
-          failedIndices.push(fail);
-          return [header, fail];
-        } else return null;
-      })
-      .filter((header) => header != null);
-
-    // Did the test result pass?
-    if (output.length === 0) {
-      result = true;
-    } else if (output.length > 0) {
-      result = false;
+        })
+        return message;
+      }
     }
-
-    const errorMessage = `<h3>Result</h3><br>
-                  <b>${output.length} / ${headerArray.length} columns</b> in your file contain values that could be Social Security Numbers. <b style='color:grey; font-weight:400;'> &nbsp (Potential SSNs include values with 9 digits or in the format ###-##-####)</b>. <br>
-                  <ul>
-                  ${output.map((value) => `<li> <b class='fail'>${value[0]}</b> has <b>${value[1].length} potential SSN(s)</b> at the following location(s): &nbsp ${value[1].map((v) => `<br> &nbsp &nbsp <b style='color:lightgrey;'>></b> Row <b>${v + 1}</b> &nbsp `).join("")}</li><br>`).join("")}
-                  </ul>
-                  Please remove the Social Security Numbers from your data file and try again.`;
-
-    // Set the success message
-    const successMessage = `<h3>Result</h3><br>
-          <b class='success'>Passed: No values in your file are Social Security Numbers.</b>`;
-
-    // Show a message on the page based on the test result
-    this.displayResult(result, stepLocation, resultLocation, errorLocation, errorMessage, successMessage);
-
-    return {
-      failedHeaders,
-      failedIndices,
-      output,
-      result,
-    };
+    return errorMessages[testName](params);
   }
 
-  dataType(headerArray, data, stepLocation, resultLocation, errorLocation, state) {
-    let result;
-    let failedHeaders = [];
-    const requiredHeaders = headers.required;
-
-    const output = headerArray
-      .map((header) => {
-        // If the header is in the required header list...
-        if (requiredHeaders.includes(header)) {
-          let dataType = headers.meta[header].datatype;
-          let errorMessage = headers.meta[header].error;
-
-          // Get the array of values for the header
-          const arr = util.getColByName(data, data.length - 1, header);
-          const values = [];
-          const indices = [];
-
-          // Loop through each value and check the datatype
-          const fail = arr
-            .map((value, index) => {
-              if (value === null) {
-                return null;
-              } else if (util.validate(value, dataType) === false) {
-                values.push(value);
-                indices.push(index);
-                return value & index;
-              } else return null;
-            })
-            .filter((value) => value != null);
-
-          // If at least one value failed, return the header with the failed indices
-          if (fail.length > 0) {
-            failedHeaders.push(header);
-            const r = {
-              header: header,
-              failedValues: values,
-              failedIndices: indices,
-              errorMessage: errorMessage,
-            };
-            return r;
-          } else return null;
-        } else return null;
-      })
-      .filter((header) => header != null);
-
-    // Did the test result pass?
-    if (output.length === 0) {
-      result = true;
-    } else if (output.length > 0) {
-      result = false;
+  // Params = state object for specific test
+  getSuccessMessage(testName) {
+    //const params = state.test[testName];
+    const successMessages = {
+      required: () => {
+        return `<h3>Result</h3><br><b class='success'>Passed: All required headers are included in your file.</b>`
+        },
+      pii: () => {
+        return `<h3>Result</h3><br><b class='success'>Passed: No headers in your file are PII.</b>`
+        },
+      ssn: () => {
+        return `<h3>Result</h3><br><b class='success'>Passed: No values in your file are Social Security Numbers.</b>`
+        },
+      datatype: () => {
+        return `<h3>Result</h3><br><b class='success'>Passed: Your fields contain the right data types.</b>`
+        }
     }
-
-    const messages = [];
-
-    Object.entries(output).forEach(([key, value]) => {
-      messages.push(`<ul><li><b class='fail'>${value.header}</b><b class='neutral'> contains <b style='color:black;'>${value.failedIndices.length} value(s)</b> to fix. These values ${value.errorMessage}</b></li></ul>`);
-      value.failedValues.map((v, index) => {
-        const str = `<b style='padding: 0px 0px 0px 50px; font-weight:400;'><b style='color:lightgrey;'>></b> &nbsp <b>Row ${value.failedIndices[index] + 2}</b> contains the value <b>'${v}'</b>.<br></b>`;
-        messages.push(str);
-      });
-    });
-
-    // Set the error message
-    const errorMessage = `<h3>Result</h3><br>
-          <b>Please fix the following errors:</b><br>
-          ${messages.join("")}`;
-
-    // Set the success message
-    const successMessage = `<h3>Result</h3><br><b class='success'>Passed: Your fields contain the right data types.</b>`;
-
-    // Show a message on the page based on the test result
-    this.displayResult(result, stepLocation, resultLocation, errorLocation, errorMessage, successMessage);
-
-    return {
-      output,
-      failedHeaders,
-      result,
-    };
+    return successMessages[testName];
   }
 
-  /*
-   *STATUS AND DISPLAY
-   */
-  displayResult(testResult, stepLocation, resultLocation, errorLocation, errorMessage, successMessage) {
-    if (testResult === false) {
-      resultLocation.text("NO PASS").classed("neutral", false);
-      resultLocation.classed("fail", true);
-      stepLocation
+  displayResult(params) {
+    if (params.testResult === false) {
+      params.resultLocation.text("NO PASS").classed("neutral", false);
+      params.resultLocation.classed("fail", true);
+      params.stepLocation
         .style("background-color", "#FFB9B9")
         .on("mouseover", function (d) {
-          d3.select(this).style("background-color", "#ffa5a5");
+          params.stepLocation.style("background-color", "#ffa5a5");
         })
         .on("mouseout", function (d) {
-          d3.select(this).style("background-color", "#FFB9B9");
+          params.stepLocation.style("background-color", "#FFB9B9");
         });
-      errorLocation.html(errorMessage);
+        params.errorLocation.html(params.errorMessage);
     } else {
-      resultLocation.text("PASS").classed("neutral", false);
-      resultLocation.text("PASS").classed("fail", false);
-      resultLocation.classed("success", true);
-      stepLocation
+      params.resultLocation.text("PASS").classed("neutral", false);
+      params.resultLocation.text("PASS").classed("fail", false);
+      params.resultLocation.classed("success", true);
+      params.stepLocation
         .style("background-color", "lightblue")
         .on("mouseover", function (d) {
-          d3.select(this).style("background-color", "#9ed1e1");
+          params.stepLocation.style("background-color", "#9ed1e1");
         })
         .on("mouseout", function (d) {
-          d3.select(this).style("background-color", "lightblue");
+          params.stepLocation.style("background-color", "lightblue");
         });
-      errorLocation.html(successMessage);
+      params.errorLocation.html(params.successMessage);
     }
   }
 
-  checkStatus(resultsArray, state) {
-    if (resultsArray.some(util.valueIsFalse)) {
-      util.deactivate(d3.select("#validateButton"), false);
-      util.deactivate(d3.select("#aggregateButton"), true);
-      d3.select("#reupload-button").classed("hide", false);
-      // Reset values
-      state.backend_raw = null;
-      state.backend_output = [];
-      d3.selectAll(".agg-header").remove();
-      d3.selectAll(".agg-value").remove();
-      d3.selectAll(".filter-btn").remove();
-    } else if (resultsArray.some(util.valueIsTrue)) {
-      util.deactivate(d3.select("#validateButton"), false);
-      util.activate(d3.select("#aggregateButton"), true);
-      // Reset values
-      state.backend_raw = null;
-      state.backend_output = [];
-      d3.selectAll(".agg-header").remove();
-      d3.selectAll(".agg-value").remove();
-      d3.selectAll(".filter-btn").remove();
-    }
-  }
 }
 
 export { Validator };
