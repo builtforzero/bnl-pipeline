@@ -16,7 +16,7 @@ let util = new Utils();
 
 /* APPLICATION STATE */
 let state = {
-  version: "v3.4.4 | 04/2021",
+  version: "v3.4.5 | 04/2021",
   debug: true, // Toggle to remove form field requirement
   scriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
 
@@ -349,7 +349,8 @@ function getRowsByStatus(data) {
     d["Date of Identification"] != null &&
     idDate <= reportingDate &&
     ( // any one of these conditions:
-      (d["Housing Move-In Date"] === null && d["Inactive Date"] === null) ||
+      (housingDate === null && inactiveDate === null) ||
+      (inactiveDate != null && housingDate != null && inactiveDate < idDate && housingDate < idDate) ||
       (inactiveDate != null && inactiveDate < idDate) ||
       (housingDate != null && housingDate < idDate) ||
       ((housingDate != null && housingDate > reportingDate) || (inactiveDate != null && inactiveDate > reportingDate))
