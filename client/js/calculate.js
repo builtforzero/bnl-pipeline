@@ -26,9 +26,11 @@ class Calculator {
                         return dateReturnedToActive
                     } else if (dateOfId === null && dateReturnedToActive === null) {
                         return null
-                    } else return dateOfId;
+                    } else if (dateOfId === dateReturnedToActive) {
+                        return dateReturnedToActive
+                    } else return dateOfId
                 },
-                maxEntryCategory: (d) => {
+                maxEntryReason: (d) => {
                     const dateOfId = util.parseDate(d['Date of Identification'])
                     const dateReturnedToActive = util.parseDate(d['Returned to Active Date'])
                     if (dateOfId > dateReturnedToActive) {
@@ -37,9 +39,9 @@ class Calculator {
                         return "Returned to Active"
                     } else if (dateOfId === null && dateReturnedToActive === null) {
                         return null
-                    } else {
-                        return "Date of Identification"
-                    }
+                    } else if (dateOfId === dateReturnedToActive) {
+                        return "Returned to Active"
+                    } else return "Date of Identification"
                 },
                 maxExitDate: (d) => {
                     const dateHousingMoveIn = util.parseDate(d['Housing Move-In Date'])
@@ -54,7 +56,7 @@ class Calculator {
                         return dateHousingMoveIn
                     }
                 },
-                maxExitCategory: (d) => {
+                maxExitReason: (d) => {
                     const dateHousingMoveIn = util.parseDate(d['Housing Move-In Date'])
                     const dateInactive = util.parseDate(d['Inactive Date'])
                     if (dateHousingMoveIn > dateInactive) {
@@ -120,9 +122,20 @@ class Calculator {
                         return false;
                     }
                 },
+                "Active": (d) => {
+                    const reportingDate = util.parseDate(state.meta.reportingDate);
+                    if (d.maxEntryDate <= reportingDate && 
+                        (d.maxExitDate === null ||
+                        d.maxExitDate < d.maxEntryDate ||
+                        d.maxExitDate > reportingDate ) === true) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                },
                 lengthOfTime: (d) => {
                     if (d.maxExitDate != null && 
-                        d.maxExitCategory === 'Housing Move-In Date' && 
+                        d.maxExitReason === 'Housing Move-In Date' && 
                         d.maxEntryDate != null &&
                         d.maxExitDate > d.maxEntryDate) {
                             const diff = d.maxExitDate - d.maxEntryDate;
@@ -133,14 +146,15 @@ class Calculator {
             }),
             select([
                 'Client ID',
-                'maxEntryCategory',
+                'Active',
+                'maxEntryReason',
                 'maxEntryDate',
-                'maxExitCategory',
+                'maxExitReason',
                 'maxExitDate',
                 'All',
-                'AllSingles',
+                'All Singles',
                 'Chronic',
-                'ChronicVeteran',
+                'Chronic Veteran',
                 'Families',
                 'Veteran',
                 'Youth',
@@ -154,15 +168,10 @@ class Calculator {
         state.rows.all[population] = data.filter((d) => d[population] === true);
         state.rows.active[population] = data.filter((d) => {
             return d[population] === true &&
-                    d.maxEntryDate <= reportingDate && (
-                    d.maxExitDate === null ||
-                    d.maxExitDate < d.maxEntryDate ||
-                    d.maxExitDate > reportingDate
-                )
-            })
-        
+            d["Active"] === true
+        });
+
         const allData = state.rows.all[population];
-        const activeData = state.rows.active[population];
 
         /* 
         *Note:
@@ -181,29 +190,37 @@ class Calculator {
         const demo = pops.categories[population].outputDemo;
         
         state.rows.filtered[population] = {
-            "ACTIVELY HOMELESS NUMBER": activeData,
+            "ACTIVELY HOMELESS NUMBER": allData.filter((d) => {
+                return d["Active"] === true
+            }),
             "HOUSING PLACEMENTS": allData.filter((d) => {
-                return d.maxExitCategory === "Housing Move-In Date" &&
+                return d.maxExitReason === "Housing Move-In Date" &&
                     util.equalMY(d.maxExitDate, reportingDate) === true
                 }),
             "MOVED TO INACTIVE NUMBER": allData.filter((d) => {
-                return d.maxExitCategory === "Inactive Date" &&
+                return d.maxExitReason === "Inactive Date" &&
                     util.equalMY(d.maxExitDate, reportingDate) === true
-            }),
-            "NEWLY IDENTIFIED NUMBER": activeData.filter((d) => {
-                return util.equalMY(d.maxEntryDate, reportingDate) === true &&
-                d.maxExitDate === null
-            }),
-            "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": activeData.filter((d) => {
-                return d.maxEntryCategory === "Returned to Active" &&
-                    d.maxExitCategory === "Housing Move-In Date"
                 }),
-            "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": activeData.filter((d) => {
-                return d.maxEntryCategory === "Returned to Active" &&
-                    d.maxExitCategory === "Inactive Date"
+            "NEWLY IDENTIFIED NUMBER": allData.filter((d) => {
+                return d.maxEntryReason === "Date of Identification" &&
+                    util.equalMY(d.maxEntryDate, reportingDate) === true &&
+                    (d.maxExitDate === null ||
+                    util.equalMY(d.maxEntryDate, d.maxExitDate) === true)
+                }),
+            "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": allData.filter((d) => {
+                return d["Active"] === true &&
+                    d.maxExitReason === "Housing Move-In Date" &&
+                    d.maxEntryDate > d.maxExitDate &&
+                    util.equalMY(d.maxEntryDate, reportingDate) === true
+                }),
+            "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": allData.filter((d) => {
+                return d["Active"] === true &&
+                    d.maxExitReason === "Inactive Date" &&
+                    d.maxEntryDate > d.maxExitDate &&
+                    util.equalMY(d.maxEntryDate, reportingDate) === true
                 }),
             "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT": allData.filter((d) => {
-                return d.maxExitCategory === "Housing Move-In Date" &&
+                return d.maxExitReason === "Housing Move-In Date" &&
                     util.equalMY(d.maxExitDate, reportingDate) === true &&
                     d.lengthOfTime != null
                 }),
@@ -277,11 +294,12 @@ class Calculator {
                 output: null
             }
         } else {
+            const formatNumber = d3.format(".1f")
             const clientList = util.getColByName(data, "Client ID");
             const lotArr = util.getColByName(data, 'lengthOfTime')
-            const average = lotArr.reduce(function (sum, value) {
+            const average = formatNumber(lotArr.reduce(function (sum, value) {
                 return sum + value;
-            }, 0) / lotArr.length;
+            }, 0) / lotArr.length);
             return {
                 clientList: clientList,
                 output: average
@@ -402,8 +420,6 @@ class Calculator {
                 this.printRow(pop, cleanMetricName, calcResult, suffixSingular, suffixPlural, helpText)
             })
         })
-
-        
     }
 
     printRow(population, cleanCalcName, calcValue, suffixSingular, suffixPlural, helpText) {
@@ -420,7 +436,6 @@ class Calculator {
             this.printCalcName(cleanCalcName, calcNameForClass, cleanPopName);
             this.printCalcValue(calcValue, calcNameForClass, "", cleanPopName);
         }
-
         d3.selectAll(`.agg-value-calc.${cleanPopName}.${calcNameForClass}`)
             .on("mouseover", function() {
                 d3.selectAll(`.${calcNameForClass}`).style("background-color", "rgb(235, 235, 235)")
@@ -480,6 +495,55 @@ class Calculator {
         state.backend.output = {};
         d3.selectAll(".agg-value").remove();
         d3.selectAll(".agg-value-calc").remove();
+    }
+
+    lookupClientInfo(clientId, state) {
+        const reportingDate = util.parseDate(state.meta.reportingDate);
+        const output = {
+            clientId: clientId,
+            reportingDate: reportingDate,
+            raw: null,
+            clean: null,
+            entryExit: {
+                maxEntryDate: null,
+                maxEntryReason: null,
+                maxExitDate: null,
+                maxExitReason: null,
+            },
+            activeDebug: {
+                active: null,
+                maxEntryBeforeReporting: null,
+                atLeastOne: {
+                    maxExitDateNull: null,
+                    maxExitBeforeMaxEntry: null,
+                    maxExitAfterReporting: null,
+                }
+            }
+        }
+
+        output.raw = state.data.raw.filter((d) => d["Client ID"] === clientId)[0];
+        
+        if (output.raw === undefined) {
+            console.log("🔎 CLIENT LOOKUP", clientId, " || NOT FOUND");
+            console.log(" ");
+        } else {
+            output.clean = state.data.clean.filter((d) => d["Client ID"] === clientId)[0];
+            const d = output.clean
+            output.entryExit.maxEntryDate = d.maxEntryDate;
+            output.entryExit.maxEntryReason = d.maxEntryReason;
+            output.entryExit.maxExitDate = d.maxExitDate;
+            output.entryExit.maxExitReason = d.maxExitReason;
+            output.activeDebug.active = d.Active;
+            output.activeDebug.maxEntryBeforeReporting = (d.maxEntryDate <= reportingDate);
+            output.activeDebug.atLeastOne.maxExitInReporting = (util.equalMY(d.maxExitDate, reportingDate) === true)
+            output.activeDebug.atLeastOne.maxExitDateNull = (d.maxExitDate === null);
+            output.activeDebug.atLeastOne.maxExitBeforeMaxEntry = (d.maxExitDate < d.maxEntryDate);
+            output.activeDebug.atLeastOne.maxExitAfterReporting = (d.maxExitDate > reportingDate);
+
+            console.log("🔎 CLIENT LOOKUP", clientId, output);
+            console.log(" ");
+        }
+        
     }
 
     

@@ -427,7 +427,6 @@ select {
 
 .button-group-subtitle {
   font-size: var(--h3-size);
-  color: var(--color-main);
   margin: 0px 0px 10px;
   font-weight: 600;
 }

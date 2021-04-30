@@ -59,9 +59,6 @@ class Utils {
         "background: white; color: red"
       );
     }
-
-
-
     // Reset Validation Step
     d3.select(".reupload-aggregate").classed("hide", true);
     d3.select(".new-upload-submit").classed("hide", true);
@@ -79,8 +76,6 @@ class Utils {
         })
       d3.select(`.${testName}-error`).html("");
     })
-
-    
     // Reset Submission Step
     d3.select(".reupload-submit").classed("hide", true);
     d3.select(".download-btn").classed("hide", true);

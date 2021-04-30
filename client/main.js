@@ -1,10 +1,8 @@
 // Require packages
 const d3 = require("d3");
-const Papa = require("papaparse");
-const XLSX = require("xlsx");
 
 // Import components
-import { headers, pops, values } from "./dict.js";
+import { headers, pops } from "./dict.js";
 import { Validator } from "./js/validate.js";
 import { Calculator } from "./js/calculate.js";
 import { FormHandler } from "./js/form.js";
@@ -230,6 +228,9 @@ function setupButtons() {
     d3.select(".download-btn").classed("hide", false);
     d3.select(".submit-instructions").classed("hide", false);
     d3.select(".review-msg").classed("hide", false);
+    d3.select(".button-group-title").classed("hide", false);
+    d3.select(".button-group-subtitle").classed("hide", false);
+    d3.select(".button-group-instructions").classed("hide", false);
 
   });
 
@@ -362,6 +363,7 @@ function checkValidationStatus(resultsArray, state) {
     // Run the data cleaner
     calc.cleanData(state.data.raw, state);
     calc.getAndPrintMetrics(state);
+    
   }
 }
 
@@ -374,7 +376,7 @@ function aggregate(data, state) {
   calc.getAndPrintMetrics(state, data);
   
   // Update visible reporting month and community
-  d3.select(".button-group-title").html(`<b>${state.meta.reportingDate.toUpperCase()}</b> <b style='color: gray;'>&nbsp;results for&nbsp;</b> <b>${state.meta.selectedPop.toUpperCase()}</b>`);
+  d3.select(".button-group-title").html(`<b>${state.meta.reportingDate.toUpperCase()} <b style='font-weight:400;'>results for</b> ${state.meta.selectedPop.toUpperCase()}</b>`);
 
   d3.select(".button-group-subtitle").html(`${state.form.community_clean}`);
   d3.select(".button-group-instructions").html(`Select a subpopulation to review`);
@@ -389,6 +391,7 @@ function aggregate(data, state) {
   if (state._dev.debug === true) { 
     console.log("✨ CLICKED AGGREGATE BUTTON ✨");
     console.log("  Aggregated Output:", state.output);
+    console.log("  Aggregated Rows", state.rows);
     console.log("  Overall State:", state);
     console.log(" ");
   }
@@ -430,7 +433,7 @@ function addPopButtons() {
           state.meta.selectedPop = pop;
           d3.select(".button-group-title")
             .style("opacity", "0")
-            .html(`<b>${state.meta.reportingDate.toUpperCase()}</b> <b style='color: gray;'>&nbsp;results for&nbsp;</b> <b>${state.meta.selectedPop.toUpperCase()}</b>`)
+            .html(`<b>${state.meta.reportingDate.toUpperCase()} <b style='font-weight:400;'>results for</b> ${state.meta.selectedPop.toUpperCase()}</b>`)
             .transition()
             .duration(200)
             .style("opacity", "1");
@@ -452,7 +455,7 @@ function addPopButtons() {
           state.meta.selectedPop = pop;
           d3.select(".button-group-title")
             .style("opacity", "0")
-            .html(`<b>${state.meta.reportingDate.toUpperCase()}</b> <b style='color: gray;'>&nbsp;results for&nbsp;</b> <b>${state.meta.selectedPop.toUpperCase()}</b>`)
+            .html(`<b>${state.meta.reportingDate.toUpperCase()} <b style='font-weight:400;'>results for</b> ${state.meta.selectedPop.toUpperCase()}</b>`)
             .transition()
             .duration(200)
             .style("opacity", "1");
