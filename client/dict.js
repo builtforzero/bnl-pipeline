@@ -30,76 +30,54 @@ const headers = {
     'Age',
   ],
   meta: {
+    "Client ID": {
+      altNames: ["clientid", "idnumber"],
+      rename: "Client ID",
+      datatype: "num",
+      error: `must only contain <b style='color:black'>whole numbers</b>. e.g. "3"`,
+    },
     "Date of Identification": {
-      altNames: [],
+      altNames: ["dateofidentification", "identificationdate"],
+      rename: "Date of Identification",
       datatype: "date",
       error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
     }, 
-    "Homeless Start Date": {
-      altNames: [],
-      datatype: "date",
-      error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
-    },  
     "Housing Move-In Date": {
-      altNames: [],
+      altNames: ["housingmoveindate", "dateofhousingmovein"],
+      rename: "Housing Move-In Date",
       datatype: "date",
       error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
     },  
     "Inactive Date": {
-      altNames: [],
+      altNames: ["inactivedate"],
+      rename: "Inactive Date",
       datatype: "date",
       error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
     }, 
     "Returned to Active Date": {
-      altNames: [],
+      altNames: ["returnedtoactivedate"],
+      rename: "Returned to Active Date",
       datatype: "date",
       error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
-    },  
-    "Age": {
-      altNames: [],
-      datatype: "num",
-      error: `must only contain <b style='color:black'>whole numbers</b>. e.g. "3"`,
-    }, 
-    "Client ID": {
-      altNames: [],
-      datatype: "num",
-      error: `must only contain <b style='color:black'>whole numbers</b>. e.g. "3"`,
-    },  
+    },
     "Household Type": {
-      altNames: [],
+      altNames: ["householdtype"],
+      rename: "Household Type",
       datatype: "any",
       error: `can accept any data type.`,
-    },  
-    "Household Size": {
-      altNames: [],
-      datatype: "num",
-      error: `must only contain <b style='color:black'>whole numbers</b>. e.g. "3"`,
-    },  
+    },   
     "Chronic Status": {
-      altNames: [],
+      altNames: ["chronicstatus"],
+      rename: "Chronic Status",
       datatype: "any",
       error: `can accept any data type.`,
     },  
     "Veteran Status": {
-      altNames: [],
+      altNames: ["veteranstatus"],
+      rename: "Veteran Status",
       datatype: "any",
       error: `can accept any data type.`,
-    },  
-    "Ethnicity": {
-      altNames: [],
-      datatype: "any",
-      error: `can accept any data type.`,
-    },  
-    "Race": {
-      altNames: [],
-      datatype: "any",
-      error: `can accept any data type.`,
-    },  
-    "Gender": {
-      altNames: [],
-      datatype: "any",
-      error: `can accept any data type.`,
-    }, 
+    },
   },
   banned: [
     "Social Security Number", 
@@ -197,7 +175,10 @@ const headers = {
     "[Families] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
     "[Families] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
   ],
-  metrics: [
+};
+
+const metrics = {
+  all: [
     "ACTIVELY HOMELESS NUMBER", 
     "HOUSING PLACEMENTS", 
     "MOVED TO INACTIVE NUMBER", 
@@ -207,11 +188,69 @@ const headers = {
     "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
     "POTENTIAL 3-MONTH DATA RELIABILITY"
   ],
-};
+  info: {
+    "ACTIVELY HOMELESS NUMBER": {
+      clean: "Actively Homeless Number",
+      category: "Active",
+      suffix_singular: "",
+      suffix_plural: "",
+      help_text: `As of the last day of the reporting month, the number of actively homeless individuals on your By-Name List who have not yet moved into permanent housing.`
+    }, 
+    "HOUSING PLACEMENTS": {
+      clean: "Housing Placements",
+      category: "All",
+      suffix_singular: "",
+      suffix_plural: "",
+      help_text: `The total number of individuals experiencing homelessness who moved into permanent housing over the course of the reporting month.`
+    }, 
+    "MOVED TO INACTIVE NUMBER": {
+      clean: "Moved to Inactive Number",
+      category: "All",
+      suffix_singular: "",
+      suffix_plural: "",
+      help_text: `The total number of individuals experiencing homelessness who have been designated as "inactive" on your By-Name List over the course of the reporting month`
+    },  
+    "NEWLY IDENTIFIED NUMBER": {
+      clean: "Newly Identified Number",
+      category: "Active",
+      suffix_singular: "",
+      suffix_plural: "",
+      help_text: `The total number of individuals experiencing homelessness who have <i>newly</i> entered your coordinated entry system over the course of the reporting month.`
+    }, 
+    "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": {
+      clean: "Returned to Active from Housing",
+      category: "All",
+      suffix_singular: "",
+      suffix_plural: "",
+      help_text: `The total number of individuals who were previously housed and have become unhoused or have otherwise returned to homelessness over the course of the reporting month.`
+    },  
+    "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER": {
+      clean: "Returned to Active from Inactive",
+      category: "All",
+      suffix_singular: "",
+      suffix_plural: "",
+      help_text: `The total number of individuals who were previously designated as inactive but have since reappeared or otherwise returned to homelessness over the course of the reporting month.`
+    },   
+    "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT": {
+      clean: "Average Length of Time from ID to Housing Placement",
+      category: "All",
+      suffix_singular: " day",
+      suffix_plural: " days",
+      help_text: `The average length of time (LOT) from date of identification to placement in permanent housing for individuals in your community, for the reporting month.`
+    },
+    "POTENTIAL 3-MONTH DATA RELIABILITY": {
+      clean: "Potential 3 Month Data Reliability",
+      category: "All",
+      suffix_singular: "",
+      suffix_plural: "",
+      help_text: `A measure of data quality that signals a robust data management practice. Represents the percentage difference between the actual and expected number of actively homeless individuals over the past 3 months.`
+    },
+  }
+}
 
 const pops = {
   all: ["All", "All Singles", "Veteran", "Chronic", "Chronic Veteran", "Youth", "Families"],
-  output: {
+  categories: {
     "All": {
       outputPop: "All",
       outputSubpop: "All",
@@ -259,4 +298,4 @@ const values = {
   family: ["family", "families"],
 };
 
-export { headers, pops, values };
+export { headers, metrics, pops, values };

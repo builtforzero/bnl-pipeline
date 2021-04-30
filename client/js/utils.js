@@ -51,7 +51,7 @@ class Utils {
   }
 
   resetData(state) {
-    if (state.debug) {
+    if (state._dev.debug) {
       console.log("DATA RESET")
       // Flag that required fields are off for testing
       console.log(
@@ -60,55 +60,98 @@ class Utils {
       );
     }
 
+
+
     // Reset Validation Step
     d3.select(".reupload-aggregate").classed("hide", true);
     d3.select(".new-upload-submit").classed("hide", true);
     this.deactivate(d3.select("#aggregateButton"), false);
-    d3.selectAll(".validation-name")
-      .style("background-color", "white")
-      .on("mouseover", function () {
-        d3.select(this).style("background-color", "rgb(233, 232, 232)");
-      })
-      .on("mouseout", function () {
-        d3.select(this).style("background-color", "white");
-      });
+    
     d3.selectAll(".validation-symbol").text("N/A").classed("neutral", true);
-    d3.selectAll(".header-error, .pii-error, .ssn-error, .datatype-error").html("");
+    state.test._names.map((testName) => {
+      d3.selectAll(`.${testName}-header`)
+        .style("background-color", "white")
+        .on("mouseover", (d) => {
+          d3.selectAll(`.${testName}-header`).style("background-color", "var(--color-bg-gray)")
+        })
+        .on("mouseout", (d) => {
+          d3.selectAll(`.${testName}-header`).style("background-color", "white")
+        })
+      d3.select(`.${testName}-error`).html("");
+    })
 
+    
     // Reset Submission Step
     d3.select(".reupload-submit").classed("hide", true);
     d3.select(".download-btn").classed("hide", true);
     this.deactivate(d3.select("#submitButton"), false);
-    d3.select(".button-group-title").text("");
-    d3.select(".reporting-month").text("");
-    d3.select(".reporting-community").text("");
+    d3.select(".button-group-title").classed("hide", true);
+    d3.select(".button-group-subtitle").classed("hide", true);
+    d3.select(".button-group-instructions").classed("hide", true);
+    d3.select(".reporting-month").classed("hide", true);
+    d3.select(".reporting-community").classed("hide", true);
     d3.select(".submit-instructions").classed("hide", true);
     d3.select(".review-msg").classed("hide", true);
-    d3.select(".progress-msg").text("");
-    d3.select(".progress-bar").text("");
-    d3.selectAll(".agg-header").remove();
+    d3.select(".submit-progress-msg").classed("hide", true);
+    d3.select(".submit-progress-bar").classed("hide", true);
     d3.selectAll(".agg-value").remove();
+    d3.selectAll(".agg-value-calc").remove();
     d3.selectAll(".filter-btn").remove();
 
+    // Reset Data, except form data
+    state.form.file_upload = "";
+    state.form.fileList = null;
+    state.form.fileFormat = null;
+    state.backend = {
+      output: []
+    }
+    state.data = {
+      raw: null,
+      clean: null,
+      headers: null,
+      csv: null,
+    }
+    state.output = {};
+    state.rows = {
+      active: {},
+      all: {},
+      filtered: {}
+    }
     // Reset Data
-    state.fileList = null;
-    state.fileFormat = null;
-    state.data_raw = null;
-    state.data_clean = null;
-    state.data_headers = null;
-    state.data_length = null;
-    state.data_csv = null;
-    state.data_form = null;
-    state.form_file_upload = "";
-    state.backend_raw = null;
-    state.backend_output = [];
-    state.output.ah = null;
-    state.output.hp = null;
-    state.output.inactive = null;
-    state.output.newlyId = null;
-    state.output.retHousing = null;
-    state.output.retInactive = null;
-    state.output.lot = null;
+    state.test = {
+      _names: ["required", "pii", "ssn", "datatype"],
+      _pass: {
+        required: false,
+        pii: false,
+        ssn: false,
+        datatype: false,
+      },
+      remainingSections: null,
+      required: {
+        sectionOpen: false,
+        pass: [],
+        fail: [],
+      },
+      pii: {
+        sectionOpen: false,
+        pass: [],
+        fail: [],
+      },
+      ssn: {
+        sectionOpen: false,
+        passHeaders: [],
+        failHeaders: [],
+        pass: {},
+        fail: {}
+      },
+      datatype: {
+        sectionOpen: false,
+        passHeaders: [],
+        failHeaders: [],
+        pass: {},
+        fail: {}
+      },
+    }
   }
 
   getRangeArr(start, stop, step) {
@@ -178,14 +221,63 @@ class Utils {
     }
   }
 
-  getColByName(arr, length, columnName) {
-    const col = [];
-    for (let row = 0; row < length; row++) {
-      const value = Object.values(arr)[row][columnName];
-      col.push(value);
+  equalMY(dateValue, reportingDate) {
+    if (dateValue === null || reportingDate === null) {
+      return null
+    } else {
+      const formatValue = d3.timeFormat("%B %Y")
+      const dateMY = formatValue(dateValue)
+      const reportingMY = formatValue(reportingDate)
+      if (dateMY === reportingMY) {
+        return true;
+      } else return false; 
     }
-    return col;
   }
+
+  getAverageOfArray(arr) {
+    const average = arr.reduce(function (sum, value) {
+        return sum + value;
+    }, 0) / arr.length;
+    return average
+  }
+
+  getColByName(arr, columnName) {
+    if (arr === undefined) {
+      return []
+    } else if (arr.length === 0) {
+      return []
+    } else {
+      const len = arr.length
+      const col = [];
+      for (let row = 0; row < len; row++) {
+        const value = Object.values(arr)[row][columnName];
+        col.push(value);
+      }
+      return col;
+    }
+  }
+
+  // Permanently renames field in data object
+  renameCol(data, oldKey, newKey) {
+    data.forEach(e => {
+      delete Object.assign(e, {[newKey]: e[oldKey] })[oldKey];
+    })
+    console.log(" ");
+    console.log("RENAMED HEADER", oldKey, "➡️", newKey);
+    console.log(" ");
+  }
+
+  // Recursive function that walks through each key in an object and removes null values
+  // Works on nested objects
+  removeEmptyOrNull(obj) {
+    Object.keys(obj).forEach(k =>
+      (obj[k] && typeof obj[k] === 'object') && this.removeEmptyOrNull(obj[k]) ||
+      (!obj[k] && obj[k] !== undefined) && delete obj[k]
+    );
+    return obj;
+  }
+
+
 
   validate(value, dataType) {
     if (value === null) {
