@@ -32,6 +32,7 @@ class FormHandler {
         } else {
           state._import.comm_list = nameList;
         }
+        this.checkLoadingScreen(state);
         this.getCommunityData(state, form)
       })
       .catch(error => {
@@ -66,6 +67,7 @@ class FormHandler {
           console.log("  Overall State:", state);
           console.log(" ");
         }
+        this.checkLoadingScreen(state);
         this.setupFields(state, state._import.comm_list, form)
       })
       .catch(error => {
@@ -77,6 +79,7 @@ class FormHandler {
 
 
   checkStatus(state) {
+    this.checkLoadingScreen(state);
     let formValues = [
         state.form.community_clean,
         state.form.month,
@@ -86,10 +89,8 @@ class FormHandler {
         state.form.org,
         state.form.file_upload
     ]
-
     let valButton = d3.select("#validateButton")
     let valMessage = d3.select(".validateBtn-msg")
-
     // First check whether required fields are on or off
     if (state._dev.debug === false) {
       // If any form values are null or "", deactivate the Validate button
@@ -106,8 +107,28 @@ class FormHandler {
       valMessage.text("");
     }
   }
+
+  // Remove loading screen when community data is imported
+  checkLoadingScreen(state) {
+    if (state._import.comm_data === null || state._import.comm_list === null || state._import.dr_data === null) {
+      d3.select(".loading-screen").classed("hide", false);
+      d3.select(".loading-screen-text").classed("hide", false);
+    } else if (state._import.comm_data != null && state._import.comm_list != null && state._import.dr_data != null) {
+      d3.select(".loading-screen")
+        .transition()
+        .duration(200)
+        .style("opacity", "0")
+      d3.select(".loading-screen-text")
+        .transition()
+        .duration(200)
+        .style("opacity", "0")
+      d3.select(".loading-screen").classed("hide", true);
+      d3.select(".loading-screen-text").classed("hide", true);
+    }
+  }
   
-  setupFields(state, communityList, form) {
+
+  setupFields(state, form) {
 
     const monthMap = {
       0: "January",

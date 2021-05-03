@@ -17,7 +17,7 @@ let util = new Utils();
 /* APPLICATION STATE */
 let state = {
   _dev: {
-    version: "v4.0.0 | 04/2021",
+    version: "v4.0.1 | 05/2021",
     debug: true,
     scriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
   },
@@ -116,6 +116,11 @@ let state = {
 init(state, form);
 
 function init(state, form) {
+  form.checkStatus(state);
+  form.getCommunityList(state, form);
+  setupButtons();
+  setUpSectionToggle(state);
+
   d3.select(".version-number").text(state._dev.version);
 
   d3.select(".required-header-list")
@@ -139,11 +144,6 @@ function init(state, form) {
 
   d3.select('.recommended-header-count')
     .text(headers.recommended.length)
-
-  form.checkStatus(state);
-  form.getCommunityList(state, form);
-  setupButtons();
-  setUpSectionToggle(state);
 
   if (state._dev.debug) {
     console.log("✨ APP INITIALIZED ✨");
