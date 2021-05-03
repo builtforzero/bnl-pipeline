@@ -120,12 +120,33 @@ button {
 }
 
 .version-number {
-  margin: 2px 0px;
+  margin: 0px;
   font-size: var(--subtitle-size);
   padding: 0;
   color: gray;
-  text-align: right;
   font-family: var(--font-title);
+  display: grid;
+  grid-template-columns: 1fr 0.15fr;
+}
+
+.version-text {
+  margin: 4px 0px 4px 0px;
+}
+
+.debug-label {
+  display: grid;
+  grid-template-columns: 1fr 3.5fr;
+  padding: 0;
+  margin: 0;
+}
+
+.debug-label>input {
+  margin: 4px 0px 4px 0px;
+  padding: 0;
+}
+
+.debug-label>label {
+  margin: 4px 4px 4px 0px;
 }
 
 input,

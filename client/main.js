@@ -18,7 +18,7 @@ let util = new Utils();
 let state = {
   _dev: {
     version: "v4.0.1 | 05/2021",
-    debug: true,
+    debug: false,
     scriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
   },
   _import: {
@@ -121,7 +121,7 @@ function init(state, form) {
   setupButtons();
   setUpSectionToggle(state);
 
-  d3.select(".version-number").text(state._dev.version);
+  d3.select(".version-text").text(state._dev.version);
 
   d3.select(".required-header-list")
     .selectAll("li")
