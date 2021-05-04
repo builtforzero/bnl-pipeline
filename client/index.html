@@ -124,10 +124,11 @@
                                         <h3>Requirement</h3>
                                         <p>The first row of your data file must contain all <b><span class='required-header-count'></span> required column headers</b>:</p>
                                         <ol class="required-header-list list"></ol>
-                                        <p>These <b><span class='recommended-header-count'></span> columns</b> are <b>recommended</b> (but not required):</p>
-                                        <ol class="recommended-header-list list"></ol>
+                                        <!-- <p>These <b><span class='recommended-header-count'></span> columns</b> are <b>recommended</b> (but not required):</p>
+                                        <ol class="recommended-header-list list"></ol> -->
                                     </div>
                                     <div class="result">
+                                        <h3>Result</h3>
                                         <div class="required-error error-detail"></div>
                                     </div>
                                 </div>
@@ -136,7 +137,7 @@
                             <!-- STEP 2: NO PII HEADERS -->
                             <div class="validation-step">
                                 <div class="pii-header validation-name" id="pii-name">
-                                    2. No personally-identifiable information (PII).
+                                    2. File cannot contain personally-identifiable information (PII).
                                     <span>
                                         <div class="toggle" id="pii-name-toggle">SHOW DETAILS ▼</div>
                                     </span>
@@ -153,6 +154,7 @@
                                         </ul>
                                     </div>
                                     <div class="result">
+                                        <h3>Result</h3>
                                         <div class="pii-error error-detail"></div>
                                     </div>
                                 </div>
@@ -160,7 +162,7 @@
 
                             <!-- STEP 3: NO SSN VALUES -->
                             <div class="validation-step">
-                                <div class="ssn-header validation-name" id="ssn-name">3. No Social Security Numbers.
+                                <div class="ssn-header validation-name" id="ssn-name">3. File cannot contain Social Security Numbers.
                                     <span>
                                         <div class="toggle" id="ssn-name-toggle">SHOW DETAILS ▼</div>
                                     </span>
@@ -172,6 +174,7 @@
                                         <p>Your data file cannot contain any Social Security Numbers (SSNs).</p>
                                     </div>
                                     <div class="result">
+                                        <h3>Result</h3>
                                         <div class="ssn-error error-detail"></div>
                                     </div>
                                 </div>
@@ -196,6 +199,7 @@
                                         </ul>
                                     </div>
                                     <div class="result">
+                                        <h3>Result</h3>
                                         <div class="datatype-error error-detail"></div>
                                     </div>
                                 </div>

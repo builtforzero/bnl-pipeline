@@ -20,6 +20,7 @@ let state = {
     version: "v4.0.1 | 05/2021",
     debug: false,
     scriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
+    height: 1578,
   },
   _import: {
     comm_data: null,
@@ -116,6 +117,9 @@ let state = {
 init(state, form);
 
 function init(state, form) {
+  d3.select(".loading-screen")
+    .style("height", state._dev.height + "px");
+
   form.checkStatus(state);
   form.getCommunityList(state, form);
   setupButtons();
@@ -134,7 +138,7 @@ function init(state, form) {
   d3.select('.required-header-count')
     .text(headers.required.length)
 
-  d3.select(".recommended-header-list")
+  /* d3.select(".recommended-header-list")
     .selectAll("li")
     .data(headers.recommended)
     .enter()
@@ -143,20 +147,7 @@ function init(state, form) {
     .text((d) => d);
 
   d3.select('.recommended-header-count')
-    .text(headers.recommended.length)
-
-  if (state._dev.debug) {
-    console.log("✨ APP INITIALIZED ✨");
-    // Flag that required fields are off for testing
-    console.log(
-      "  %cRequired fields are currently OFF.",
-      "background: white; color: red"
-    );
-    console.log("  Version:", state._dev.version);
-    console.log("  Debug On?", state._dev.debug);
-    console.log("  Overall State:", state);
-    console.log(" ");
-  }
+    .text(headers.recommended.length) */
 }
 
 /* EVENT LISTENERS */
@@ -376,7 +367,7 @@ function aggregate(data, state) {
   calc.getAndPrintMetrics(state, data);
   
   // Update visible reporting month and community
-  d3.select(".button-group-title").html(`<b>${state.meta.reportingDate.toUpperCase()} <b style='font-weight:400;'>results for</b> ${state.meta.selectedPop.toUpperCase()}</b>`);
+  d3.select(".button-group-title").html(`<b style='font-weight:400;'>${state.meta.reportingDate.toUpperCase()} results for ${state.meta.selectedPop.toUpperCase()}</b>`);
 
   d3.select(".button-group-subtitle").html(`${state.form.community_clean}`);
   d3.select(".button-group-instructions").html(`Select a subpopulation to review`);

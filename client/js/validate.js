@@ -143,22 +143,21 @@ class Validator {
     const params = state.test[testName];
     const errorMessages = {
       required: (params) => {
-        return `<h3>Result</h3><br>
-            <b class='fail'>${params.fail.length} / ${headers.required.length} required headers are not present (or named differently) in your file. <br></b>
+        return `
+        <b class='fail'>${params.fail.length} / ${headers.required.length} required headers are not present (or named differently) in your file. <br></b>
             <ul class='list'> ${params.fail.map((i) => `<li><b>${i}</b></li>`).join("")} </ul> <br> 
             <b class='success'>${params.pass.length} / ${headers.required.length} required headers are present in your file.</b><br>
             <ul class='list'> ${params.pass.map((i) => `<li><b class='success'>${i}</b></li>`).join("")}</ul><br>
             Please check that all ${headers.required.length} required column headers are <b>present</b> in your file and <b>named correctly</b>, and try again.`;
       },
       pii: (params) => {
-        return `<h3>Result</h3><br>
+        return `
         <b class='fail'>${params.fail.length} column header(s) are flagged as potentially containing PII:</b>
         <ul> ${params.fail.map((i) => `<li><b>${i}`).join("")}</ul> <br>
         Please remove the PII column(s) from your data file and try again.`
       },
       ssn: (params) => {
-        return `<h3>Result</h3><br>
-        <b>${params.failHeaders.length} / ${state.data.headers.length} columns</b> in your file contain values that could be Social Security Numbers. <b style='color:grey; font-weight:400;'> &nbsp (Potential SSNs include values with 9 digits or in the format ###-##-####)</b>. <br>
+        return `<b>${params.failHeaders.length} / ${state.data.headers.length} columns</b> in your file contain values that could be Social Security Numbers. <b style='color:grey; font-weight:400;'> &nbsp (Potential SSNs include values with 9 digits or in the format ###-##-####)</b>. <br>
         <ul>
           ${params.failHeaders.map((header) => `<li> <b class='fail'>${header}</b> has <b>${params.fail[header].failIndices.length} potential SSN(s)</b> at the following location(s): &nbsp ${params.fail[header].failIndices.map((v) => `<br> &nbsp &nbsp <b style='color:lightgrey;'>></b> Row <b>${v + 2}</b> &nbsp `).join("")}</li><br>`).join("")}
         </ul>
@@ -186,16 +185,16 @@ class Validator {
     //const params = state.test[testName];
     const successMessages = {
       required: () => {
-        return `<h3>Result</h3><br><b class='success'>Passed: All required headers are included in your file.</b>`
+        return `<b class='success'>Passed: All required headers are included in your file.</b>`
         },
       pii: () => {
-        return `<h3>Result</h3><br><b class='success'>Passed: No headers in your file are PII.</b>`
+        return `<b class='success'>Passed: No headers in your file are PII.</b>`
         },
       ssn: () => {
-        return `<h3>Result</h3><br><b class='success'>Passed: No values in your file are Social Security Numbers.</b>`
+        return `<b class='success'>Passed: No values in your file are Social Security Numbers.</b>`
         },
       datatype: () => {
-        return `<h3>Result</h3><br><b class='success'>Passed: Your fields contain the right data types.</b>`
+        return `<b class='success'>Passed: Your fields contain the right data types.</b>`
         }
     }
     return successMessages[testName];
