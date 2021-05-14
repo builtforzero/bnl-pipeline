@@ -205,7 +205,6 @@ class Calculator {
                 return d.maxEntryReason === "Date of Identification" &&
                     util.equalMY(d.maxEntryDate, reportingDate) === true &&
                     (d.maxExitDate === null ||
-                     d.maxExitDate > reportingDate ||
                     util.equalMY(d.maxEntryDate, d.maxExitDate) === true)
                 }),
             "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER": allData.filter((d) => {

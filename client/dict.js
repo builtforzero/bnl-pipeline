@@ -43,7 +43,7 @@ const headers = {
       error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
     }, 
     "Housing Move-In Date": {
-      altNames: ["housingmoveindate", "dateofhousingmovein", "housingdateofmovein"],
+      altNames: ["housingmoveindate", "dateofhousingmovein"],
       rename: "Housing Move-In Date",
       datatype: "date",
       error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
