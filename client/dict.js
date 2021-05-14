@@ -43,7 +43,7 @@ const headers = {
       error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
     }, 
     "Housing Move-In Date": {
-      altNames: ["housingmoveindate", "dateofhousingmovein"],
+      altNames: ["housingmoveindate", "dateofhousingmovein", "housingdateofmovein"],
       rename: "Housing Move-In Date",
       datatype: "date",
       error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
@@ -55,7 +55,7 @@ const headers = {
       error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
     }, 
     "Returned to Active Date": {
-      altNames: ["returnedtoactivedate"],
+      altNames: ["returnedtoactivedate", "returntoactivedate"],
       rename: "Returned to Active Date",
       datatype: "date",
       error: `must be a single date in a valid format <b style='color:black'>e.g. "3/1/2021" or "March 1, 2021</b> and cannot be in the <b style='color:black'>future</b>.`,
@@ -292,7 +292,7 @@ const pops = {
 
 const values = {
   veteran: ["yes", "yesvalidated", "yesconfirmed"],
-  chronic: ["yes", "chronicallyhomeless"],
+  chronic: ["yes", "chronicallyhomeless", "chronic"],
   singleAdult: ["singleadult", "singleadults"],
   youth: ["youth"],
   family: ["family", "families"],

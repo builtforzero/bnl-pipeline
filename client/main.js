@@ -17,7 +17,7 @@ let util = new Utils();
 /* APPLICATION STATE */
 let state = {
   _dev: {
-    version: "v4.0.1 | 05/2021",
+    version: "v4.0.2 | 05/2021",
     debug: false,
     scriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
     height: 1578,
