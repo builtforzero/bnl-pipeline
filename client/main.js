@@ -17,7 +17,7 @@ let util = new Utils();
 /* APPLICATION STATE */
 let state = {
   _dev: {
-    version: "v4.0.3 | 05/2021",
+    version: "v4.1.0 | 06/2021",
     debug: false,
     scriptUrl: "https://script.google.com/macros/s/AKfycbw9aaR-wsxXoctwOTNxjRtm0GeolA2zwaHWSgIyfD-U-tUt59xWzjBR/exec",
     height: 1578,
@@ -362,12 +362,16 @@ function checkValidationStatus(resultsArray, state) {
 /* 
 * AGGREGATE DATA
 */
+function buttonTitle(month, population) {
+  return `<b>${month} &nbsp;<b style='color: gray;'>|</b>&nbsp; ${population}</b>`
+}
+
 function aggregate(data, state) {
   calc.reset(state);
   calc.getAndPrintMetrics(state, data);
   
   // Update visible reporting month and community
-  d3.select(".button-group-title").html(`<b style='font-weight:400;'>${state.meta.reportingDate.toUpperCase()} results for ${state.meta.selectedPop.toUpperCase()}</b>`);
+  d3.select(".button-group-title").html(buttonTitle(state.meta.reportingDate, state.meta.selectedPop));
 
   d3.select(".button-group-subtitle").html(`${state.form.community_clean}`);
   d3.select(".button-group-instructions").html(`Select a subpopulation to review`);
@@ -424,7 +428,7 @@ function addPopButtons() {
           state.meta.selectedPop = pop;
           d3.select(".button-group-title")
             .style("opacity", "0")
-            .html(`<b>${state.meta.reportingDate.toUpperCase()} <b style='font-weight:400;'>results for</b> ${state.meta.selectedPop.toUpperCase()}</b>`)
+            .html(buttonTitle(state.meta.reportingDate, pop))
             .transition()
             .duration(200)
             .style("opacity", "1");
@@ -446,7 +450,7 @@ function addPopButtons() {
           state.meta.selectedPop = pop;
           d3.select(".button-group-title")
             .style("opacity", "0")
-            .html(`<b>${state.meta.reportingDate.toUpperCase()} <b style='font-weight:400;'>results for</b> ${state.meta.selectedPop.toUpperCase()}</b>`)
+            .html(buttonTitle(state.meta.reportingDate, pop))
             .transition()
             .duration(200)
             .style("opacity", "1");
