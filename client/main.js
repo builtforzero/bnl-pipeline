@@ -19,7 +19,7 @@ let state = {
   _dev: {
     version: "v4.1.0 | 06/2021",
     debug: false,
-    scriptUrl: "https://script.google.com/macros/s/AKfycbwvTt15bDYq7eSvjyikYZ4t7yaUnwXQk8w_-0XWZIcGqpB3ag8yq_e5szwZkAoUP2ND/exec",
+    scriptUrl: "https://script.google.com/macros/s/AKfycby2JmH1hWQu0FjmEUTthFcwxw-b0I7CLN77wESnZkM07F67TYse39tWf02_fjrGRBhy/exec",
     height: 1578,
   },
   _import: {
@@ -497,11 +497,17 @@ function downloadData(data) {
 function submitData(data) {
 
   let submitForm = document.createElement("form");
-  submitForm.setAttribute("id", "submit-form");
+  submitForm.setAttribute("id", "submit-form");+
   submitForm.setAttribute("method", "POST");
   headers.backend.map((field, fieldIndex) => {
     const fieldName = field;
-    const fieldValue = data[field];
+    let fieldValue;
+    if (data[field] === null) {
+      fieldValue = "";
+    } else {
+      fieldValue = data[field];
+    }
+  
     const i = document.createElement("input");
     i.setAttribute("type", "text");
     i.setAttribute("id", "input-" + fieldIndex);
