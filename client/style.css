@@ -275,7 +275,7 @@ input:hover,select:hover {
 .navbar {
   display: grid;
   grid-template-columns: 2fr 2fr 2fr 2fr 1fr;
-  column-gap: 10px;
+  column-gap: 2%;
   width: 100%;
   background-color: var(--color-bg-gray);
 }

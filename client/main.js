@@ -17,7 +17,7 @@ let util = new Utils();
 /* APPLICATION STATE */
 let state = {
   _dev: {
-    version: "v5.0 | 06/2021",
+    version: "v5.0.1 | 06/2021",
     debug: false,
     scriptUrl: "https://script.google.com/macros/s/AKfycbwCLfvImHNjNdbIOByBSmdRxFCe8wrvLB5oJHnWeLw33SLRs7rChi2gsxyS74o6_dhB/exec",
     height: 1578,
@@ -147,16 +147,7 @@ function init(state, form) {
     .text(headers.required.length)
 
   setUpPopChangeSection(state);
-  /* d3.select(".recommended-header-list")
-    .selectAll("li")
-    .data(headers.recommended)
-    .enter()
-    .append("li")
-    .attr("value", (d) => d)
-    .text((d) => d);
-
-  d3.select('.recommended-header-count')
-    .text(headers.recommended.length) */
+  
 }
 
 
@@ -206,11 +197,6 @@ function setupButtons() {
     // Reset to step 1
     changeActiveStep("step1")
   });
-
-  d3.select(".download-btn").on("click", function () {
-    downloadData(state.backend.output);
-  })
-
 
   /* 
   * Aggregate Button
@@ -263,6 +249,8 @@ function setupButtons() {
     submitData(state.backend.output);
     // Deactivate and hide the submit button
     // Hide the reupload button
+    d3.select(".submit-progress-bar").classed("hide", false);
+        d3.select(".submit-progress-msg").classed("hide", false);
     d3.select(".reupload-aggregate").classed("hide", true);
     d3.select(".reupload-submit").classed("hide", true);
     d3.select(".download-btn").classed("hide", true);
@@ -541,29 +529,6 @@ function addPopButtons() {
   });
 }
 
-/* 
-* DOWNLOAD & SUBMIT DATA
-*/
-/* function downloadData(data) {
-  const headers = [...Object.keys(data)]
-  const values = [...Object.values(data)]
-  console.log(headers, values);
-  state.data.csv = "data:text/csv;charset=utf-8," + headers.map((header, index) => {
-    const output = header + "," + values[index] + "\n"
-    console.log(output);
-    return output;
-  })
-
-  const dateFormat = d3.timeFormat("%m-%d-%Y_%H%M")
-  const formattedTimestamp = dateFormat(state.meta.timestamp)
-  const fileName =  state.form.month + state.form.year.toString() + "_" + state.meta.community + "_" + formattedTimestamp.toString() + ".csv"
-  const encodedUri = encodeURI(state.data.csv);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", fileName);
-  document.body.appendChild(link); // Required for FF
-  link.click(); //
-} */
 
 // Parses data as a CSV and downloads the file
 function submitData(data) {
@@ -603,6 +568,8 @@ function submitData(data) {
       body: new FormData(submitForm),
     })
       .then((response) => {
+        d3.select(".submit-progress-bar").classed("hide", false);
+        d3.select(".submit-progress-msg").classed("hide", false);
         d3.select(".submit-progress-msg").html(`Submitting Data for ${state.meta.reportingDate}...`).style("opacity", "0").transition().duration(200).style("opacity", "1");
 
         d3.select(".submit-progress-bar").html(`<progress id="file" value="1" max="2">1</progress>`);
