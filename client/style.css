@@ -137,8 +137,6 @@ button {
   padding: 0;
   color: gray;
   font-family: var(--font-title);
-  display: flex;
-  float: right;
 }
 
 .version-text {
@@ -147,7 +145,7 @@ button {
 
 .debug-label {
   display: grid;
-  grid-template-columns: 1fr 2.2fr;
+  grid-template-columns: 1fr 3fr;
 }
 
 .debug-label>input {
@@ -269,6 +267,41 @@ input:hover,select:hover {
 }
 
 
+/* NAVBAR */
+.navbar-wrapper {
+  position: sticky;
+  top: 0px;
+}
+.navbar {
+  display: grid;
+  grid-template-columns: 2fr 2fr 2fr 2fr 1fr;
+  column-gap: 10px;
+  width: 100%;
+  background-color: var(--color-bg-gray);
+}
+
+.navbar-button {
+  width: 100%;
+  border: none;
+  background-color: var(--color-bg-gray);
+  font-family: var(--font-title);
+  margin: 0%;
+  color: gray;
+  padding: 15px;
+  font-size: var(--h3-size);
+  font-weight: 900;
+}
+
+.navbar-active {
+  background-color: var(--color-main);
+  color: white;
+}
+
+.navbar-active:hover {
+  background-color: var(--color-main);
+  color: white;
+}
+
 /* VALIDATION STEPS */
 
 .status {
@@ -349,8 +382,6 @@ input:hover,select:hover {
   margin: 0px 0px 5px 0px;
 }
 
-
-
 .helptext {
   margin: 5px;
   font-size: var(--subtitle-size);
@@ -365,6 +396,39 @@ input:hover,select:hover {
   color: var(--color-alert);
   font-size: var(--h4-size);
   font-weight: 900;
+}
+
+
+/* NO LONGER MEETS POP CRITERIA */
+.popChange {
+  margin: 0% 5% 5% 5%;
+}
+
+.popChange-title {
+  text-align: left;
+  margin: 2%;
+  font-size: var(--h3-size);
+  font-family: var(--font-title);
+}
+
+.popChange-input {
+  display: grid;
+  grid-template-columns: 1fr;
+  border: 5px solid white;
+  width: 100%;
+  max-width: 150px;
+}
+
+.popChange-label {
+  font-size: var(--subtitle-size);
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+.popChange-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  margin: 1%;
 }
 
 
@@ -503,6 +567,7 @@ input:hover,select:hover {
 
 .reupload-submit,
 .reupload-aggregate,
+.reupload-popCriteria,
 .new-upload-submit,
 .download-btn {
   background-color: white;
@@ -516,6 +581,7 @@ input:hover,select:hover {
 
 .reupload-submit:hover,
 .reupload-aggregate:hover,
+.reupload-popCriteria:hover,
 .new-upload-submit:hover,
 .download-btn:hover {
   color: var(--color-main);

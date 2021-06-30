@@ -108,6 +108,7 @@ const headers = {
     "[All] NEWLY IDENTIFIED NUMBER",
     "[All] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
     "[All] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
+    "[All] NO LONGER MEETS POPULATION CRITERIA",
     // All Singles
     "[All Singles] Population",
     "[All Singles] Subpopulation",
@@ -119,6 +120,7 @@ const headers = {
     "[All Singles] NEWLY IDENTIFIED NUMBER",
     "[All Singles] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
     "[All Singles] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
+    "[All Singles] NO LONGER MEETS POPULATION CRITERIA",
     // Chronic
     "[Chronic] Population",
     "[Chronic] Subpopulation",
@@ -130,6 +132,7 @@ const headers = {
     "[Chronic] NEWLY IDENTIFIED NUMBER",
     "[Chronic] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
     "[Chronic] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
+    "[Chronic] NO LONGER MEETS POPULATION CRITERIA",
     // Veteran
     "[Veteran] Population",
     "[Veteran] Subpopulation",
@@ -141,6 +144,7 @@ const headers = {
     "[Veteran] NEWLY IDENTIFIED NUMBER",
     "[Veteran] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
     "[Veteran] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
+    "[Veteran] NO LONGER MEETS POPULATION CRITERIA",
     // Chronic Veteran
     "[Chronic Veteran] Population",
     "[Chronic Veteran] Subpopulation",
@@ -152,6 +156,7 @@ const headers = {
     "[Chronic Veteran] NEWLY IDENTIFIED NUMBER",
     "[Chronic Veteran] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
     "[Chronic Veteran] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
+    "[Chronic Veteran] NO LONGER MEETS POPULATION CRITERIA",
     // Youth
     "[Youth] Population",
     "[Youth] Subpopulation",
@@ -163,6 +168,7 @@ const headers = {
     "[Youth] NEWLY IDENTIFIED NUMBER",
     "[Youth] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
     "[Youth] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
+    "[Youth] NO LONGER MEETS POPULATION CRITERIA",
     // Families
     "[Families] Population",
     "[Families] Subpopulation",
@@ -174,6 +180,7 @@ const headers = {
     "[Families] NEWLY IDENTIFIED NUMBER",
     "[Families] RETURNED TO ACTIVE LIST FROM HOUSING NUMBER",
     "[Families] RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER",
+    "[Families] NO LONGER MEETS POPULATION CRITERIA",
   ],
 };
 
@@ -186,6 +193,7 @@ const metrics = {
     "RETURNED TO ACTIVE LIST FROM HOUSING NUMBER", 
     "RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER", 
     "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT",
+    "NO LONGER MEETS POPULATION CRITERIA",
     "POTENTIAL 3-MONTH DATA RELIABILITY"
   ],
   info: {
@@ -237,6 +245,13 @@ const metrics = {
       suffix_singular: " day",
       suffix_plural: " days",
       help_text: `The average length of time (LOT) from date of identification to placement in permanent housing for individuals in your community, for the reporting month.`
+    },
+    "NO LONGER MEETS POPULATION CRITERIA": {
+      clean: "No Longer Meets Population Criteria",
+      category: "All",
+      suffix_singular: "",
+      suffix_plural: "",
+      help_text: `The number of clients that have changed population statuses since the last time you reported.`
     },
     "POTENTIAL 3-MONTH DATA RELIABILITY": {
       clean: "Potential 3 Month Data Reliability",

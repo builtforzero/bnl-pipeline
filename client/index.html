@@ -14,12 +14,18 @@
 
 <body>
     <div id="root">
+        <!-- Loading Screen -->
         <div class='loading-screen'>
             <b class='loading-screen-text'>LOADING...</b>
         </div>
-        <section class="columns">
-            <div class='version-spacer'></div>
-            <div>
+
+        <!-- Navbar -->
+        <div class='navbar-wrapper'>
+            <div class='navbar'>
+                <div class='navbar-button step1 navbar-active'>1. Upload</div>
+                <div class='navbar-button step2'>2. Validate</div>
+                <div class='navbar-button step3'>3. Add Population Change</div>
+                <div class='navbar-button step4'>4. Review & Submit</div>
                 <div class='version-number'>
                     <div class='version-text'>Version 1</div>
                     <div class='debug-label'>
@@ -28,16 +34,23 @@
                     </div>
                 </div>
             </div>
+        </div>
 
+        <!-- Main Content Area -->
+        <section class="columns">
 
-            <section class="column1">
-                <section>
+            <!-- Steps -->
+            <section>
+                <!-- Step 1 -->
+                <section class='step1-section'>
+                    <!-- Step 1 Header -->
                     <div class="step-header step1-header">
                         <div>
                             <h2>1. UPLOAD</h2>
                             <p>Upload your by-name list file.</p>
                         </div>
                     </div>
+                    <!-- Step 1 Content -->
                     <div class="step-content">
                         <form class='submission-form'>
                             <section class="form-columns">
@@ -98,16 +111,14 @@
                     </div>
                 </section>
 
-            </section>
-
-            <section class="column2">
-                <section class="row1">
-
+                <!-- Step 2 -->
+                <section class='step2-section hide'>
+                    <!-- Step 2 Header -->
                     <div class="step-header">
                         <h2>2. VALIDATE</h2>
                         <p>Make sure your file contains the right data.</p>
                     </div>
-
+                    <!-- Step 2 Content -->
                     <div class="step-content">
                         <div class="validation">
 
@@ -208,61 +219,91 @@
                         </div>
 
                         <div class="center">
-                            <button class="inactive" type='button' id="aggregateButton" disabled>AGGREGATE DATA</button>
+                            <button class="inactive" type='button' id="aggregateButton" disabled>CONTINUE</button>
                         </div>
+                        <div class="validateBtn-msg helptext"></div>
                         <button class='hide reupload-aggregate'>
-                            UPLOAD A NEW FILE &nbsp &#8630
+                            RESET &nbsp &#8630
                         </button>
                     </div>
                 </section>
 
-                <section class="row2">
+                <!-- Step 3 -->
+                <section class='step3-section hide'>
+                    <!-- Step 3 Header -->
+                    <div class="step-header">
+                        <h2>3. ADD POPULATION CHANGE DATA</h2>
+                        <p>Record the number of clients that changed population statuses.</p>
+                    </div>
+                    <!-- Content -->
+                    <div class="step-content">
+                        <div class='popChange'>
+                            <div class='popChange-title'>
+                                <h3>How many clients this month no longer meet population criteria?</h3>
+                                <p>If you're unsure or there are none this month, click on "Continue".</p>
+                            </div>
+                            <div class='popChange-form'>
+                            </div>
+                        </div>
+
+                        <div class="center">
+                            <button class="inactive" type='button' id="popCriteriaButton" disabled>CONTINUE</button>
+                        </div>
+                        <div class="validateBtn-msg helptext"></div>
+                        <button class='hide reupload-popCriteria'>
+                            RESET &nbsp &#8630
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Step 4 -->
+                <section class='step4-section hide'>
+                    <!-- Step 3 Header -->
                     <div class="step-header">
                         <h2>3. REVIEW & SUBMIT</h2>
                         <p>Review your aggregated data and submit to BFZ.</p>
                     </div>
-
+                    <!-- Content -->
                     <div class="step-content">
                         <div class='reporting-month'></div>
                         <div class='reporting-community'></div>
-                        <div class='filter-buttons'>
-                            <div class='button-group-title center'></div>
-                            <div class='button-group-subtitle center'></div>
-                            <div class='button-group-instructions center'></div>
-                            <div class='button-group'></div>
+
+                        <div class='agg-output'>
+                            <div class='filter-buttons'>
+                                <div class='button-group-title center'></div>
+                                <div class='button-group-subtitle center'></div>
+                                <div class='button-group-instructions center'></div>
+                                <div class='button-group'></div>
+                            </div>
+                            <div class='agg-table'></div>
                         </div>
 
-                        <div class='agg-table'></div>
 
                         <div class="submitBtn-msg center">
                             <button class='hide reupload-submit'>
-                                UPLOAD A NEW FILE &nbsp &#8630
+                                RESET &nbsp &#8630
                             </button>
-                            <button class='hide download-btn'>
+                            <!-- <button class='hide download-btn'>
                                 DOWNLOAD AGGREGATED DATA AS CSV
-                            </button>
+                            </button> -->
                         </div>
                         <div class="submit-instructions center hide">Click on the button below to report data for ALL populations!</div>
                         <div class="center">
                             <button class="inactive" type='button' id="submitButton" disabled>SUBMIT DATA</button>
                         </div>
+                        <div class="validateBtn-msg helptext"></div>
 
                         <div class="submitBtn-msg center">
                             <div class="submit-progress-msg center"></div>
                             <div class="submit-progress-bar center"></div>
                         </div>
                         <button class='hide new-upload-submit'>
-                            UPLOAD A NEW FILE &nbsp &#8630
+                            RESET &nbsp &#8630
                         </button>
 
                     </div>
-
-
                 </section>
             </section>
-
-        </section>
-
     </div>
 
     <script src="./main.js"></script>

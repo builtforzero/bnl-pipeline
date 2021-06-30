@@ -251,25 +251,34 @@ class Calculator {
         }
 
         state.output[population] = {}
-
         metrics.all.map((metric) => {
-            state.output[population][metric] = {}
-            const data = state.rows.filtered[population][metric]
-            if (metric === "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT") {
-                const result = this.getAvgLot(data)
-                state.output[population][metric].clientList = result.clientList;
-                state.output[population][metric].value = result.output;
-            } else if (metric === "POTENTIAL 3-MONTH DATA RELIABILITY") {
-                const result = this.getDataReliability(data, population, range, state)
-                state.output[population][metric].data = data;
-                state.output[population][metric].value = result.output;
-                state.output[population][metric].sentence = result.sentence;
-            } else {
-                const result = this.getUniqueClients(data)
-                state.output[population][metric].clientList = result.clientList;
-                state.output[population][metric].value = result.output;
-            }
+            this.getMetrics(state, metric, population, range)
         })
+    }
+
+    getMetrics(state, metric, population, range) {
+        state.output[population][metric] = {}
+        const data = state.rows.filtered[population][metric]
+        if (metric === "AVERAGE LENGTH OF TIME FROM IDENTIFICATION TO HOUSING PLACEMENT") {
+            const result = this.getAvgLot(data)
+            state.output[population][metric].clientList = result.clientList;
+            state.output[population][metric].value = result.output;
+        } else if (metric === "POTENTIAL 3-MONTH DATA RELIABILITY") {
+            const result = this.getDataReliability(data, population, range, state)
+            state.output[population][metric].data = data;
+            state.output[population][metric].value = result.output;
+            state.output[population][metric].sentence = result.sentence;
+        } else if (metric === "NO LONGER MEETS POPULATION CRITERIA") {
+            if (state.popChange[population] === null || state.popChange[population] === undefined) {
+                state.output[population][metric].value = null;
+            } else {
+                state.output[population][metric].value = state.popChange[population];
+            }
+        } else {
+            const result = this.getUniqueClients(data)
+            state.output[population][metric].clientList = result.clientList;
+            state.output[population][metric].value = result.output;
+        }
     }
 
     getUniqueClients(data) {
@@ -311,6 +320,7 @@ class Calculator {
     getDataReliability(data, population, range, state) {
         let values = {}
         let netChange, drValue, prevMonthError, sentence;
+
         const monthsWithNoData = []
         range.map((month, index) => {
             const monthNum = `month${index}`
@@ -323,6 +333,14 @@ class Calculator {
                     outflow: null
                 }
             } else {
+                let popCriteriaValBackend;
+
+                if (util.cleanNum(data[monthNum][0]["NO LONGER MEETS POPULATION CRITERIA"]) === undefined || util.cleanNum(data[monthNum][0]["NO LONGER MEETS POPULATION CRITERIA"]) === null) {
+                    popCriteriaValBackend = 0
+                } else {
+                    popCriteriaValBackend = util.cleanNum(data[monthNum][0]["NO LONGER MEETS POPULATION CRITERIA"])
+                }
+                
                 values[monthNum] = {
                     month: month,
                     ah: util.cleanNum(data[monthNum][0]["ACTIVELY HOMELESS NUMBER"]),
@@ -335,6 +353,14 @@ class Calculator {
             }
         })
 
+        let popCriteriaVal;
+
+        if (state.output[population]["NO LONGER MEETS POPULATION CRITERIA"].value === undefined || state.output[population]["NO LONGER MEETS POPULATION CRITERIA"].value === null) {
+            popCriteriaVal = 0
+        } else {
+            popCriteriaVal = state.output[population]["NO LONGER MEETS POPULATION CRITERIA"].value
+        }
+        
         const thisMonthValues = {
             ah: state.output[population]["ACTIVELY HOMELESS NUMBER"].value,
             hp: state.output[population]["HOUSING PLACEMENTS"].value,
@@ -342,13 +368,14 @@ class Calculator {
             newlyId:  state.output[population]["NEWLY IDENTIFIED NUMBER"].value,
             retHousing: state.output[population]["RETURNED TO ACTIVE LIST FROM HOUSING NUMBER"].value,
             retInactive:  state.output[population]["RETURNED TO ACTIVE LIST FROM INACTIVE NUMBER"].value,
+            popCriteria: popCriteriaVal
         }
 
         values["month3"] = {
             month: util.getMonthYear(state.meta.reportingDate),
             ah: thisMonthValues.ah,
             inflow: thisMonthValues.newlyId + thisMonthValues.retHousing + thisMonthValues.retInactive,
-            outflow: thisMonthValues.hp + thisMonthValues.inactive
+            outflow: thisMonthValues.hp + thisMonthValues.inactive + thisMonthValues.popCriteria
         }
 
         const formatPercent = d3.format(".1%")
@@ -448,9 +475,6 @@ class Calculator {
                     .style("top", (d3.select(this).attr("cy")) + "px")
                     .html(`<p class='metric-help-text'>${helpText}</p>`)
                     .transition().duration(200).style("opacity", null);
-            })
-            .on("mousemove", function() {
-                
             })
             .on("mouseout", function() {
                 d3.selectAll(`.${calcNameForClass}`).style("background-color", "white")

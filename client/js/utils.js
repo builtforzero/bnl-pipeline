@@ -1,6 +1,5 @@
 const d3 = require("d3");
-const Papa = require("papaparse");
-const XLSX = require("xlsx");
+import { pops } from "../dict.js";
 
 class Utils {
 
@@ -76,6 +75,13 @@ class Utils {
         })
       d3.select(`.${testName}-error`).html("");
     })
+
+    // Reset Population Change Step
+    this.deactivate(d3.select("#popCriteriaButton"), false);
+    pops.all.map((pop) => {
+      this.clearFileInput(`popChange-${pop.replace(" ", "").toLowerCase()}`)
+    })
+
     // Reset Submission Step
     d3.select(".reupload-submit").classed("hide", true);
     d3.select(".download-btn").classed("hide", true);
@@ -92,6 +98,7 @@ class Utils {
     d3.selectAll(".agg-value").remove();
     d3.selectAll(".agg-value-calc").remove();
     d3.selectAll(".filter-btn").remove();
+    
 
     // Reset Data, except form data
     state.form.file_upload = "";
@@ -107,6 +114,7 @@ class Utils {
       csv: null,
     }
     state.output = {};
+    state.popChange = {};
     state.rows = {
       active: {},
       all: {},

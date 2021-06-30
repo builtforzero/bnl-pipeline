@@ -17,7 +17,7 @@ let util = new Utils();
 /* APPLICATION STATE */
 let state = {
   _dev: {
-    version: "v4.1.1 | 06/2021",
+    version: "v5.0 | 06/2021",
     debug: false,
     scriptUrl: "https://script.google.com/macros/s/AKfycbwCLfvImHNjNdbIOByBSmdRxFCe8wrvLB5oJHnWeLw33SLRs7rChi2gsxyS74o6_dhB/exec",
     height: 1578,
@@ -26,6 +26,11 @@ let state = {
     comm_data: null,
     comm_list: null,
     dr_data: null
+  },
+
+  _nav: {
+    active: "step1",
+    all: ["step1", "step2", "step3", "step4"]
   },
 
   dr: {
@@ -74,6 +79,8 @@ let state = {
     filtered: {}
   },
 
+  popChange: {},
+
   backend: {
     output: []
   },
@@ -117,6 +124,7 @@ let state = {
 init(state, form);
 
 function init(state, form) {
+
   d3.select(".loading-screen")
     .style("height", state._dev.height + "px");
 
@@ -138,6 +146,7 @@ function init(state, form) {
   d3.select('.required-header-count')
     .text(headers.required.length)
 
+  setUpPopChangeSection(state);
   /* d3.select(".recommended-header-list")
     .selectAll("li")
     .data(headers.recommended)
@@ -149,6 +158,8 @@ function init(state, form) {
   d3.select('.recommended-header-count')
     .text(headers.recommended.length) */
 }
+
+
 
 /* EVENT LISTENERS */
 function setupButtons() {
@@ -178,6 +189,10 @@ function setupButtons() {
       util.deactivate(d3.select("#submitButton"), false);
       util.activate(d3.select("#aggregateButton"), false);
       d3.select(".reupload-aggregate").classed("hide", false);
+
+      // Move on to step 2
+      changeActiveStep("step2")
+      d3.select(".reupload-popCriteria").classed("hide", false);
     }
   });
 
@@ -185,9 +200,11 @@ function setupButtons() {
   /* 
   * Reupload and New Upload Buttons
   */
-  d3.selectAll(".reupload-aggregate,.reupload-submit,.new-upload-submit").on("click", function () {
+  d3.selectAll(".reupload-aggregate,.reupload-submit,.reupload-popCriteria,.new-upload-submit").on("click", function () {
     util.resetData(state);
     util.clearFileInput("filePicker");
+    // Reset to step 1
+    changeActiveStep("step1")
   });
 
   d3.select(".download-btn").on("click", function () {
@@ -214,6 +231,7 @@ function setupButtons() {
     // Activate the submit button
     util.deactivate(d3.select("#aggregateButton"), false);
     util.activate(d3.select("#submitButton"), false);
+    util.activate(d3.select("#popCriteriaButton"), false);
     d3.select(".reupload-aggregate").classed("hide", true);
     d3.select(".reupload-submit").classed("hide", false);
     d3.select(".download-btn").classed("hide", false);
@@ -223,7 +241,18 @@ function setupButtons() {
     d3.select(".button-group-subtitle").classed("hide", false);
     d3.select(".button-group-instructions").classed("hide", false);
 
+    // Change to Step 3
+    changeActiveStep("step3")
   });
+
+
+  /* 
+  * Population Criteria Button
+  */
+  d3.select("#popCriteriaButton").on("click", function () {
+    // Change to Step 3
+    changeActiveStep("step4")
+  })
 
   
   /* 
@@ -251,6 +280,25 @@ function setupButtons() {
       console.log(" ");
     }
   });
+}
+
+// Show the chosen step and hide all of the others
+function changeActiveStep(step) {
+  state._nav.active = step;
+  const remainingSteps = state._nav.all.filter((d) => d != step)
+  const sectionName = `${step}-section`
+      
+  d3.selectAll(`.${sectionName}`).classed("hide", false)
+  d3.selectAll(`.${step}`).classed("navbar-active", true)
+
+  remainingSteps.map(step => {
+    const remainingSectionName = `${step}-section`
+    d3.selectAll(`.${step}`)
+      .classed("navbar-active", false)
+
+    d3.selectAll(`.${remainingSectionName}`)
+      .classed("hide", true)
+  })
 }
 
 function setUpSectionToggle(state) {
@@ -297,6 +345,29 @@ function setUpSectionToggle(state) {
   })
 }
 
+function setUpPopChangeSection(state) {
+  
+  const popChangeEntry = (pop) => `<div class='popChange-input'>
+    <label class='popChange-label' for="popChange-${pop.replace(" ", "").toLowerCase()}">${pop.toUpperCase()}</label>
+    <input class='popChange-field' type="number" min="0" name="popChange-${pop.replace(" ", "").toLowerCase()}" 
+    id="popChange-${pop.replace(" ", "").toLowerCase()}" value=0>
+  </div>`
+
+  pops.all.map((pop) => {
+    d3.select(".popChange-form")
+      .append("div")
+      .html(popChangeEntry(pop))
+
+    state.popChange[pop] = null;
+    d3.select(`#popChange-${pop.replace(" ", "").toLowerCase()}`)
+      .on("change", function() {
+        state.popChange[pop]  = parseInt(this.value);
+        calc.getMetrics(state, "NO LONGER MEETS POPULATION CRITERIA", pop)
+        calc.getAndPrintMetrics(state)
+      })
+  })
+}
+
 
 /* 
 *RUN TESTS AND CHECK VALIDATION STATUS 
@@ -311,13 +382,13 @@ function runTests(headerArray, data, state) {
     results.push(state.test._pass[testName])
   })
   checkValidationStatus(results, state);
-  
 }
 
 function checkValidationStatus(resultsArray, state) {
   if (resultsArray.some(util.valueIsFalse)) {
     util.deactivate(d3.select("#validateButton"), false);
     util.deactivate(d3.select("#aggregateButton"), true);
+    util.deactivate(d3.select("#popCriteriaButton"), false);
     d3.select("#reupload-button").classed("hide", false);
     // Reset values
     state.backend.raw = null;
@@ -337,6 +408,7 @@ function checkValidationStatus(resultsArray, state) {
   } else if (resultsArray.some(util.valueIsTrue)) {
     util.deactivate(d3.select("#validateButton"), false);
     util.activate(d3.select("#aggregateButton"), true);
+    util.activate(d3.select("#popCriteriaButton"), false);
     // Reset values
     state.backend.raw = null;
     state.backend.output = [];
@@ -472,7 +544,7 @@ function addPopButtons() {
 /* 
 * DOWNLOAD & SUBMIT DATA
 */
-function downloadData(data) {
+/* function downloadData(data) {
   const headers = [...Object.keys(data)]
   const values = [...Object.values(data)]
   console.log(headers, values);
@@ -491,7 +563,7 @@ function downloadData(data) {
   link.setAttribute("download", fileName);
   document.body.appendChild(link); // Required for FF
   link.click(); //
-}
+} */
 
 // Parses data as a CSV and downloads the file
 function submitData(data) {

@@ -19,13 +19,13 @@ class FormHandler {
         state.form.file_upload
     ]
     let valButton = d3.select("#validateButton")
-    let valMessage = d3.select(".validateBtn-msg")
+    let valMessage = d3.selectAll(".validateBtn-msg")
     // First check whether required fields are on or off
     if (state._dev.debug === false) {
       // If any form values are null or "", deactivate the Validate button
       if (formValues.some(util.valueIsNull)) {
         util.deactivate(valButton, false);
-        valMessage.html("Please fill in all required fields to continue.");
+        valMessage.html("Please fill in all required form fields in Step 1 to continue.");
       } else if (formValues.every(util.valueIsNotNull)) {
         util.activate(valButton, false);
         valMessage.text("");
