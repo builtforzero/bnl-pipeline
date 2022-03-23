@@ -8,6 +8,7 @@ import { tidy, select, mutate } from '@tidyjs/tidy';
 
 // Initialize components
 let util = new Utils();
+let dispatch = d3.dispatch("valueChanged");
 
 class Calculator {
 
@@ -445,24 +446,34 @@ class Calculator {
                 } else {
                     helpText = metrics.info[metric].help_text
                 }
-                this.printRow(pop, cleanMetricName, calcResult, suffixSingular, suffixPlural, helpText)
+                this.printRow(state, pop, metric, cleanMetricName, calcResult, suffixSingular, suffixPlural, helpText)
             })
+
         })
+
+	// hacky way to handle value changes
+        dispatch
+          .on('valueChanged', (change) => {
+            console.log('value changed event received');
+            console.log(change);
+	    state.output[change.population][change.metric].value = change.value
+            state.backend.output["[" + change.population + "] " + change.metric] = change.value
+          })
     }
 
-    printRow(population, cleanCalcName, calcValue, suffixSingular, suffixPlural, helpText) {
+    printRow(state, population, metric, cleanCalcName, calcValue, suffixSingular, suffixPlural, helpText) {
         const cleanPopName = population.replace(/\s+/g, '')
         const calcNameForClass = cleanCalcName.replace(/\s+/g, '')
 
         if (calcValue != 1 && calcValue != "N/A") {
             this.printCalcName(cleanCalcName, calcNameForClass, cleanPopName);
-            this.printCalcValue(calcValue, calcNameForClass, suffixPlural, cleanPopName);
+            this.printCalcValue(state, population, metric, calcValue, calcNameForClass, suffixPlural, cleanPopName);
         } else if (calcValue === 1 && calcValue != "N/A") {
             this.printCalcName(cleanCalcName, calcNameForClass, cleanPopName);
-            this.printCalcValue(calcValue, calcNameForClass, suffixSingular, cleanPopName);
+            this.printCalcValue(state, population, metric, calcValue, calcNameForClass, suffixSingular, cleanPopName);
         } else {
             this.printCalcName(cleanCalcName, calcNameForClass, cleanPopName);
-            this.printCalcValue(calcValue, calcNameForClass, "", cleanPopName);
+            this.printCalcValue(state, population, metric, calcValue, calcNameForClass, "", cleanPopName);
         }
         d3.selectAll(`.agg-value-calc.${cleanPopName}.${calcNameForClass}`)
             .on("mouseover", function() {
@@ -493,24 +504,27 @@ class Calculator {
             .html(`${calcName}`);
     }
 
-    printCalcValue(value, calcNameForClass, suffix, cleanPopName) {
-        if (value === null || value === 0 || value === "N/A" || value === "N/A%") {
-            d3.select(".agg-table")
-                .append("div")
-                .classed("agg-value", true)
-                .classed(`${cleanPopName}`, true)
-                .classed(`${calcNameForClass}`, true)
-                .classed("hide", true)
-                .html(`<b class='neutral' style='font-weight:400;'>${value}${suffix}</b>`);
-        } else {
-            d3.select(".agg-table")
-                .append("div")
-                .classed("agg-value", true)
-                .classed(`${cleanPopName}`, true)
-                .classed(`${calcNameForClass}`, true)
-                .classed("hide", true)
-                .html(`<b>${value}${suffix}</b>`);
-        }
+    printCalcValue(state, population, metric, value, calcNameForClass, suffix, cleanPopName) {
+      let htmlContent = `<b>${value}${suffix}</b>`
+      if(value === null || value === 0 || value === "N/A" || value === "N/A%") {
+        htmlContent = `<b class='neutral' style='font-weight:400;'>${value}${suffix}</b>`
+      }
+      if(state._dev.debug) {
+        htmlContent = `<input type="text" value="${value}" />${suffix}`
+      }
+      d3.select(".agg-table")
+        .append("div")
+        .classed("agg-value", true)
+        .classed(`${cleanPopName}`, true)
+        .classed(`${calcNameForClass}`, true)
+        .classed("hide", true)
+        .html(htmlContent)
+        .select('input')
+        .on('change', () => {
+          let newVal = util.cleanFloat(d3.event.target.value);
+	  console.log({population: population, metric: metric});
+	  dispatch.call("valueChanged", this, { population: population, metric: metric, value: newVal}, {'bubbles': true} );
+        })
     }
 
 

@@ -41,12 +41,26 @@ class Utils {
   }
 
   cleanNum(value) {
-    if (value === "" || value === null || parseInt(value) === NaN || value === undefined) {
+    if (value === "" || value === null || isNaN(parseInt(value)) || value === undefined) {
       return 0;
     } else {
       const cleanedValue = parseInt(value)
       return cleanedValue;
     }
+  }
+
+  cleanFloat(value) {
+    if (value === "" || value === null || value === undefined) {
+      return null
+    }
+    const cleanedValue = value
+      .toString()
+      .replace(/[^0-9.]/g, "")
+    const parsedValue = parseFloat(cleanedValue)
+    if(isNaN(parsedValue) || parsedValue === undefined || parsedValue === null) {
+      return null
+    }
+    return parsedValue
   }
 
   resetData(state) {
