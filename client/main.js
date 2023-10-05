@@ -7,6 +7,7 @@ import { Validator } from "./js/validate.js";
 import { Calculator } from "./js/calculate.js";
 import { FormHandler } from "./js/form.js";
 import { Utils } from "./js/utils.js";
+import { insertData } from "./js/supabase.js";
 
 // Initialize components
 let test = new Validator();
@@ -250,7 +251,7 @@ function setupButtons() {
     // Deactivate and hide the submit button
     // Hide the reupload button
     d3.select(".submit-progress-bar").classed("hide", false);
-        d3.select(".submit-progress-msg").classed("hide", false);
+    d3.select(".submit-progress-msg").classed("hide", false);
     d3.select(".reupload-aggregate").classed("hide", true);
     d3.select(".reupload-submit").classed("hide", true);
     d3.select(".download-btn").classed("hide", true);
@@ -531,72 +532,31 @@ function addPopButtons() {
 
 
 // Parses data as a CSV and downloads the file
-function submitData(data) {
+async function submitData(data) {
+  let result = await insertData(data);
+  if(result == 'SUCCESS') {
+    d3.select(".submit-progress-bar").classed("hide", false);
+    d3.select(".submit-progress-msg").classed("hide", false);
+    d3.select(".submit-progress-msg").html(`Submitting Data for ${state.meta.reportingDate}...`).style("opacity", "0").transition().duration(200).style("opacity", "1");
+    d3.select(".submit-progress-bar").html(`<progress id="file" value="1" max="2">1</progress>`);
 
-  let submitForm = document.createElement("form");
-  submitForm.setAttribute("id", "submit-form");+
-  submitForm.setAttribute("method", "POST");
-  headers.backend.map((field, fieldIndex) => {
-    const fieldName = field;
-    let fieldValue;
-    if (data[field] === null) {
-      fieldValue = "";
-    } else {
-      fieldValue = data[field];
-    }
-  
-    const i = document.createElement("input");
-    i.setAttribute("type", "text");
-    i.setAttribute("id", "input-" + fieldIndex);
-    i.setAttribute("name", fieldName);
-    i.setAttribute("value", fieldValue);
-    submitForm.appendChild(i);
-  });
+    setTimeout(() => {
+      d3.select(".submit-progress-msg").html(`✨ All Data Submitted for ${state.meta.reportingDate}! ✨`).style("opacity", "0").transition().duration(200).style("opacity", "1");
+      d3.select(".submit-progress-bar").html(`<progress id="file" value="${2}" max="2">${6}</progress>`);
 
-  const s = document.createElement("button");
-  s.setAttribute("type", "submit");
-  s.setAttribute("value", "Submit");
-
-  submitForm.appendChild(s);
-  submitForm.addEventListener("submit", (e) => {
-
-    e.preventDefault();
-    const value = "form";
-
-    fetch(state._dev.scriptUrl, {
-      method: "POST",
-      body: new FormData(submitForm),
-    })
-      .then((response) => {
-        d3.select(".submit-progress-bar").classed("hide", false);
-        d3.select(".submit-progress-msg").classed("hide", false);
-        d3.select(".submit-progress-msg").html(`Submitting Data for ${state.meta.reportingDate}...`).style("opacity", "0").transition().duration(200).style("opacity", "1");
-
-        d3.select(".submit-progress-bar").html(`<progress id="file" value="1" max="2">1</progress>`);
-
-        setTimeout(() => {
-          d3.select(".submit-progress-msg").html(`✨ All Data Submitted for ${state.meta.reportingDate}! ✨`).style("opacity", "0").transition().duration(200).style("opacity", "1");
-          d3.select(".submit-progress-bar").html(`<progress id="file" value="${2}" max="2">${6}</progress>`);
-
-          d3.select(".new-upload-submit").style("opacity", "0").transition().duration(400).style("opacity", "1");
-          d3.select(".new-upload-submit").classed("hide", false);
-          submitForm.remove();
-        }, 1100);
-      })
-      .catch((error) => {
-        d3.select(".submit-progress-bar").classed("hide", true);
-        d3.select(".submit-progress-msg")
-          .html(`<div style='text-align: center; background-color: #ffa5a5; padding: 20px; margin: 10px; border: 1px solid var(--color-alert)'><b style='font-size:var(--root-size);'>ERROR SUBMITTING DATA! <br> Please contact bfzdatasupport@community.solutions. <br> <b style='color:var(--color-alert); font-size:var(--root-size)'>${error}</b></b></div>`)
-          .style("opacity", "0")
-          .transition()
-          .duration(200)
-          .style("opacity", "1");
-        console.error("Error submitting data to backend", error.message);
-        submitForm.remove();
-      });
-  });
-
-  submitForm.className = "hide";
-  document.body.appendChild(submitForm);
-  s.click();
+      d3.select(".new-upload-submit").style("opacity", "0").transition().duration(400).style("opacity", "1");
+      d3.select(".new-upload-submit").classed("hide", false);
+    }, 1100);
+  } else {
+    d3.select(".submit-progress-bar").classed("hide", true);
+    d3.select(".submit-progress-msg")
+      .html(`<div style='text-align: center; background-color: #ffa5a5; padding: 20px; margin: 10px; border: 1px solid var(--color-alert)'><b style='font-size:var(--root-size);'>ERROR SUBMITTING DATA! <br> Please contact bfzdatasupport@community.solutions. <br> <b style='color:var(--color-alert); font-size:var(--root-size)'>${result}</b></b></div>`)
+      .style("opacity", "0")
+      .transition()
+      .duration(200)
+      .style("opacity", "1");
+    console.error("Error submitting data to backend", result);
+    d3.select(".new-upload-submit").style("opacity", "0").transition().duration(400).style("opacity", "1");
+    d3.select(".new-upload-submit").classed("hide", false);
+  }
 }
